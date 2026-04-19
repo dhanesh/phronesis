@@ -17,3 +17,11 @@ frontend/dist/
 /phronesis
 *.test
 *.out
+
+# webfs/dist is populated from frontend/dist/ by `make build` so a
+# `-tags=prod` compile can embed it. Kept out of git on purpose: if it
+# were committed, stale placeholder content could ship in a release.
+internal/webfs/dist/
+
+# goreleaser output
+dist/

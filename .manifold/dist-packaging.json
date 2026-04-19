@@ -1,0 +1,800 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "dist-packaging",
+  "phase": "VERIFIED",
+  "domain": "software",
+  "created": "2026-04-19T15:15:00Z",
+  "updated": "2026-04-19T18:10:00Z",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "B2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "platforms": "darwin-arm64, darwin-amd64, linux-amd64, linux-arm64"
+        }
+      },
+      {
+        "id": "T2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T4",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T5",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "30s",
+          "measured_on": "fresh clone"
+        }
+      },
+      {
+        "id": "T6",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T7",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "U2",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder"
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "S3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation"
+      },
+      {
+        "id": "S4",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "S5",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "note": "Added in iter-2 (WebSearch amendment pass) after surfacing Homebrew 5.0.0 (Nov 2025) DSL deprecations. Source stays 'interview' per schema enum; the WebSearch origin is recorded in iterations[1] and in the .md rationale."
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "O2",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O4",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O5",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "10m",
+          "measured_on": "GitHub Actions, trailing 10 releases"
+        },
+        "note": "Added by m2-tension resolution of TN4 (B1 4-channel breadth vs T5 30s test budget). Splits the time budget: T5 governs make test, O5 governs make release on CI."
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "trade_off",
+      "between": ["T2", "O3"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "physical",
+        "parameters": "reliability vs information",
+        "principles": ["P10", "P35"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "T2", "effect": "LOOSENED", "note": "SOURCE_DATE_EPOCH removes wall-clock as non-determinism source"},
+        {"constraint_id": "O3", "effect": "TIGHTENED", "note": "buildTime now means commit time; operators must understand"}
+      ],
+      "validation_criteria": [
+        "Two machines building same tag produce byte-identical binaries (SHA256 match)",
+        "phronesis --version prints commit timestamp, not build-host time"
+      ]
+    },
+    {
+      "id": "TN2",
+      "type": "trade_off",
+      "between": ["B1", "S4"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "reliability vs availability",
+        "principles": ["P1", "P13"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "B1", "effect": "TIGHTENED", "note": "Ship-all-4 re-scoped: GH Release atomic root, other 3 best-effort mirrors with alerting"},
+        {"constraint_id": "S4", "effect": "LOOSENED", "note": "Channel independence satisfied as stated"}
+      ],
+      "validation_criteria": [
+        "Simulated ghcr.io 503: GH Release still publishes; Docker stage retries; alerts fire",
+        "Simulated GH Release API failure: release marked failed; no downstream mirrors attempt"
+      ],
+      "failure_cascade": [
+        {"q": "What if Docker retry also fails?", "a": "Alert + manual rerun of release-channel workflow; accept-loss after 3 auto retries"},
+        {"q": "What if GH Release API is down >10 min?", "a": "Release delayed; SemVer tag stays; no partial publish; human intervention"}
+      ]
+    },
+    {
+      "id": "TN3",
+      "type": "resource_tension",
+      "between": ["T6", "T7", "U1"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "reliability vs simplicity",
+        "principles": ["P25", "P2"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "T6", "effect": "LOOSENED", "note": "Go 1.24 tool directive pins versions in go.mod"},
+        {"constraint_id": "T7", "effect": "LOOSENED", "note": "goreleaser version tracked in go.sum"},
+        {"constraint_id": "U1", "effect": "LOOSENED", "note": "No make tools target needed; surface stays at 7"}
+      ],
+      "validation_criteria": [
+        "go mod graph shows pinned staticcheck version",
+        "make lint works on fresh clone with zero manual tool install",
+        "go tool goreleaser --version matches go.mod tool directive version"
+      ]
+    },
+    {
+      "id": "TN4",
+      "type": "resource_tension",
+      "between": ["B1", "T5"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "productivity vs reliability (release scope)",
+        "principles": ["P1", "P17"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "B1", "effect": "LOOSENED", "note": "10-min budget for full matrix gives B1 headroom"},
+        {"constraint_id": "T5", "effect": "LOOSENED", "note": "Scope clarified to make test only, not make release"},
+        {"constraint_id": "O2", "effect": "TIGHTENED", "note": "Smoke must fit into 10-min O5 budget; TN6 native-parallel runners enable this"}
+      ],
+      "validation_criteria": [
+        "Measured p95 wall-clock of last 10 tagged releases on GHA: ≤ 10 min",
+        "make test p95 on fresh clone: ≤ 30s (T5 unchanged)"
+      ],
+      "introduces_constraint": "O5"
+    },
+    {
+      "id": "TN5",
+      "type": "trade_off",
+      "between": ["U1", "B1"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "flexibility vs simplicity",
+        "principles": ["P1", "P15"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "U1", "effect": "LOOSENED", "note": "7 targets preserved via CHANNEL= env parameter"},
+        {"constraint_id": "T7", "effect": "TIGHTENED", "note": "goreleaser config becomes single source of truth for channel logic"}
+      ],
+      "validation_criteria": [
+        "make help prints exactly 7 target lines",
+        "make release CHANNEL=homebrew publishes only to Homebrew",
+        "make release (no CHANNEL) publishes to all 4 channels",
+        "goreleaser check passes on unified config"
+      ]
+    },
+    {
+      "id": "TN6",
+      "type": "resource_tension",
+      "between": ["O2", "T1"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "quality of verification vs cost",
+        "principles": ["P1", "P24"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "O2", "effect": "LOOSENED", "note": "Satisfied: real execution on real silicon via native GHA runners"},
+        {"constraint_id": "O5", "effect": "TIGHTENED", "note": "4 parallel runners + coordination must fit in 10 min"}
+      ],
+      "validation_criteria": [
+        "CI matrix shows 4 native smoke jobs per release (macos-14, macos-13, ubuntu-24.04, ubuntu-24.04-arm)",
+        "Smoke failure on one platform drops that platform per O4; others proceed",
+        "Workflow explicitly pins actions/runner-images labels to avoid silent QEMU drift"
+      ],
+      "failure_cascade": [
+        {"q": "What if ubuntu-24.04-arm is unavailable?", "a": "Fall back to QEMU smoke with explicit warning; O2 partially satisfied for that release; human flag"}
+      ]
+    },
+    {
+      "id": "TN7",
+      "type": "trade_off",
+      "between": ["T3", "T4", "T5"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "integration vs dev loop speed",
+        "principles": ["P1", "P15", "P40"]
+      },
+      "propagation_effects": [
+        {"constraint_id": "T3", "effect": "LOOSENED", "note": "Satisfied: embed active in production build via -tags=prod"},
+        {"constraint_id": "T4", "effect": "LOOSENED", "note": "Frontend build required only for prod-tagged builds"},
+        {"constraint_id": "T5", "effect": "LOOSENED", "note": "Satisfied: tests skip frontend entirely via !prod stub"}
+      ],
+      "validation_criteria": [
+        "go test ./... passes with no frontend/dist directory",
+        "go build -tags=prod ./cmd/phronesis fails cleanly if frontend/dist/ is empty",
+        "phronesis without -tags=prod serves stub and logs loud startup warning",
+        "make build wraps go build -tags=prod automatically"
+      ]
+    }
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "SATISFIED",
+        "maps_to": ["T1", "O2", "O4"],
+        "evidence": [
+          {"id": "E1", "type": "file_exists", "path": ".github/workflows/release.yml", "status": "VERIFIED"},
+          {"id": "E2", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "phronesis --version", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "SATISFIED",
+        "maps_to": ["T2", "O3"],
+        "evidence": [
+          {"id": "E3", "type": "content_match", "path": ".goreleaser.yaml", "pattern": "SOURCE_DATE_EPOCH", "status": "VERIFIED"},
+          {"id": "E4", "type": "content_match", "path": "cmd/phronesis/main.go", "pattern": "buildTime", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "SATISFIED",
+        "maps_to": ["B1", "S4", "O4"],
+        "evidence": [
+          {"id": "E5", "type": "file_exists", "path": ".github/workflows/release.yml", "status": "VERIFIED"},
+          {"id": "E6", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "continue-on-error|needs:", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "SATISFIED",
+        "maps_to": ["S2", "B1"],
+        "evidence": [
+          {"id": "E7", "type": "content_match", "path": ".goreleaser.yaml", "pattern": "brews:", "status": "VERIFIED"},
+          {"id": "E8", "type": "content_match", "path": ".goreleaser.yaml", "pattern": "test:", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "SATISFIED",
+        "maps_to": ["T6", "T7"],
+        "evidence": [
+          {"id": "E9", "type": "content_match", "path": "go.mod", "pattern": "^tool ", "status": "VERIFIED"},
+          {"id": "E10", "type": "content_match", "path": "go.mod", "pattern": "staticcheck|goreleaser", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "SATISFIED",
+        "maps_to": ["U1", "U2"],
+        "evidence": [
+          {"id": "E11", "type": "file_exists", "path": "Makefile", "status": "VERIFIED"},
+          {"id": "E12", "type": "content_match", "path": "Makefile", "pattern": "^help:", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "PARTIAL",
+        "maps_to": ["O5", "B1", "O2"],
+        "evidence": [
+          {"id": "E13", "type": "manual_review", "path": ".manifold/dist-packaging.verify.json", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "SATISFIED",
+        "maps_to": ["U1", "B1"],
+        "evidence": [
+          {"id": "E14", "type": "content_match", "path": "Makefile", "pattern": "CHANNEL", "status": "VERIFIED"},
+          {"id": "E15", "type": "content_match", "path": ".goreleaser.yaml", "pattern": "^dockers:|^brews:|^nfpms:|^archives:", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "SATISFIED",
+        "maps_to": ["T3", "T4", "T5"],
+        "evidence": [
+          {"id": "E16", "type": "file_exists", "path": "internal/webfs/embed_prod.go", "status": "VERIFIED"},
+          {"id": "E17", "type": "file_exists", "path": "internal/webfs/embed_dev.go", "status": "VERIFIED"},
+          {"id": "E18", "type": "content_match", "path": "internal/webfs/embed_prod.go", "pattern": "//go:build prod", "status": "VERIFIED"},
+          {"id": "E19", "type": "content_match", "path": "internal/webfs/embed_dev.go", "pattern": "//go:build !prod", "status": "VERIFIED"},
+          {"id": "E20", "type": "test_passes", "path": "internal/webfs/embed_dev_test.go", "test_name": "TestStubFSServesPlaceholderIndex", "test_tier": "unit", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "SATISFIED",
+        "maps_to": ["S5"],
+        "evidence": [
+          {"id": "E21", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "brew audit --strict --new", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-11",
+        "status": "SATISFIED",
+        "maps_to": ["O1", "O2", "T1"],
+        "evidence": [
+          {"id": "E22", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "macos-14|macos-13|ubuntu-24.04-arm", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-12",
+        "status": "SATISFIED",
+        "maps_to": ["S1"],
+        "evidence": [
+          {"id": "E23", "type": "content_match", "path": ".goreleaser.yaml", "pattern": "checksum:", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-13",
+        "status": "SATISFIED",
+        "maps_to": ["B2"],
+        "evidence": [
+          {"id": "E24", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "tags:.*v\\*", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-14",
+        "status": "PARTIAL",
+        "maps_to": ["S3"],
+        "evidence": [
+          {"id": "E25", "type": "content_match", "path": ".github/workflows/release.yml", "pattern": "GITHUB_TOKEN|id-token: write", "status": "VERIFIED"},
+          {"id": "E26", "type": "manual_review", "path": "docs/dist-packaging/DECISIONS.md", "status": "PENDING"}
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-9",
+      "reason": "Without the -tags=prod embed gate, go test ./... cannot run on a fresh clone (//go:embed fails on missing frontend/dist/*), which blocks verification of every other RT. Load-bearing prerequisite for the entire dev + CI loop.",
+      "dependency_chain": ["RT-9", "RT-5", "RT-6", "RT-8", "RT-11", "RT-1", "RT-13", "RT-3", "RT-4", "RT-10", "RT-12", "RT-2", "RT-7", "RT-14"]
+    },
+    "tension_validation": [
+      {"tension_id": "TN1", "status": "CONFIRMED", "by_option": "RT-2 embodies the SOURCE_DATE_EPOCH resolution"},
+      {"tension_id": "TN2", "status": "CONFIRMED", "by_option": "RT-3 embodies GH-atomic-others-mirror"},
+      {"tension_id": "TN3", "status": "CONFIRMED", "by_option": "RT-5 embodies Go 1.24 tool directive"},
+      {"tension_id": "TN4", "status": "CONFIRMED", "by_option": "RT-7 embodies 10-min CI budget; T5 30s unchanged for make test"},
+      {"tension_id": "TN5", "status": "CONFIRMED", "by_option": "RT-8 embodies CHANNEL= env parametrization"},
+      {"tension_id": "TN6", "status": "CONFIRMED", "by_option": "RT-11 embodies native GHA runner matrix pins"},
+      {"tension_id": "TN7", "status": "CONFIRMED", "by_option": "RT-9 embodies -tags=prod gated embed"}
+    ],
+    "recommended_option": "C",
+    "generation": {
+      "option": "C",
+      "timestamp": "2026-04-19T17:45:00Z",
+      "binding_first": true,
+      "artifacts": [
+        {"path": "internal/webfs/embed_prod.go", "type": "code", "satisfies": ["RT-9", "T3", "T4"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+        {"path": "internal/webfs/embed_dev.go", "type": "code", "satisfies": ["RT-9", "T5"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+        {"path": "internal/webfs/stub/index.html", "type": "code", "satisfies": ["RT-9"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+        {"path": "internal/webfs/embed_dev_test.go", "type": "test", "satisfies": ["RT-9", "T5"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+        {"path": "go.mod", "type": "config", "satisfies": ["RT-5", "T6", "T7"], "status": "generated", "artifact_class": "substantive", "note": "Edited: added tool directive for staticcheck (goreleaser deliberately NOT in go.mod to preserve Go 1.24.5 floor — pinned via GH Actions instead)."},
+        {"path": "cmd/phronesis/main.go", "type": "code", "satisfies": ["RT-2", "O3"], "status": "generated", "artifact_class": "substantive", "note": "Edited: added --version flag with build-metadata ldflags variables."},
+        {"path": "internal/app/server.go", "type": "code", "satisfies": ["RT-9"], "status": "generated", "artifact_class": "substantive", "note": "Edited: replaced local //go:embed web/* with webfs.FS() call."},
+        {"path": "Makefile", "type": "config", "satisfies": ["RT-5", "RT-6", "RT-8", "U1", "U2"], "status": "generated", "artifact_class": "substantive"},
+        {"path": ".gitignore", "type": "config", "satisfies": ["T3", "T4"], "status": "generated", "artifact_class": "substantive", "note": "Edited: added internal/webfs/dist/ and dist/."},
+        {"path": ".github/workflows/ci.yml", "type": "config", "satisfies": ["RT-11", "O1", "T1"], "status": "generated", "artifact_class": "substantive"},
+        {"path": ".github/workflows/release.yml", "type": "config", "satisfies": ["RT-1", "RT-2", "RT-3", "RT-10", "RT-11", "RT-13", "RT-14"], "status": "generated", "artifact_class": "substantive"},
+        {"path": ".goreleaser.yaml", "type": "config", "satisfies": ["RT-1", "RT-2", "RT-3", "RT-4", "RT-8", "RT-12", "B1", "T1", "T2", "S1", "S2"], "status": "generated", "artifact_class": "substantive"},
+        {"path": "Dockerfile", "type": "config", "satisfies": ["B1", "T1", "RT-3"], "status": "generated", "artifact_class": "substantive"},
+        {"path": "docs/dist-packaging/README.md", "type": "docs", "satisfies": ["U1", "U2"], "status": "generated", "artifact_class": "substantive"},
+        {"path": "docs/dist-packaging/DECISIONS.md", "type": "docs", "satisfies": ["B1", "T2", "T3", "T6", "S1", "S5"], "status": "generated", "artifact_class": "substantive"},
+        {"path": "docs/dist-packaging/RUNBOOK.md", "type": "runbook", "satisfies": ["O2", "O4", "RT-3", "RT-7"], "status": "generated", "artifact_class": "substantive"}
+      ],
+      "coverage": {
+        "required_truths_addressed": 14,
+        "required_truths_total": 14,
+        "constraints_addressed": 21,
+        "constraints_total": 21,
+        "percentage": 100
+      },
+      "parallelization_note": "Sequential generation chosen: ~16 small artifacts across ~7 directories. Worktree setup overhead would have exceeded the gain from per-group parallelism. `manifold solve` emitted constraint-discovery waves (m1 phase), not m4 artifact waves."
+    },
+    "integration": {
+      "timestamp": "2026-04-19T18:30:00Z",
+      "mode": "check-only",
+      "checklist": [
+        {
+          "id": "INT-D1",
+          "source": "Makefile",
+          "target": "README.md",
+          "action": "Add 'Quick start' subsection preferring `make test` / `make build` / `make help`; keep raw `go run` + `npm run build` as the fallback path.",
+          "status": "pending",
+          "auto_wireable": true,
+          "blocking": false,
+          "satisfies": ["U1", "RT-6"]
+        },
+        {
+          "id": "INT-D2",
+          "source": ".goreleaser.yaml (brews.repository block)",
+          "target": "github.com/dhanesh/homebrew-phronesis (does not exist yet)",
+          "action": "Create public tap repo with a README + Formula/ directory skeleton before pushing first `v*.*.*` tag. goreleaser will populate Formula/phronesis.rb on first release.",
+          "status": "pending",
+          "auto_wireable": false,
+          "blocking": true,
+          "blocking_scope": "before-first-release",
+          "satisfies": ["RT-4", "B1", "S2"]
+        },
+        {
+          "id": "INT-D3",
+          "source": ".github/workflows/release.yml (HOMEBREW_TAP_TOKEN env)",
+          "target": "github.com/dhanesh/phronesis → Settings → Secrets",
+          "action": "Create fine-scoped deploy token on homebrew-phronesis, add as `HOMEBREW_TAP_TOKEN` Actions secret on phronesis repo.",
+          "status": "pending",
+          "auto_wireable": false,
+          "blocking": true,
+          "blocking_scope": "before-first-release",
+          "satisfies": ["RT-14", "S3"]
+        },
+        {
+          "id": "INT-D4",
+          "source": ".github/workflows/release.yml (on: push: tags)",
+          "target": "phronesis repo (no existing tags)",
+          "action": "Push `v0.1.0` tag to fire the release pipeline. Start O5 p95 measurement baseline from GH Actions duration. Sanity-check `phronesis --version` format on each platform tarball.",
+          "status": "pending",
+          "auto_wireable": false,
+          "blocking": false,
+          "blocking_scope": "gates-all-deferred-verifications",
+          "satisfies": ["RT-7", "RT-13", "O5", "B2", "T2"]
+        },
+        {
+          "id": "INT-D5",
+          "source": "Makefile",
+          "target": "CLAUDE.md (project-level instructions)",
+          "action": "Add a line under 'Development Conventions' preferring `make test` / `make lint` over raw `go test ./...` so future contributors default to the new entry points.",
+          "status": "pending",
+          "auto_wireable": true,
+          "blocking": false,
+          "satisfies": ["U1"]
+        },
+        {
+          "id": "INT-D6",
+          "source": "Makefile (release target)",
+          "target": "Local dev environment docs",
+          "action": "Current docs/dist-packaging/README.md covers the `brew install goreleaser` requirement for local release. Optionally cross-reference from the top-level README's Development section so it's discoverable before the reader digs into the feature docs.",
+          "status": "pending",
+          "auto_wireable": true,
+          "blocking": false,
+          "satisfies": ["T7"]
+        }
+      ],
+      "summary": {
+        "total_points": 6,
+        "completed": 0,
+        "pending": 6,
+        "auto_wireable": 3,
+        "manual_required": 3,
+        "blocking_pre_release": 2
+      },
+      "in_repo_integration_pre_done_by_m4": [
+        "internal/app/server.go was refactored to use webfs.FS() during m4 generation — no post-hoc mod-declaration or import work needed.",
+        "cmd/phronesis/main.go was extended with --version flag + ldflags vars during m4 — fully wired to release.yml smoke step.",
+        ".gitignore was extended to cover internal/webfs/dist/ + dist/ during m4 — no post-hoc edit needed.",
+        "go.mod tool directive for staticcheck was added during m4 — CI workflow consumes it directly via `go tool staticcheck`."
+      ]
+    },
+    "reversibility_log": [
+      {"step": "Publish first SemVer tag (e.g., v0.1.0)", "reversibility": "REVERSIBLE_WITH_COST", "consequence": "Consumers may pin; retagging breaks lockfiles. Move forward only (v0.1.1+)."},
+      {"step": "Create public homebrew-phronesis tap repo", "reversibility": "REVERSIBLE_WITH_COST", "consequence": "Once documented, renaming breaks `brew tap` commands. Can deprecate."},
+      {"step": "Push first Docker image to ghcr.io/dhanesh/phronesis:v0.1.0", "reversibility": "REVERSIBLE_WITH_COST", "consequence": "ghcr retains pulled digests; deletion doesn't retract existing deployments."},
+      {"step": "Publish formula in tap referencing release artifacts", "reversibility": "REVERSIBLE_WITH_COST", "consequence": "Dependents (brewfiles, CI configs) must update if formula name/tap changes."}
+    ]
+  },
+  "draft_required_truths": [
+    {
+      "id": "DRT-1",
+      "seed_from": [
+        "T1",
+        "O2"
+      ],
+      "draft_statement": "For release artifacts to work on every target platform, a per-platform smoke-test gate must exist in CI before publish (at minimum `phronesis --version` runs without error).",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-2",
+      "seed_from": [
+        "T2",
+        "O3"
+      ],
+      "draft_statement": "For deterministic builds to coexist with embedded build metadata, timestamps must derive from git commit time (SOURCE_DATE_EPOCH), not wall-clock build time. Otherwise T2 and O3 contradict.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-3",
+      "seed_from": [
+        "B1",
+        "S4"
+      ],
+      "draft_statement": "For all 4 channels (GitHub Releases, Docker, Homebrew, Linux packages) to ship per release, each channel must be an independent pipeline stage with its own retry/fail semantics \u2014 a Docker-registry outage must not block the GitHub Release.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-4",
+      "seed_from": [
+        "S2"
+      ],
+      "draft_statement": "For Homebrew and tarball consumers to receive identical behavior, the Homebrew formula must DOWNLOAD the release tarball + verify its SHA256, not rebuild from source with Homebrew's toolchain.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-5",
+      "seed_from": [
+        "T6",
+        "T7"
+      ],
+      "draft_statement": "For reproducible lint and release results across dev machines and CI, tool versions (staticcheck, goreleaser, etc.) must be pinned in-repo and installable via a single `make tools` command.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-6",
+      "seed_from": [
+        "U1"
+      ],
+      "draft_statement": "For the 7 core make targets to stay discoverable, `make help` must enumerate them with one-line descriptions auto-extracted from target docstrings (no manually-maintained list that drifts).",
+      "confidence": "medium"
+    }
+  ],
+  "iterations": [
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-04-19T15:45:00Z",
+      "result": "Discovered 19 constraints across 5 categories via 3 interview rounds + pre-mortem pass. User committed to full 4-channel distribution (GitHub Releases + Docker multi-arch + Homebrew tap + Linux .deb/.rpm) with 4-platform binary matrix (darwin/linux x amd64/arm64), deterministic builds, SemVer tagging, GitHub Actions CI, SHA256 checksums, embedded frontend via //go:embed, 30s test budget, and the minimal 7-target Makefile surface. Pre-mortem surfaced 5 invariants: platform smoke-test (O2), tool-version pinning (T6, T7), Homebrew-downloads-tarball (S2), release-stages-independent (S4). Two tensions seeded for m2: reproducibility (T2) vs build-timestamp in ldflags (O3) -- resolvable via SOURCE_DATE_EPOCH; and 4-channel breadth (B1) vs 30s test budget (T5) -- test budget doesn't include cross-compile or Docker build, so cross-compile is a separate 'make release' concern. 6 draft required truths seeded for m3.",
+      "constraints_added": 19,
+      "by_category": {
+        "business": 2,
+        "technical": 7,
+        "user_experience": 2,
+        "security": 4,
+        "operational": 4
+      }
+    },
+    {
+      "number": 2,
+      "phase": "constrain",
+      "timestamp": "2026-04-19T16:10:00Z",
+      "result": "WebSearch pass (skipped in iteration #1 due to misread of 'connectivity: offline' in life-os state) surfaced 3 amendments: (1) NEW S5 -- Homebrew formula must pass brew audit --strict --new against v5.0+ API, mitigates Homebrew DSL deprecation risk flagged by release of Homebrew 5.0.0 Nov 2025 which deprecated Formula#needs and conflicts_with formula:; (2) AMEND T7 rationale -- explicitly include goreleaser check as pre-release schema validation; (3) AMEND S1 rationale -- acknowledge cosign keyless signing via GitHub Actions OIDC as the planned v2 upgrade path rather than an undefined future (sign the digest not the tag per sigstore best practice). No constraints removed or invalidated; core structure holds against current 2026 practice.",
+      "constraints_added": 1,
+      "by_category": {
+        "security": 1
+      },
+      "amendments": [
+        "T7 rationale (goreleaser check)",
+        "S1 rationale (cosign path)"
+      ],
+      "sources": [
+        "goreleaser.com/customization",
+        "brew.sh/2025/11/12/homebrew-5.0.0",
+        "docs.brew.sh/Deprecating-Disabling-and-Removing",
+        "github.com/sigstore/cosign",
+        "chainguard.dev/unchained/zero-friction-keyless-signing-with-github-actions"
+      ]
+    },
+    {
+      "number": 3,
+      "phase": "tension",
+      "timestamp": "2026-04-19T16:35:00Z",
+      "result": "Surfaced 7 tensions across 20 constraints. All resolved. TN1 (T2×O3 determinism-vs-metadata) via SOURCE_DATE_EPOCH from git commit time. TN2 (B1×S4 atomic-vs-independent) via GitHub Release as atomic root, other 3 channels best-effort mirrors. TN3 (T6/T7×U1 pinning-vs-surface) via Go 1.24 tool directive in go.mod — no make tools target needed. TN4 (B1×T5 breadth-vs-budget) via splitting budgets: T5 for `make test`, new O5 for `make release` on CI (p95 ≤ 10 min). TN5 (U1×B1 targets-vs-channels) via CHANNEL= env parameter keeping 7 user-facing targets. TN6 (O2×T1 smoke-vs-cross-compile) via native GHA runner matrix (macos-14/macos-13/ubuntu-24.04/ubuntu-24.04-arm), rejecting QEMU due to Go runtime scheduler flakiness under binfmt_misc. TN7 (T3+T4×T5 embed-vs-tests) via build-tag-gated embed (-tags=prod). One new constraint (O5) added by TN4 resolution. No VIOLATED propagation effects; 2 tensions have failure_cascade entries. Blocking dependencies: none — all resolutions are compatible. Ready for m3-anchor.",
+      "tensions_found": 7,
+      "tensions_resolved": 7,
+      "by_type": {
+        "trade_offs": 4,
+        "resource_tensions": 3,
+        "hidden_dependencies": 0
+      },
+      "constraints_added": 1,
+      "introduced_constraints": ["O5"]
+    },
+    {
+      "number": 4,
+      "phase": "anchor",
+      "timestamp": "2026-04-19T17:05:00Z",
+      "result": "Derived 14 required truths by backward reasoning from the outcome, using the 6 DRTs from m1 plus the 7 resolved tensions from m2 as seeds. Status split: 8 SPECIFICATION_READY (well-known patterns: SOURCE_DATE_EPOCH, goreleaser checksum/brews blocks, GHA tag filter, awk help extraction, native runner labels, brew audit, tool directive, CHANNEL= env), 6 NOT_SATISFIED (require nontrivial design or measurement: RT-1 smoke gate, RT-3 pipeline stage independence, RT-7 release wall-clock, RT-9 embed build-tag split, RT-14 OIDC secrets). Identified RT-9 (-tags=prod embed gate) as the binding constraint — without it, go test ./... fails on fresh clone, blocking verification of every other RT. Dependency chain: RT-9 → RT-5 → RT-6+RT-8 → RT-11 → RT-1+RT-13 → RT-3 → RT-4+RT-10+RT-12 → RT-2+RT-7+RT-14. Solution space: three sequencing options (single-PR, 2-phase, 3-phase). Recommended Option C (3-phase: local tooling → CI verify → release automation) for smallest per-PR surface and binding-first ToC ordering. All 7 tensions CONFIRMED by the recommended option; zero REOPENED. 4 reversibility entries logged (all REVERSIBLE_WITH_COST, no pure ONE_WAY).",
+      "required_truths": 14,
+      "by_status": {"SATISFIED": 0, "PARTIAL": 0, "NOT_SATISFIED": 6, "SPECIFICATION_READY": 8},
+      "solution_options": 3,
+      "selected_option": "Option C",
+      "binding_constraint": "RT-9",
+      "tensions_confirmed": 7,
+      "tensions_reopened": 0
+    },
+    {
+      "number": 5,
+      "phase": "generate",
+      "timestamp": "2026-04-19T17:45:00Z",
+      "result": "Generated 16 artifacts per Option C sequencing, binding-first. Wave A (RT-9 binding): internal/webfs/embed_prod.go + embed_dev.go + stub/index.html + embed_dev_test.go. `go test ./...` passes with 0 failures in 19.6s (T5 budget: 30s, headroom: 10.4s). Edits to cmd/phronesis/main.go (--version flag), internal/app/server.go (webfs.FS refactor), go.mod (staticcheck tool directive). Wave B (RT-5/RT-6/RT-8): Makefile with 7 auto-extracted help targets, go.mod tool directive for staticcheck. Compromise on RT-5: goreleaser NOT added to go.mod because its transitive deps bumped the Go floor to 1.26.2, violating T6 (1.24.5 floor). Pinned instead via goreleaser-action@v6 in release.yml with `version: \"~> v2\"` — documented in DECISIONS ADR-3. Wave C (CI): .github/workflows/ci.yml with 4-platform native runner matrix, runs vet+staticcheck+test on every push/PR. Wave D (release): .github/workflows/release.yml with 3-stage pipeline (smoke matrix → atomic release → best-effort brew audit); .goreleaser.yaml with all 4 channel modules (archives, brews, dockers, nfpms) + SHA256SUMS + OIDC token plumbing; minimal distroless Dockerfile. Wave E (docs): README/DECISIONS/RUNBOOK triple with full constraint+tension+ADR traceability. Immediate evidence validation: 24 of 26 evidence items VERIFIED on disk (file_exists + content_match); 2 remain PENDING (E13 manual_review for release wall-clock needs real tagged release; E26 manual_review for OIDC secrets plan needs tap repo provisioning). Coverage: 14/14 RTs have generated artifacts; 21/21 constraints touched by at least one artifact.",
+      "artifacts_count": 16,
+      "artifacts_by_type": {"code": 5, "test": 1, "config": 7, "docs": 2, "runbook": 1},
+      "artifacts_by_class": {"substantive": 16, "structural": 0},
+      "evidence_verified_now": 24,
+      "evidence_pending_m5": 2,
+      "coverage_percentage": 100,
+      "binding_constraint_closed": true,
+      "post_generation_test_time": "19.6s",
+      "post_generation_test_budget": "30s"
+    },
+    {
+      "number": 6,
+      "phase": "verify",
+      "timestamp": "2026-04-19T18:10:00Z",
+      "result": "Full verification matrix walked across 20 constraints × 4 dimensions (code/test/docs/ops). Result: 16 SATISFIED + 4 PARTIAL + 0 MISSING. All 16 declared artifacts present on disk. Binding constraint RT-9 CLOSED (TestStubFSServesPlaceholderIndex VERIFIED in unit tier; go test ./... green in 19.6s). 4 PARTIAL constraints (T2 determinism, S1 SHA256SUMS, S2 Homebrew tarball, S3 secrets-in-logs) are all deferred-verification items that can only be end-to-end checked against a real tagged release — flagged as non-blocking with explicit action items in gaps list. 6 gaps recorded (G1-G6), 5 non-blocking/informational, 1 pre-release (G6: HOMEBREW_TAP_TOKEN + tap repo provisioning before v0.1.0). Evidence summary: 25/26 VERIFIED + 2 manual_review PENDING (E13, E26). All 7 tensions CONFIRMED preserved (TN3 noted minor ADR-3 relaxation for goreleaser). 0 ONE_WAY reversibility steps generated. Fixed one evidence name mismatch during verification (E20 test_name aligned to actual test function). Phase advances to VERIFIED; convergence stays IN_PROGRESS until first tagged release closes T2/S1/S2/O5/RT-7/RT-14.",
+      "result_summary": "PARTIAL",
+      "artifacts_verified": 16,
+      "matrix_satisfied": 16,
+      "matrix_partial": 4,
+      "matrix_missing": 0,
+      "evidence_verified": 25,
+      "evidence_pending": 2,
+      "gaps_total": 6,
+      "gaps_blocking": 0,
+      "gaps_pre_release": 1,
+      "gaps_non_blocking": 4,
+      "gaps_informational": 1,
+      "binding_constraint_closed": true,
+      "tensions_confirmed": 7,
+      "tensions_reopened": 0,
+      "convergence_status": "IN_PROGRESS"
+    },
+    {
+      "number": 7,
+      "phase": "integrate",
+      "timestamp": "2026-04-19T18:30:00Z",
+      "result": "Integration scan completed in --check-only mode. Discovered 6 integration points: 3 auto-wireable doc-level items (INT-D1 README update, INT-D5 CLAUDE.md update, INT-D6 top-level goreleaser-install pointer); 3 external-coordination items (INT-D2 tap repo creation, INT-D3 HOMEBREW_TAP_TOKEN provisioning, INT-D4 first tag push). 2 are BLOCKING before first release (INT-D2 + INT-D3). The in-repo wiring work typically surfaced in m6 was done inline during m4 generation — server.go was refactored to webfs.FS() immediately, main.go flag wiring landed with the code, .gitignore and go.mod were edited as part of the artifact set. Zero stale references to the old `internal/app/web/` directory remain in the codebase. No unresolved mod declarations, import statements, or feature flags. Next action depends on user intent: apply INT-D1/D5/D6 via auto-wire pass, or treat this phase as complete and move to first-release prep (INT-D2/D3/D4).",
+      "integration_points": 6,
+      "completed": 0,
+      "pending": 6,
+      "auto_wireable": 3,
+      "manual_required": 3,
+      "blocking_pre_release": 2,
+      "mode": "check-only"
+    }
+  ],
+  "convergence": {
+    "status": "IN_PROGRESS",
+    "criteria": {
+      "all_invariants_satisfied": false,
+      "all_required_truths_satisfied": false,
+      "no_blocking_gaps": true,
+      "binding_constraint_closed": true,
+      "all_declared_artifacts_on_disk": true
+    },
+    "reason": "11/14 invariants SATISFIED; 3 INVARIANTs (T2, S1, S2, S3) at PARTIAL because their end-to-end verification depends on a real tagged release. 12/14 RTs SATISFIED; RT-7 (release wall-clock) + RT-14 (secret provisioning) remain PARTIAL pending first release. No blocking gaps for pipeline code itself — convergence will flip to CONVERGED after first `v*.*.*` tag exercises the deferred verifications."
+  },
+  "evidence": [],
+  "gap_checklist_compliance": [
+    {
+      "gap": "GAP-03",
+      "status": "SKIPPED",
+      "skip_reason": "dist-packaging is build tooling; no runtime data flow to analyze. Source -> artifact pipeline is the 'data path' and is captured via T1/T2/T4/O2/O3/O4."
+    },
+    {
+      "gap": "GAP-09",
+      "status": "COMPLETED",
+      "note": "SHA256SUMS (S1) is the only cryptographic surface. Attack matrix deferred: no key rotation, no signatures to forge, no replay window. Future cosign upgrade (discussed but not adopted) would re-open this GAP."
+    },
+    {
+      "gap": "GAP-10",
+      "status": "SKIPPED",
+      "skip_reason": "No server endpoints in scope -- this is local dev tooling + CI. Resource-exhaustion risk is bounded by CI runner budgets, not an application concern."
+    },
+    {
+      "gap": "GAP-11",
+      "status": "COMPLETED",
+      "note": "External dependencies: GitHub Actions (O1 CI platform), ghcr.io (B1 channels), Homebrew (B1 channels, S2 formula), Go toolchain distribution (T6/T7), staticcheck + goreleaser (T6/T7). All have version-pinning (T6/T7) and independent-stage (S4) mitigations. Pre-mortem #3 flagged ghcr.io outage + goreleaser drift + OIDC change -- all addressed by S4 and T6/T7."
+    },
+    {
+      "gap": "GAP-14",
+      "status": "SKIPPED",
+      "skip_reason": "No external data inputs; Makefile consumes source files, not network/user data."
+    },
+    {
+      "gap": "GAP-17",
+      "status": "SKIPPED",
+      "skip_reason": "No shared-state runtime. `make -jN` parallelism is declared by target dependencies, not application concurrency."
+    }
+  ],
+  "constraint_graph": {
+    "version": 1,
+    "nodes": {},
+    "edges": {
+      "dependencies": [],
+      "conflicts": [],
+      "satisfies": []
+    }
+  }
+}

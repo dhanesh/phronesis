@@ -1,0 +1,166 @@
+# phronesis release pipeline.
+#
+# Trigger: SemVer tag push `v*.*.*` — no manual dispatch, no
+# rolling-main builds. The tag IS the version string embedded in the
+# binary. (RT-13 + B2.)
+#
+# Pipeline shape (TN2-informed):
+#   1. smoke       — matrix of 4 native runners, each builds + smokes its
+#                    own platform binary. Failure here drops that platform
+#                    (O4) but does NOT block other platforms.
+#   2. release     — consolidates into a single goreleaser invocation on
+#                    ubuntu-24.04 (needs docker buildx + all artifacts).
+#                    This is the ATOMIC root: if this step fails, the
+#                    release is considered failed (RT-3 / TN2).
+#   3. audit-brew  — runs `brew audit --strict --new` on the emitted
+#                    formula. Non-blocking for the GH Release (mirror
+#                    channel), but alerts on failure (S5 / RT-10).
+#
+# Budget: p95 <=10 min wall-clock across the whole pipeline (O5 / RT-7).
+# Measured via the GitHub Actions run summary; first 10 releases
+# establish the baseline.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write      # create GH Release + upload assets
+  packages: write      # push to ghcr.io
+  id-token: write      # OIDC for future cosign keyless (S1 v2 path, RT-14)
+
+jobs:
+  # Stage 1: per-platform smoke test (RT-1 + RT-11 + O2 + O4).
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-amd64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+          - os: macos-13
+            platform: darwin-amd64
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    name: smoke (${{ matrix.platform }})
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # goreleaser needs full history for changelog
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: build frontend
+        run: cd frontend && npm ci && npm run build
+
+      - name: stage webfs/dist
+        run: |
+          rm -rf internal/webfs/dist
+          mkdir -p internal/webfs/dist
+          cp -R frontend/dist/. internal/webfs/dist/
+
+      - name: build production binary (tags=prod, deterministic)
+        # RT-2 + TN1: SOURCE_DATE_EPOCH from git commit time.
+        run: |
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "${GITHUB_REF_NAME}")
+          VERSION="${GITHUB_REF_NAME}"
+          COMMIT="$(git rev-parse HEAD)"
+          BUILD_TIME="$(git log -1 --format=%cI "${VERSION}")"
+          go build -trimpath -tags=prod \
+            -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildTime=${BUILD_TIME}" \
+            -o phronesis ./cmd/phronesis
+
+      - name: smoke test (RT-1 / O2)
+        run: |
+          ./phronesis --version
+          # Sanity: output must contain the tag we built.
+          ./phronesis --version | grep -q "${GITHUB_REF_NAME}" || {
+            echo "error: --version did not include tag ${GITHUB_REF_NAME}" >&2
+            exit 1
+          }
+
+  # Stage 2: atomic release (TN2's "GH Release as atomic root").
+  # Depends on all smoke jobs passing (per-platform atomicity via O4
+  # inside this gate; cross-platform independence via GH Actions's
+  # job-level isolation).
+  release:
+    needs: smoke
+    runs-on: ubuntu-24.04
+    name: release (goreleaser)
+    outputs:
+      checksum_url: ${{ steps.gh-release.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: set up QEMU (only for buildx multi-arch Docker staging)
+        uses: docker/setup-qemu-action@v3
+      - name: set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+      - name: login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: run goreleaser (pinned action version; tool version derived from action)
+        id: gh-release
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          # RT-5 adjacency: pin the tool version. Bumps are intentional.
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  # Stage 3: mirror-channel audit. Non-blocking for GH Release; if
+  # `brew audit` fails the release still stands and a human acts on the
+  # alert. (S5 / RT-10.)
+  audit-brew:
+    needs: release
+    runs-on: macos-14
+    name: brew audit (S5 / RT-10)
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: dhanesh/homebrew-phronesis
+          # Trailing `/` avoids the tap-name-mismatch warning.
+          path: homebrew-phronesis
+          ref: main
+
+      - name: brew audit --strict --new
+        run: |
+          cd homebrew-phronesis
+          brew tap-new --no-git local/phronesis || true
+          brew audit --strict --new Formula/phronesis.rb

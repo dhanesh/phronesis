@@ -1,0 +1,61 @@
+# Satisfies: RT-11 (native GHA runner matrix per platform),
+#            RT-5 (uses pinned tools via go.mod tool directive),
+#            RT-13-adjacent (branches/PRs; release.yml handles tags),
+#            T5 (make test stays under 30s per platform).
+#
+# Trigger: every push to main + every PR. We run the real test + lint on
+# all four target platforms so a regression on one architecture doesn't
+# slip through via an amd64-only merge check.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        # RT-11: explicitly pinned runner labels. Do NOT use `*-latest` —
+        # drift would break the platform smoke guarantee (TN6).
+        include:
+          - os: ubuntu-24.04
+            platform: linux-amd64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+          - os: macos-13
+            platform: darwin-amd64
+          - os: macos-14
+            platform: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.platform }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Single source of truth — avoids drift from go.mod.
+          go-version-file: go.mod
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck (pinned via go.mod tool directive, RT-5)
+        run: go tool staticcheck ./...
+
+      - name: go test
+        # -race catches concurrency issues that collab-wiki's CRDT and
+        # audit drainer introduced. Timeout is generous relative to T5
+        # so flaky runners fail loudly rather than hang.
+        run: go test -race -timeout=120s ./...

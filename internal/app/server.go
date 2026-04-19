@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"crypto/rand"
-	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -27,12 +26,10 @@ import (
 	"github.com/dhanesh/phronesis/internal/ratelimit"
 	"github.com/dhanesh/phronesis/internal/sessions"
 	"github.com/dhanesh/phronesis/internal/snapshot"
+	"github.com/dhanesh/phronesis/internal/webfs"
 	"github.com/dhanesh/phronesis/internal/wiki"
 	"github.com/dhanesh/phronesis/internal/xssdefense"
 )
-
-//go:embed web/*
-var webFS embed.FS
 
 type Config struct {
 	Addr          string
@@ -534,11 +531,7 @@ func staticHandler(frontendDist string) http.Handler {
 	if info, err := os.Stat(frontendDist); err == nil && info.IsDir() {
 		return http.FileServer(http.Dir(frontendDist))
 	}
-	sub, err := fs.Sub(webFS, "web")
-	if err != nil {
-		panic(err)
-	}
-	return http.FileServerFS(sub)
+	return http.FileServerFS(webfs.FS())
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
@@ -783,7 +776,7 @@ func (s *Server) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := fs.ReadFile(webFS, "web/index.html")
+	data, err := fs.ReadFile(webfs.FS(), "index.html")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

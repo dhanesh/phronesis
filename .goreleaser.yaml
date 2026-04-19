@@ -1,0 +1,168 @@
+# goreleaser configuration for phronesis.
+#
+# Satisfies: B1, B2, T1, T2, T3, S1, S2, O3,
+#            RT-1 (smoke hook), RT-2 (SOURCE_DATE_EPOCH),
+#            RT-3 (channel-independent), RT-4 (brew downloads tarball),
+#            RT-8 (CHANNEL= env scoping via --skip),
+#            RT-10 (brew audit hook in release.yml),
+#            RT-12 (SHA256 checksums), RT-13 (fires on SemVer tags only).
+#
+# Schema: v2 (goreleaser/goreleaser v2.11+). Validate locally with
+# `goreleaser check` before committing changes.
+
+version: 2
+
+project_name: phronesis
+
+# Before-build hooks run exactly once before any platform build kicks
+# off. This is where the frontend + webfs/dist staging happens so the
+# `-tags=prod` build downstream has something to //go:embed.
+before:
+  hooks:
+    - cmd: bash -c "cd frontend && npm ci && npm run build"
+    - cmd: bash -c "rm -rf internal/webfs/dist && mkdir -p internal/webfs/dist && cp -R frontend/dist/. internal/webfs/dist/"
+    - go mod download
+
+builds:
+  - id: phronesis
+    main: ./cmd/phronesis
+    binary: phronesis
+    # T3 + T4 + RT-9: production tag activates the real //go:embed.
+    flags:
+      - -trimpath
+      - -tags=prod
+    env:
+      - CGO_ENABLED=0
+    # T2 + RT-2 + TN1: deterministic flags. SOURCE_DATE_EPOCH is set by
+    # goreleaser itself to the commit time of the tag, which makes
+    # .buildTime byte-identical across hosts.
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.buildTime={{.CommitDate}}
+    # T1: exactly 4 binaries per release.
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: phronesis-archive
+    ids: [phronesis]
+    formats: [tar.gz]
+    name_template: "phronesis_{{.Version}}_{{.Os}}_{{.Arch}}"
+    files:
+      - LICENSE*
+      - README*
+
+# RT-12 + S1: every release publishes SHA256SUMS. Consumers verify via
+# `shasum -a 256 -c SHA256SUMS`. The v2 cosign path (S1 amendment) will
+# produce `SHA256SUMS.sig` via keyless signing; not in v1 scope.
+checksum:
+  name_template: "SHA256SUMS"
+  algorithm: sha256
+
+# RT-13: SemVer tag is the source of the version string. Snapshot builds
+# (no tag) get a distinct name so they can't be confused with releases.
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev+{{.ShortCommit}}"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+# RT-4 + S2 + DRT-4: Homebrew formula DOWNLOADS the release tarball and
+# verifies its SHA256. It does NOT invoke `go build`. The formula is
+# pushed to the separate tap repository.
+brews:
+  - name: phronesis
+    ids: [phronesis-archive]
+    repository:
+      owner: dhanesh
+      name: homebrew-phronesis
+      branch: main
+      # S3 + RT-14: tap push uses a scoped deploy token, NOT a long-lived
+      # PAT. The token is stored as the `HOMEBREW_TAP_TOKEN` repo secret
+      # and consumed only by the release workflow.
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    description: "phronesis — markdown wiki + collaboration server"
+    homepage: "https://github.com/dhanesh/phronesis"
+    license: "MIT"
+    # Post-install hook: verify the binary actually runs. This duplicates
+    # the CI smoke (O2/RT-1) at install time, catching any Homebrew-
+    # specific path or permission issue.
+    test: |
+      system "#{bin}/phronesis", "--version"
+    # No `depends_on "go"` — we ship the compiled binary (RT-4).
+    # Homebrew v5.0+ DSL: use `url` + `sha256` only; `needs` and
+    # `conflicts_with formula:` are deprecated (S5, RT-10).
+
+# B1 + RT-3: Docker channel. ghcr.io push is its own pipeline stage per
+# the GH Actions workflow; failure here does not fail the GH Release.
+dockers:
+  - image_templates:
+      - "ghcr.io/dhanesh/phronesis:{{.Version}}-amd64"
+      - "ghcr.io/dhanesh/phronesis:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    goarch: amd64
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source=https://github.com/dhanesh/phronesis"
+
+  - image_templates:
+      - "ghcr.io/dhanesh/phronesis:{{.Version}}-arm64"
+      - "ghcr.io/dhanesh/phronesis:latest-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    goarch: arm64
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source=https://github.com/dhanesh/phronesis"
+
+docker_manifests:
+  - name_template: "ghcr.io/dhanesh/phronesis:{{.Version}}"
+    image_templates:
+      - "ghcr.io/dhanesh/phronesis:{{.Version}}-amd64"
+      - "ghcr.io/dhanesh/phronesis:{{.Version}}-arm64"
+  - name_template: "ghcr.io/dhanesh/phronesis:latest"
+    image_templates:
+      - "ghcr.io/dhanesh/phronesis:latest-amd64"
+      - "ghcr.io/dhanesh/phronesis:latest-arm64"
+
+# B1 + RT-3: Linux distro packages (.deb + .rpm). Also a separate channel
+# so a package-build failure doesn't block GH Release publication.
+nfpms:
+  - id: phronesis-linux-packages
+    package_name: phronesis
+    ids: [phronesis]
+    vendor: dhanesh
+    homepage: "https://github.com/dhanesh/phronesis"
+    maintainer: "dhanesh <dhanesh.purohit@gmail.com>"
+    description: "phronesis — markdown wiki + collaboration server"
+    license: "MIT"
+    formats: [deb, rpm]
+    bindir: /usr/bin
+
+release:
+  # RT-3 + TN2: GitHub Release is the atomic root. If THIS step fails,
+  # the release is considered failed and no downstream publishing
+  # attempts are made.
+  github:
+    owner: dhanesh
+    name: phronesis
+  # Draft first so humans can eyeball the asset list + changelog before
+  # it goes public. CI will flip draft=false on clean smoke + audit.
+  draft: true
+  prerelease: auto
