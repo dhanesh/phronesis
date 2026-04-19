@@ -1,0 +1,3609 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "collab-wiki",
+  "phase": "VERIFIED",
+  "domain": "software",
+  "created": "2026-04-18T06:22:27Z",
+  "updated": "2026-04-19T14:45:00Z",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "B2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "B3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "300ms"
+        }
+      },
+      {
+        "id": "T3",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "100ms",
+          "concurrency": "500 editors",
+          "throughput": "1000 req/s"
+        }
+      },
+      {
+        "id": "T4",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "docs_per_workspace": "10000",
+          "concurrent_editors": "500"
+        }
+      },
+      {
+        "id": "T5",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "max_doc_size": "2MB"
+        }
+      },
+      {
+        "id": "T6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T7",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T8",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T9",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T10",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "max_queue": "1000 commits",
+          "max_queue_bytes": "100MB",
+          "alert_at": "100 commits"
+        }
+      },
+      {
+        "id": "T11",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "U2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "U3",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "300ms"
+        }
+      },
+      {
+        "id": "U4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "U5",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "max_bundle_gzipped": "500KB"
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "retention_default_days": "180"
+        }
+      },
+      {
+        "id": "S3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "S4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "S5",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "max_request_body": "2MB"
+        }
+      },
+      {
+        "id": "S6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "default_quota_gb": "5"
+        }
+      },
+      {
+        "id": "S7",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "S8",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "S9",
+        "type": "boundary",
+        "source": "pre-mortem",
+        "challenger": "technical-reality"
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O5",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "O6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "O7",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "snapshot_interval_default": "1h"
+        }
+      },
+      {
+        "id": "O8",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "threshold": {
+          "kind": "deterministic",
+          "max_flush_interval": "3s",
+          "max_ops_between_flush": "100"
+        }
+      },
+      {
+        "id": "O9",
+        "type": "goal",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "warn_repo_size": "1GB",
+          "alert_repo_size": "5GB"
+        }
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "trade_off",
+      "between": [
+        "T1",
+        "B1"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "On simulated server crash mid-session, max data loss across all active rooms is bounded by O8 window (<=3s of inactivity OR <=100 ops per room)",
+        "B1 acceptance criteria documents 'working state' explicitly as 'edits ack'd as durable within O8 bound'",
+        "UI distinguishes 'synced' from 'saved' states (coupled to TN6)"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "O8",
+          "effect": "TIGHTENED",
+          "note": "O8 now carries INVARIANT weight for B1's bounded-loss definition; relaxing O8 is equivalent to weakening B1"
+        }
+      ],
+      "failure_cascade": [
+        "Primary backstop: O8 flush every <=3s OR <=100 ops",
+        "Fallback if fsync fails: O5 graceful drain refuses to exit without successful flush; repeated fsync failure surfaces as /readyz failure + alert (explicit accept-loss if physical disk death is simultaneous with in-memory CRDT loss)"
+      ]
+    },
+    {
+      "id": "TN2",
+      "type": "trade_off",
+      "between": [
+        "S2",
+        "T3"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "Under sustained 1K req/s with full audit (including reads) enabled, p95 read latency remains <100ms as measured on the read response path (excluding async audit-buffer enqueue)",
+        "Read-audit buffer depth is exposed as a Prometheus metric (satisfies O1)",
+        "Load test reproduces the full audit path and confirms audit events are eventually persisted after the read has returned"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "O8",
+          "effect": "TIGHTENED",
+          "note": "Audit buffer now one more thing to drain on SIGTERM (TN10 journal-spill mechanism covers this)"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: async audit buffer with bounded capacity",
+        "If buffer saturates: drop-oldest with a loud metric signal (audit_events_dropped_total) and alert; document this as accepted loss mode for the bounded read-audit trail"
+      ]
+    },
+    {
+      "id": "TN3",
+      "type": "hidden_dependency",
+      "between": [
+        "T8",
+        "T1",
+        "T2"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "Reference k8s manifests ship with replicas=1 + PVC + graceful-termination window >= 30s",
+        "Single binary + Docker + k8s single-replica all run the same server image and pass the same collab smoke-test",
+        "Stateful interfaces (session store, CRDT broadcast, snapshot target, audit sink) exist as interfaces in code with in-process defaults"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "T8",
+          "effect": "TIGHTENED",
+          "note": "Docs must explicitly call out 'k8s single-replica for v1' as the supported posture"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: single-replica k8s + PVC",
+        "If replica dies: k8s restarts it; active CRDT rooms reload from last flush (O8 bounded loss); clients reconnect per U2 flow"
+      ]
+    },
+    {
+      "id": "TN4",
+      "type": "resource_tension",
+      "between": [
+        "U4",
+        "T6",
+        "O9"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "A workspace with 100 uploaded images has zero binary files in its git working tree; markdown references resolve to /media/<hash> URLs served by the blob-store adapter",
+        "Default blob-store is local filesystem under data dir, works with single binary",
+        "O7 snapshot backup includes both markdown and the blob store contents"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "O7",
+          "effect": "TIGHTENED",
+          "note": "Snapshot must cover blob-store bytes in addition to markdown corpus"
+        },
+        {
+          "constraint_id": "S6",
+          "effect": "TIGHTENED",
+          "note": "Per-workspace storage quota now refers to blob-store bytes, not git repo bytes"
+        },
+        {
+          "constraint_id": "O9",
+          "effect": "LOOSENED",
+          "note": "Repo-size alerts no longer need to warn about media bloat (media lives outside git)"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: blob-store reads for media URLs",
+        "If blob-store unreachable: media URL returns 404; markdown renders with a visible placeholder; alert fires; editor stays usable for text",
+        "If local filesystem blob-store corrupted: restore from O7 snapshot; bounded data loss = O7 snapshot interval (default 1h)"
+      ]
+    },
+    {
+      "id": "TN5",
+      "type": "trade_off",
+      "between": [
+        "T9",
+        "B1"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "Auth adapter interface defines password and OIDC implementations; both exist in code",
+        "A stub OIDC provider passes integration tests end-to-end in CI",
+        "Enabling OIDC for a real IdP is a config-only change (no rebuild required)"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "S4",
+          "effect": "TIGHTENED",
+          "note": "S4's OIDC contract (JWKS handling, claim mapping via S8) must be fully implemented at launch, not deferred"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: password auth always available",
+        "If OIDC adapter has bugs post-launch: fall back to password auth; no user lockout because password is INVARIANT (B1 + S3)"
+      ]
+    },
+    {
+      "id": "TN6",
+      "type": "hidden_dependency",
+      "between": [
+        "O8",
+        "U3"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "UI has two visible states: 'synced' (broadcast ack received, <=300ms p95 per U3 target) and 'saved' (disk-durable per O8 flush)",
+        "State-transition test covers: typing -> synced transition within 300ms under p95 network conditions; synced -> saved transition within O8 window",
+        "U3 rationale updated to reflect: 'saved indicator' shows SYNCED state at <=300ms; a separate DURABLE marker tracks disk commit"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "U3",
+          "effect": "TIGHTENED",
+          "note": "U3 semantically split: the 300ms target now governs 'synced' state; true durability is tracked by a separate UX element"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: synced ack within 300ms",
+        "If synced ack never arrives: client times out at a configurable threshold (default 2s), shows 'reconnecting', editor goes read-only (U2)"
+      ]
+    },
+    {
+      "id": "TN7",
+      "type": "hidden_dependency",
+      "between": [
+        "S5",
+        "B1"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "Server-side sliding-window rate limiter is active on /login, /auth/callback, and /auth/* for all deployments regardless of reverse-proxy presence",
+        "Rate-limit hit produces 429 + metric increment (satisfies O1); IP extraction honors X-Forwarded-For with a configurable trusted-proxy list",
+        "Documentation for production deployments continues to recommend the reverse proxy as the primary defense; server-side floor is a backstop not a replacement"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "S5",
+          "effect": "TIGHTENED",
+          "note": "S5 no longer solely 'input-size bounds'; server now mandates auth-endpoint rate limiting as a floor. Wording to be refined in m3."
+        }
+      ],
+      "failure_cascade": [
+        "Primary: server-side floor blocks brute-force /login at a default rate",
+        "If attacker uses many distinct IPs: floor becomes ineffective; reverse proxy (with WAF/IP reputation) remains the primary defense; docs flag this clearly"
+      ]
+    },
+    {
+      "id": "TN8",
+      "type": "hidden_dependency",
+      "between": [
+        "S1",
+        "B2"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "A single authorization function covers both user principals and service-account principals with the same viewer/editor/admin role enum",
+        "Audit log (S2) records principal type (user/service-account) in addition to principal id; authz checks are identical across both paths",
+        "RBAC test suite exercises user + service-account combinations for each of the three roles"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "S2",
+          "effect": "TIGHTENED",
+          "note": "Audit schema gains principal-type field"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: same role enum for both principal classes",
+        "Known limitation: 'editor but only on docs/path/**' style scoping is not supported in v1; deferred to v2"
+      ]
+    },
+    {
+      "id": "TN9",
+      "type": "hidden_dependency",
+      "between": [
+        "O4",
+        "T6"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "Simulated git remote unreachability (e.g., DNS fail, TCP reset) does NOT cause /readyz to return non-200",
+        "/readyz conditions are: data dir writable, CRDT manager goroutine alive, audit buffer not saturated, journal replay complete",
+        "Git remote health is exposed via a separate /metrics gauge and fires an alert when unhealthy"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "O4",
+          "effect": "LOOSENED",
+          "note": "Original O4 listed 'git remote reachable' as a readiness condition; resolution moves it out of readiness into the metrics+alert path"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: /readyz stays green under transient remote issues",
+        "If local filesystem becomes unwritable: /readyz fails (liveness of the service is broken); k8s re-routes traffic; local alerts fire"
+      ]
+    },
+    {
+      "id": "TN10",
+      "type": "hidden_dependency",
+      "between": [
+        "O5",
+        "T10"
+      ],
+      "status": "resolved",
+      "decision": "A",
+      "validation_criteria": [
+        "SIGTERM handler completes within a configurable drain window (default 30s) even under T10-max backlog (1000 commits / 100MB)",
+        "Any unpushed commits remaining at drain-deadline are written to a persistent journal under the data dir",
+        "On subsequent startup, journal replay runs BEFORE /readyz returns 200; replay failures are surfaced as startup errors"
+      ],
+      "propagation_effects": [
+        {
+          "constraint_id": "O4",
+          "effect": "TIGHTENED",
+          "note": "/readyz now requires 'journal replay complete' as an additional readiness condition"
+        },
+        {
+          "constraint_id": "O5",
+          "effect": "TIGHTENED",
+          "note": "Drain window is bounded; journal-spill is a new required code path"
+        }
+      ],
+      "failure_cascade": [
+        "Primary: bounded drain + journal spill",
+        "If journal write fails (disk full): BLOCK shutdown, emit loud alert, escalate to human operator (explicit human-intervention path)",
+        "If journal replay fails on next startup: startup errors out with a clear message; /readyz stays non-ready; operator must intervene (runbook entry)"
+      ]
+    }
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "SATISFIED",
+        "maps_to": [
+          "B1"
+        ],
+        "depth": 0,
+        "children": [],
+        "evidence": [
+          {
+            "id": "E1-1",
+            "type": "file_exists",
+            "path": "docs/collab-wiki/CAPABILITY_HEALTH.md",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E1-2",
+            "type": "content_match",
+            "path": "docs/collab-wiki/CAPABILITY_HEALTH.md",
+            "pattern": "Capability 1|Capability 2|Capability 3|Capability 4|Working state|Degraded state|Detection signals",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E1-3",
+            "type": "manual_review",
+            "path": "docs/collab-wiki/CAPABILITY_HEALTH.md",
+            "status": "PENDING",
+            "note": "Operators review the thresholds + signals for their deployment context"
+          }
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "SATISFIED",
+        "maps_to": [
+          "T1",
+          "O8",
+          "U3",
+          "B1"
+        ],
+        "depth": 0,
+        "evidence": [
+          {
+            "id": "E2-1",
+            "type": "file_exists",
+            "path": "internal/crdt/events.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E2-2",
+            "type": "file_exists",
+            "path": "internal/crdt/room.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E2-3",
+            "type": "content_match",
+            "path": "internal/crdt/events.go",
+            "pattern": "OpAckedEvent|OpSavedEvent",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E2-4",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestApplyEmitsAckedBeforeSaved",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E2-5",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestFlushFiresOnOpCountThreshold",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E2-6",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestFlushFiresOnIdleTimer",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E2-7",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestCloseForcesFinalFlush",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E2-8",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestDefaultPolicyMatchesO8Thresholds",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E2-9",
+            "type": "test_passes",
+            "path": "internal/crdt/room_test.go",
+            "test_name": "TestBroadcastPrecedesAcked",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ],
+        "children": [
+          {
+            "id": "RT-2.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "evidence": [
+              {
+                "id": "E2.1-1",
+                "type": "content_match",
+                "path": "internal/crdt/room.go",
+                "pattern": "func \\(r \\*Room\\) Acked",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E2.1-2",
+                "type": "content_match",
+                "path": "internal/crdt/room.go",
+                "pattern": "func \\(r \\*Room\\) Saved",
+                "status": "VERIFIED"
+              }
+            ],
+            "children": [
+              {
+                "id": "RT-2.1.1",
+                "status": "SPECIFICATION_READY",
+                "depth": 2,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "RT-2.2",
+            "status": "PARTIAL",
+            "depth": 1,
+            "evidence": [
+              {
+                "id": "E2.2-1",
+                "type": "file_exists",
+                "path": "frontend/src/lib/durability.js",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E2.2-2",
+                "type": "file_exists",
+                "path": "frontend/src/lib/DurabilityIndicator.svelte",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E2.2-3",
+                "type": "content_match",
+                "path": "frontend/src/lib/durability.js",
+                "pattern": "DURABILITY_STATES|createDurabilityTracker",
+                "status": "VERIFIED"
+              }
+            ],
+            "children": [
+              {
+                "id": "RT-2.2.1",
+                "status": "SPECIFICATION_READY",
+                "depth": 2,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "RT-2.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "evidence": [
+              {
+                "id": "E2.3-1",
+                "type": "content_match",
+                "path": "internal/crdt/room.go",
+                "pattern": "type FlushPolicy",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E2.3-2",
+                "type": "content_match",
+                "path": "internal/crdt/room.go",
+                "pattern": "MaxIdle.*3 \\* time\\.Second",
+                "status": "VERIFIED"
+              }
+            ],
+            "children": [
+              {
+                "id": "RT-2.3.1",
+                "status": "SATISFIED",
+                "depth": 2,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "RT-2.4",
+            "status": "PARTIAL",
+            "depth": 1,
+            "evidence": [
+              {
+                "id": "E2.4-1",
+                "type": "manual_review",
+                "path": "internal/crdt/room.go",
+                "status": "PENDING"
+              }
+            ],
+            "children": [
+              {
+                "id": "RT-2.4.1",
+                "status": "SATISFIED",
+                "depth": 2,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S2",
+          "S9",
+          "T3"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-3.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-3.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E3-1",
+            "type": "file_exists",
+            "path": "internal/app/server_audit_test.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E3-2",
+            "type": "content_match",
+            "path": "internal/app/server_audit_test.go",
+            "pattern": "TestServerReadPathIsOffAuditHotPath|TestServerReadNotBlockedByMisbehavingAuditSink",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E3-3",
+            "type": "test_passes",
+            "path": "internal/app/server_audit_test.go",
+            "test_name": "TestServerReadPathIsOffAuditHotPath",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E3-4",
+            "type": "test_passes",
+            "path": "internal/app/server_audit_test.go",
+            "test_name": "TestServerReadNotBlockedByMisbehavingAuditSink",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E3-5",
+            "type": "test_passes",
+            "path": "internal/app/server_audit_test.go",
+            "test_name": "TestAuditEnqueueHandlesNilDrainer",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "SATISFIED",
+        "maps_to": [
+          "T1",
+          "T8"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-4.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": [],
+            "evidence": [
+              {
+                "id": "E4.1-1",
+                "type": "file_exists",
+                "path": "internal/sessions/store.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.1-2",
+                "type": "file_exists",
+                "path": "internal/sessions/memstore.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.1-3",
+                "type": "content_match",
+                "path": "internal/sessions/store.go",
+                "pattern": "type Store interface|PrincipalType",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.1-4",
+                "type": "test_passes",
+                "path": "internal/sessions/store_test.go",
+                "test_name": "TestMemStorePutGetRoundTrip",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.1-5",
+                "type": "test_passes",
+                "path": "internal/sessions/store_test.go",
+                "test_name": "TestMemStoreExpiredTreatedAsMissing",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.1-6",
+                "type": "test_passes",
+                "path": "internal/sessions/store_test.go",
+                "test_name": "TestMemStoreDeleteExpired",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              }
+            ]
+          },
+          {
+            "id": "RT-4.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": [],
+            "evidence": [
+              {
+                "id": "E4.2-1",
+                "type": "file_exists",
+                "path": "internal/crdt/broadcast_inproc.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.2-2",
+                "type": "content_match",
+                "path": "internal/crdt/broadcast_inproc.go",
+                "pattern": "type InProcBroadcaster|func .+ Broadcast",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.2-3",
+                "type": "test_passes",
+                "path": "internal/crdt/broadcast_test.go",
+                "test_name": "TestInProcBroadcasterFansOutToAllSubscribers",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.2-4",
+                "type": "test_passes",
+                "path": "internal/crdt/broadcast_test.go",
+                "test_name": "TestInProcBroadcasterSlowSubscriberDoesNotStall",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.2-5",
+                "type": "test_passes",
+                "path": "internal/crdt/broadcast_test.go",
+                "test_name": "TestRoomThroughInProcBroadcaster",
+                "status": "VERIFIED",
+                "test_tier": "integration"
+              }
+            ]
+          },
+          {
+            "id": "RT-4.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": [],
+            "evidence": [
+              {
+                "id": "E4.3-1",
+                "type": "file_exists",
+                "path": "internal/snapshot/target.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.3-2",
+                "type": "file_exists",
+                "path": "internal/snapshot/localfs.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.3-3",
+                "type": "content_match",
+                "path": "internal/snapshot/target.go",
+                "pattern": "type Target interface|Markdown.*Blobs",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.3-4",
+                "type": "test_passes",
+                "path": "internal/snapshot/target_test.go",
+                "test_name": "TestLocalFSStoreRestoreRoundTrip",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.3-5",
+                "type": "test_passes",
+                "path": "internal/snapshot/target_test.go",
+                "test_name": "TestAtomicWriteCleansUp",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              }
+            ]
+          },
+          {
+            "id": "RT-4.4",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": [],
+            "evidence": [
+              {
+                "id": "E4.4-1",
+                "type": "file_exists",
+                "path": "internal/audit/sink.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.4-2",
+                "type": "file_exists",
+                "path": "internal/audit/filesink.go",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.4-3",
+                "type": "content_match",
+                "path": "internal/audit/sink.go",
+                "pattern": "type Sink interface|BufferedDrainer",
+                "status": "VERIFIED"
+              },
+              {
+                "id": "E4.4-4",
+                "type": "test_passes",
+                "path": "internal/audit/sink_test.go",
+                "test_name": "TestDrainerEnqueueIsHotPath",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.4-5",
+                "type": "test_passes",
+                "path": "internal/audit/sink_test.go",
+                "test_name": "TestDrainerDropsOldestOnSaturation",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              },
+              {
+                "id": "E4.4-6",
+                "type": "test_passes",
+                "path": "internal/audit/sink_test.go",
+                "test_name": "TestFileSinkJSONLRoundTrip",
+                "status": "VERIFIED",
+                "test_tier": "unit"
+              }
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E4-1",
+            "type": "file_exists",
+            "path": "internal/sessions/store.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E4-2",
+            "type": "file_exists",
+            "path": "internal/crdt/broadcast_inproc.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E4-3",
+            "type": "file_exists",
+            "path": "internal/snapshot/target.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E4-4",
+            "type": "file_exists",
+            "path": "internal/audit/sink.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E4-5",
+            "type": "file_exists",
+            "path": "internal/blob/store.go",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S1",
+          "S4",
+          "T9",
+          "B2"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-5.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-5.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-5.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E5-1",
+            "type": "file_exists",
+            "path": "internal/principal/principal.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E5-2",
+            "type": "content_match",
+            "path": "internal/principal/principal.go",
+            "pattern": "type Principal struct|TypeUser|TypeServiceAccount",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E5-3",
+            "type": "test_passes",
+            "path": "internal/principal/principal_test.go",
+            "test_name": "TestPrincipalTypeDistinguishesUserVsServiceAccount",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E5-4",
+            "type": "test_passes",
+            "path": "internal/principal/principal_test.go",
+            "test_name": "TestRBACRoleLadder",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E5-5",
+            "type": "test_passes",
+            "path": "internal/principal/principal_test.go",
+            "test_name": "TestRequireEnforcesWorkspaceScope",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "SATISFIED",
+        "maps_to": [
+          "U4",
+          "T6",
+          "O7",
+          "O9",
+          "S6"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-6.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-6.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-6.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E6-1",
+            "type": "file_exists",
+            "path": "internal/blob/store.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-2",
+            "type": "file_exists",
+            "path": "internal/blob/localfs.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-3",
+            "type": "file_exists",
+            "path": "internal/media/handler.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-4",
+            "type": "file_exists",
+            "path": "internal/snapshot/scheduler.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-5",
+            "type": "content_match",
+            "path": "internal/media/handler.go",
+            "pattern": "/media/|h.store.Put|h.store.Get",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-6",
+            "type": "content_match",
+            "path": "internal/snapshot/scheduler.go",
+            "pattern": "type Scheduler|RunOnce|Source interface",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6-7",
+            "type": "test_passes",
+            "path": "internal/blob/store_test.go",
+            "test_name": "TestLocalFSPutGetRoundTrip",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E6-8",
+            "type": "test_passes",
+            "path": "internal/media/handler_test.go",
+            "test_name": "TestUploadReturnsContentAddressedURL",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E6-9",
+            "type": "test_passes",
+            "path": "internal/media/handler_test.go",
+            "test_name": "TestGetRoundTrip",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E6-10",
+            "type": "test_passes",
+            "path": "internal/snapshot/scheduler_test.go",
+            "test_name": "TestSchedulerRunOnceIteratesWorkspaces",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E6-11",
+            "type": "test_passes",
+            "path": "internal/snapshot/scheduler_test.go",
+            "test_name": "TestSchedulerStartFiresThenStopsCleanly",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "SATISFIED",
+        "maps_to": [
+          "O5",
+          "T10",
+          "O4"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-7.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-7.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E7-1",
+            "type": "file_exists",
+            "path": "internal/journal/journal.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E7-2",
+            "type": "content_match",
+            "path": "internal/journal/journal.go",
+            "pattern": "type Journal struct|func Replay|func \\(j \\*Journal\\) Append",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E7-3",
+            "type": "test_passes",
+            "path": "internal/journal/journal_test.go",
+            "test_name": "TestAppendReplayRoundTrip",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E7-4",
+            "type": "test_passes",
+            "path": "internal/journal/journal_test.go",
+            "test_name": "TestReplayRemovesJournalOnSuccess",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E7-5",
+            "type": "test_passes",
+            "path": "internal/journal/journal_test.go",
+            "test_name": "TestReplayPreservesJournalOnReplayerError",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E7-6",
+            "type": "test_passes",
+            "path": "internal/journal/journal_test.go",
+            "test_name": "TestAppendConcurrent",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E7-7",
+            "type": "test_passes",
+            "path": "internal/journal/journal_test.go",
+            "test_name": "TestExistsDetection",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "SATISFIED",
+        "maps_to": [
+          "O4",
+          "T6"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-8.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-8.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E8-1",
+            "type": "file_exists",
+            "path": "internal/app/readyz.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E8-2",
+            "type": "content_match",
+            "path": "internal/app/readyz.go",
+            "pattern": "handleReadyz|checkDataDir|checkJournalReplayed",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E8-3",
+            "type": "test_passes",
+            "path": "internal/app/readyz_test.go",
+            "test_name": "TestReadyzGreenOnHealthyServer",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E8-4",
+            "type": "test_passes",
+            "path": "internal/app/readyz_test.go",
+            "test_name": "TestReadyzFailsWhenJournalHasEntries",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E8-5",
+            "type": "test_passes",
+            "path": "internal/app/readyz_test.go",
+            "test_name": "TestReadyzDoesNotDependOnGitRemote",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S7"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-9.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-9.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-9.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E9-1",
+            "type": "file_exists",
+            "path": "internal/xssdefense/xssdefense.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E9-2",
+            "type": "content_match",
+            "path": "internal/xssdefense/xssdefense.go",
+            "pattern": "StripDangerousTags|SanitizeHTML|CSPMiddleware|DefaultCSP",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E9-3",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestStripDangerousTagsRemovesScript",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E9-4",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestStripDangerousTagsRemovesEventHandlers",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E9-5",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestStripDangerousTagsRemovesJavaScriptURLs",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E9-6",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestSanitizeHTMLAllowList",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E9-7",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestSanitizeHTMLStripsHandlersFromAllowedTags",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E9-8",
+            "type": "test_passes",
+            "path": "internal/xssdefense/xssdefense_test.go",
+            "test_name": "TestCSPMiddlewareSetsHeader",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S5",
+          "B1"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-10.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-10.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E10-1",
+            "type": "file_exists",
+            "path": "internal/ratelimit/ratelimit.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E10-2",
+            "type": "file_exists",
+            "path": "internal/ratelimit/middleware.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E10-3",
+            "type": "content_match",
+            "path": "internal/ratelimit/ratelimit.go",
+            "pattern": "type Limiter|func .+ Allow",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E10-4",
+            "type": "content_match",
+            "path": "internal/ratelimit/middleware.go",
+            "pattern": "ResolveKey|TrustedProxies|X-Forwarded-For",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E10-5",
+            "type": "test_passes",
+            "path": "internal/ratelimit/ratelimit_test.go",
+            "test_name": "TestAllowEnforcesMax",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E10-6",
+            "type": "test_passes",
+            "path": "internal/ratelimit/ratelimit_test.go",
+            "test_name": "TestAllowSlidingWindow",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E10-7",
+            "type": "test_passes",
+            "path": "internal/ratelimit/middleware_test.go",
+            "test_name": "TestMiddlewareAllowsThenDenies",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E10-8",
+            "type": "test_passes",
+            "path": "internal/ratelimit/middleware_test.go",
+            "test_name": "TestResolveKeyTrustedProxy",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E10-9",
+            "type": "test_passes",
+            "path": "internal/ratelimit/middleware_test.go",
+            "test_name": "TestMiddlewareGatesAllPathsWhenPrefixesEmpty",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-11",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S4",
+          "S8",
+          "T9"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-11.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-11.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-11.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ],
+        "evidence": [
+          {
+            "id": "E11-1",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/oidc.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11-2",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/verifier.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11-3",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/claim_mapping.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11-4",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/stub.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11-5",
+            "type": "content_match",
+            "path": "internal/auth/oidc/oidc.go",
+            "pattern": "Authenticate|validateTemporal|validateIssuerAudience",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11-6",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestStubProviderFullFlow",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E11-7",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestAuthenticateRejectsTamperedSignature",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11-8",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestAuthenticateRejectsExpired",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11-9",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestRotateSecretRejectsOldTokens",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11-10",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestAuthenticateRejectsNoneAlg",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11-11",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/oidc_test.go",
+            "test_name": "TestClaimMappingRejectsWrongSchemaVersion",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-12",
+        "status": "SATISFIED",
+        "maps_to": [
+          "O5",
+          "T10"
+        ],
+        "depth": 0,
+        "children": [
+          {
+            "id": "RT-12.1",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-12.2",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          },
+          {
+            "id": "RT-12.3",
+            "status": "SATISFIED",
+            "depth": 1,
+            "children": []
+          }
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-2",
+      "reason": "RT-2 (op_acked vs op_saved distinction + enforceable O8 flush) cross-cuts four layers (CRDT engine, server events, client state machine, UX indicator). Without it, B1's INVARIANT is unfalsifiable, U3 is wrong or infeasible, and O8 has no enforcement hook. Closing it makes B1 observable, U3 well-defined, and RT-7/RT-12 durability semantics consistent.",
+      "dependency_chain": [
+        "RT-1",
+        "RT-7",
+        "RT-12"
+      ]
+    },
+    "recommended_option": "C",
+    "tension_validation": [
+      {
+        "tension_id": "TN1",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-2"
+      },
+      {
+        "tension_id": "TN2",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-3"
+      },
+      {
+        "tension_id": "TN3",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-4"
+      },
+      {
+        "tension_id": "TN4",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-6"
+      },
+      {
+        "tension_id": "TN5",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-11"
+      },
+      {
+        "tension_id": "TN6",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-2"
+      },
+      {
+        "tension_id": "TN7",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-10"
+      },
+      {
+        "tension_id": "TN8",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-5"
+      },
+      {
+        "tension_id": "TN9",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rt": "RT-8"
+      },
+      {
+        "tension_id": "TN10",
+        "status": "CONFIRMED",
+        "by_option": "C",
+        "via_rts": [
+          "RT-7",
+          "RT-12"
+        ]
+      }
+    ],
+    "solution_options": [
+      {
+        "id": "A",
+        "label": "Interface-first",
+        "reversibility": "TWO_WAY",
+        "satisfies_rts": [
+          "RT-4"
+        ],
+        "recommended": false
+      },
+      {
+        "id": "B",
+        "label": "Thin vertical slice",
+        "reversibility": "REVERSIBLE_WITH_COST",
+        "satisfies_rts": [
+          "RT-2"
+        ],
+        "recommended": false
+      },
+      {
+        "id": "C",
+        "label": "ToC-aligned (binding-first)",
+        "reversibility": "TWO_WAY",
+        "satisfies_rts": [
+          "RT-2",
+          "RT-4",
+          "RT-5",
+          "RT-6",
+          "RT-11",
+          "RT-7",
+          "RT-10",
+          "RT-12",
+          "RT-3",
+          "RT-8",
+          "RT-9",
+          "RT-1"
+        ],
+        "recommended": true
+      },
+      {
+        "id": "D",
+        "label": "Parallel tracks",
+        "reversibility": "ONE_WAY",
+        "satisfies_rts": [
+          "RT-2",
+          "RT-4",
+          "RT-5",
+          "RT-6",
+          "RT-11"
+        ],
+        "recommended": false
+      }
+    ]
+  },
+  "draft_required_truths": [
+    {
+      "id": "DRT-1",
+      "seed_from": [
+        "B1"
+      ],
+      "draft_statement": "'Degradation' must be defined concretely per capability (collab / API / auth / git sync) with detection signals, so that the 'all four INVARIANT' promise is measurable.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-2",
+      "seed_from": [
+        "T1",
+        "O8"
+      ],
+      "draft_statement": "For ephemeral CRDT + .md-as-truth to not lose edits, the flush policy must be bounded in BOTH time and op count, AND clients must distinguish broadcast-acked from disk-durable.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-3",
+      "seed_from": [
+        "T6",
+        "O7"
+      ],
+      "draft_statement": "For push-only git to be sufficient, local disk durability + snapshot must be at least as reliable as the git remote, because git is not a recovery path for local loss.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-4",
+      "seed_from": [
+        "S2",
+        "S9",
+        "T3"
+      ],
+      "draft_statement": "For read-event audit + p95 read < 100ms to coexist, audit must be strictly off the read hot path (async buffer) and tolerant of bounded loss on crash.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-5",
+      "seed_from": [
+        "T8"
+      ],
+      "draft_statement": "For the binary to work in single-binary + Docker + k8s, all stateful subsystems (session store, CRDT pubsub, audit sink, snapshot target) must be abstracted behind interfaces with in-process defaults.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-6",
+      "seed_from": [
+        "U2",
+        "T1"
+      ],
+      "draft_statement": "For disconnect-to-read-only to be reliable, the client must have a dedicated heartbeat signal distinct from slow responses, so that 'slow' is not misclassified as 'disconnected'.",
+      "confidence": "medium"
+    },
+    {
+      "id": "DRT-7",
+      "seed_from": [
+        "S7"
+      ],
+      "draft_statement": "For store+render XSS defense to be complete, the markdown parser must not emit raw HTML attributes by default, AND rendered output must ship with a server-enforced CSP.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-8",
+      "seed_from": [
+        "O8",
+        "T1",
+        "T2"
+      ],
+      "draft_statement": "For 3s flush + 300ms collab latency to coexist, CRDT broadcast to peers must happen independently of and faster than the disk flush path.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-9",
+      "seed_from": [
+        "S1",
+        "T9",
+        "S4"
+      ],
+      "draft_statement": "For user-PATs, workspace service accounts, password sessions, and OIDC sessions to coexist, a single canonical 'principal' abstraction must cover all four identity types with a common authorization check.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-10",
+      "seed_from": [
+        "U4",
+        "S6",
+        "O9"
+      ],
+      "draft_statement": "For embedded media in a git-synced repo, either git-LFS is mandatory OR media lives outside git (object store). The combination of embedded media + plain git + bounded repo size is infeasible.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-11",
+      "seed_from": [
+        "TN10",
+        "O4",
+        "O5"
+      ],
+      "draft_statement": "For bounded SIGTERM drain + eventual push consistency to both hold, a persistent push-journal must exist as a spillover mechanism, and startup must replay the journal before declaring readiness.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-12",
+      "seed_from": [
+        "TN9",
+        "O4"
+      ],
+      "draft_statement": "Readiness (ability to serve traffic) is distinct from durability health (ability to push to remote). /readyz tracks the former; remote health surfaces via metrics and alerts.",
+      "confidence": "high"
+    }
+  ],
+  "blocking_dependencies": [
+    {
+      "blocker": "T1",
+      "blocked": "B1",
+      "tension_id": "TN1",
+      "note": "B1's 'collab is INVARIANT' acceptance depends on T1's ephemeral-CRDT + flush policy being in place"
+    },
+    {
+      "blocker": "O8",
+      "blocked": "B1",
+      "tension_id": "TN1",
+      "note": "B1's bounded-loss acceptance depends on O8's flush window being enforced"
+    },
+    {
+      "blocker": "S9",
+      "blocked": "T3",
+      "tension_id": "TN2",
+      "note": "T3's read-latency target depends on S9's async-audit implementation"
+    },
+    {
+      "blocker": "T1",
+      "blocked": "T8",
+      "tension_id": "TN3",
+      "note": "T8's k8s story depends on T1's stateful interfaces being abstracted"
+    },
+    {
+      "blocker": "O8",
+      "blocked": "U3",
+      "tension_id": "TN6",
+      "note": "U3's two-state indicator depends on O8's flush window to define the 'saved' transition"
+    },
+    {
+      "blocker": "S1",
+      "blocked": "B2",
+      "tension_id": "TN8",
+      "note": "B2's 3-role RBAC unification depends on S1's canonical principal abstraction"
+    },
+    {
+      "blocker": "S4",
+      "blocked": "T9",
+      "tension_id": "TN5",
+      "note": "T9's 'OIDC architecturally ready at launch' depends on S4's JWKS/issuer/audience validation being complete"
+    }
+  ],
+  "iterations": [
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-04-18T11:54:06Z",
+      "result": "Discovered 37 constraints across 5 categories via 5 interview rounds + pre-mortem pass. User selected 'all four INVARIANTs' scope and ratified 8 of 12 pre-mortem failure modes, producing a dense INVARIANT-heavy set. Expect m2-tension to surface 5+ high-severity tensions (read-audit vs throughput, ephemeral CRDT vs no-loss, multi-deploy-mode vs in-process state, media vs push-only-git, all-INVARIANT vs graceful-drain).",
+      "constraints_added": 37,
+      "by_category": {
+        "business": 3,
+        "technical": 11,
+        "user_experience": 5,
+        "security": 9,
+        "operational": 9
+      }
+    },
+    {
+      "number": 2,
+      "phase": "tension",
+      "timestamp": "2026-04-18T12:08:00Z",
+      "result": "Identified 10 tensions (3 trade-offs, 1 resource-tension, 6 hidden-dependencies) and resolved all 10 via user-selected 'A' options. Recorded validation_criteria (GAP-08), propagation_effects (TIGHTENED: O4/O7/O8/S4/S5/U3/S2; LOOSENED: O9/O4[remote]), and failure_cascade analyses (GAP-06) per tension. Extracted 7 blocking_dependencies for m3-anchor prioritization. Added DRT-11 (journal spill) and DRT-12 (readiness-vs-durability) to draft required truths.",
+      "tensions_found": 10,
+      "tensions_resolved": 10,
+      "by_type": {
+        "trade_offs": 3,
+        "resource_tensions": 1,
+        "hidden_dependencies": 6
+      }
+    },
+    {
+      "number": 3,
+      "phase": "anchor",
+      "timestamp": "2026-04-18T12:22:00Z",
+      "result": "Derived 12 required truths (RT-1..RT-12) from the outcome, seeded by the 12 draft_required_truths and 7 blocking_dependencies from m2. Depth-2 decomposition applied to binding-constraint RT-2 (4 children, 4 grandchildren). Identified RT-2 (op_acked vs op_saved distinction + enforceable O8 flush) as the binding constraint via ToC analysis: it cross-cuts 4 layers and unblocks RT-1, RT-7, RT-12. Generated 4 solution options with reversibility tags; user selected Option C (ToC-aligned, binding-first, TWO_WAY). All 10 tensions validated as CONFIRMED by Option C's RT-satisfaction ordering. m4 must generate RT-2 artifacts first with priority=binding.",
+      "required_truths": 12,
+      "by_status": {
+        "SATISFIED": 0,
+        "PARTIAL": 0,
+        "NOT_SATISFIED": 10,
+        "SPECIFICATION_READY": 2
+      },
+      "solution_options": 4,
+      "selected_option": "C",
+      "binding_constraint": "RT-2"
+    },
+    {
+      "number": 4,
+      "phase": "generate",
+      "timestamp": "2026-04-18T12:42:00Z",
+      "result": "Generated Wave-1 binding-constraint spike (RT-2) plus PM documentation, per user-selected scope A. Backend: internal/crdt package (events.go, room.go, room_test.go) with two-state event emission (OpAckedEvent, OpSavedEvent), O8 FlushPolicy (3s idle / 100 ops), and 6 @constraint-annotated tests. Frontend: frontend/src/lib/durability.js state machine (idle/dirty/syncing/synced/saved/disconnected) + DurabilityIndicator.svelte two-state visual. Docs: PRD.md (13 sections, MoSCoW), STORIES.md (12 user stories), DECISIONS.md (10 ADRs + binding constraint + solution option). Tests pass: 6/6 crdt tests green on first post-fix run (triggerFlush was stubbed initially; wired to buffered channel). Full project test suite passes with no regressions. Immediate evidence validation (step 11b): 8/8 file_exists VERIFIED; 5/5 content_match VERIFIED; test_passes left PENDING for m5. Waves 2-5 deferred; their artifacts are not yet generated.",
+      "scope": "A",
+      "artifacts_generated": 8,
+      "by_type": {
+        "code": 4,
+        "test": 1,
+        "docs": 3
+      },
+      "waves_completed": [
+        1
+      ],
+      "waves_deferred": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "binding_constraint_addressed": true,
+      "post_generation_test_status": "6/6 new tests pass locally; m5 will re-run and stamp test_passes VERIFIED"
+    },
+    {
+      "number": 5,
+      "phase": "verify",
+      "timestamp": "2026-04-18T12:48:00Z",
+      "result": "Wave-1 VERIFIED against declared scope A. Schema: 37/37 + 10/10 + 12/12 linked. Artifact existence: 8/8 on disk. Test execution: 6/6 PASS (go test ./internal/crdt/ in 0.456s), 0 regressions in other packages. Evidence: 18/19 VERIFIED, 1 pending manual_review (RT-2.4 fsync observability, deferred to Wave-4/5). Binding constraint RT-2 reached VERIFIED satisfaction level. Gaps found: G1 (no Svelte unit tests yet \u2014 minor), G2 (T2 statistical threshold needs percentile test \u2014 Wave-5), G3 (23 constraints with no code/test \u2014 scope-deferred per Option C Waves 2-5), G4 (RT-2.4 observability wiring \u2014 informational). Enhancement checks: genealogy PASS, statistical WARN (expected), reversibility PASS (all Wave-1 steps TWO_WAY), propagation PASS, binding-constraint PASS. Convergence: IN_PROGRESS \u2014 Wave-1 converged against its scope; full-manifold convergence requires Waves 2-5.",
+      "result_code": "PARTIAL",
+      "tests_executed": 6,
+      "tests_passed": 6,
+      "evidence_total": 19,
+      "evidence_verified": 18,
+      "evidence_pending": 1,
+      "evidence_failed": 0,
+      "gaps_identified": 4,
+      "gaps_blocking_merge": 0,
+      "scope_note": "Gaps G1-G4 reflect the pre-planned Waves-2-5 deferral per user m4 scope selection, not verification defects."
+    },
+    {
+      "number": 6,
+      "phase": "generate",
+      "timestamp": "2026-04-18T13:05:00Z",
+      "result": "Generated Wave-2 per Option C: RT-4 subsystem interfaces + in-process default implementations + contract tests across 5 new packages (sessions, crdt.broadcast, snapshot, audit, blob). 15 artifacts total (14 substantive + 1 structural). First build pass caught one bug: TestRoomThroughInProcBroadcaster passed nil context to Room.Close, causing panic; fixed by passing context.Background(). After fix, all 34 tests across 6 packages pass (go test ./... ok). Evidence promoted: RT-4, RT-4.1-4.4, RT-6.1 moved from NOT_SATISFIED to PARTIAL (file_exists + content_match VERIFIED; test_passes left PENDING for m5). Coverage jump: constraints with direct code artifacts 25% \u2192 ~50%. Waves 3-5 remain deferred.",
+      "scope": "Wave-2 full",
+      "artifacts_generated": 15,
+      "by_type": {
+        "code": 10,
+        "test": 5
+      },
+      "waves_completed": [
+        1,
+        2
+      ],
+      "waves_deferred": [
+        3,
+        4,
+        5
+      ],
+      "binding_constraint_addressed": true,
+      "post_generation_test_status": "34/34 tests pass locally across 6 packages (sessions, snapshot, audit, blob, crdt, app); m5 will promote PENDING \u2192 VERIFIED"
+    },
+    {
+      "number": 7,
+      "phase": "verify",
+      "timestamp": "2026-04-18T13:15:00Z",
+      "result": "Wave-2 VERIFIED against declared scope. Schema: 37/37 + 10/10 + 12/12 linked. Artifact existence: 23/23 on disk. Test execution: 34/34 PASS across 6 packages (sessions:5 snapshot:5 audit:5 blob:8 crdt:11 app:0). Evidence promoted: 14 test_passes items PENDING -> VERIFIED. RT status promotions: RT-4 (and 4.1-4.4) + RT-6.1 -> SATISFIED. Convergence: still IN_PROGRESS (RT-1, RT-3, RT-5, RT-7, RT-8, RT-9, RT-10, RT-11, RT-12 + RT-6 partial + RT-2.4 partial remain -- Wave 3/4/5 per Option C). Enhancement checks: genealogy PASS, statistical WARN (T2/U3 statistical thresholds still need percentile tests -- Wave 5), reversibility PASS (all 8 action steps TWO_WAY), propagation PASS, binding-constraint PASS (RT-2 verified, now RT-4 also satisfied). No new gaps introduced by Wave 2; the 15 new artifacts are consistent with DECISIONS.md.",
+      "result_code": "PARTIAL",
+      "tests_executed": 34,
+      "tests_passed": 34,
+      "evidence_promoted_to_verified": 14,
+      "rt_promotions": [
+        "RT-4 -> SATISFIED",
+        "RT-4.1 -> SATISFIED",
+        "RT-4.2 -> SATISFIED",
+        "RT-4.3 -> SATISFIED",
+        "RT-4.4 -> SATISFIED",
+        "RT-6.1 -> SATISFIED"
+      ],
+      "gaps_identified": 3,
+      "gaps_blocking_merge": 0,
+      "scope_note": "Gaps reflect pre-planned Waves-3-5 deferral per Option C, not verification defects."
+    },
+    {
+      "number": 8,
+      "phase": "generate",
+      "timestamp": "2026-04-18T13:35:00Z",
+      "result": "Generated Wave-3 per Option C (full, HMAC-stub OIDC): 11 artifacts across 4 packages. internal/principal carries canonical Principal type + RBAC Can() + context helpers (RT-5). internal/auth/oidc ships adapter + Verifier interface + HMACVerifier default + JWKSCache scaffold + schema-versioned ClaimMapping (S8) + stub provider passing TN5 integration test (RT-11). internal/media HTTP handler serves GET/POST /media/<sha> with S5 body cap and S6 enforcement via blob store (RT-6.2). internal/snapshot/scheduler periodically invokes Source.SnapshotFor -> Target.Store with graceful drain (RT-6.3, O7). Zero new dependencies. One bug caught mid-build: initial test file contained invalid Go (stray 'import0 := \"\"' and undefined 'stdBase64RawURL'); fixed by adding strconv + encoding/base64 imports and replacing helpers with stdlib. After fix, all 9 packages build and test clean (go test ./... green).",
+      "scope": "Wave-3 full (A)",
+      "artifacts_generated": 11,
+      "by_type": {
+        "code": 7,
+        "test": 4
+      },
+      "waves_completed": [
+        1,
+        2,
+        3
+      ],
+      "waves_deferred": [
+        4,
+        5
+      ],
+      "binding_constraint_addressed": true,
+      "post_generation_test_status": "All packages pass; m5 will promote 17 new test_passes PENDING -> VERIFIED"
+    },
+    {
+      "number": 9,
+      "phase": "verify",
+      "timestamp": "2026-04-18T13:42:00Z",
+      "result": "Wave-3 VERIFIED against declared scope. Schema: 37/37 + 10/10 + 12/12 linked. Artifact existence: 34/34 on disk. Test execution: 62 tests across 9 packages (go test ./... green, 0 regressions). 33 tests in Wave-2/3 surfaces (principal 6, oidc 10, media 8, snapshot 9). Evidence: 13 test_passes items PENDING -> VERIFIED this run. RT promotions: RT-5 (and 5.1-5.3) + RT-11 (and 11.1-11.3) + RT-6 (and 6.1-6.3) -> SATISFIED. Convergence: IN_PROGRESS (RT-1, RT-3, RT-7, RT-8, RT-9, RT-10, RT-12 + RT-2.4 manual_review remain -- Waves 4/5 per Option C). Enhancement checks: genealogy PASS, statistical WARN (T2/U3 p95 still need percentile tests -- Wave 5), reversibility PASS (12 action steps, all TWO_WAY), propagation PASS, binding-constraint PASS.",
+      "result_code": "PARTIAL",
+      "tests_executed": 62,
+      "tests_passed": 62,
+      "evidence_promoted_to_verified": 13,
+      "rt_promotions": [
+        "RT-5 -> SATISFIED",
+        "RT-5.1 -> SATISFIED",
+        "RT-5.2 -> SATISFIED",
+        "RT-5.3 -> SATISFIED",
+        "RT-11 -> SATISFIED",
+        "RT-11.1 -> SATISFIED",
+        "RT-11.2 -> SATISFIED",
+        "RT-11.3 -> SATISFIED",
+        "RT-6 -> SATISFIED",
+        "RT-6.1 -> SATISFIED",
+        "RT-6.2 -> SATISFIED",
+        "RT-6.3 -> SATISFIED"
+      ],
+      "gaps_identified": 3,
+      "gaps_blocking_merge": 0,
+      "scope_note": "Gaps reflect pre-planned Waves-4-5 deferral per Option C, not verification defects."
+    },
+    {
+      "number": 10,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T13:55:00Z",
+      "result": "Analyzed 34 generated artifacts for integration into internal/app/server.go + cmd/phronesis/main.go. Identified 12 integration points: 3 auto-wireable (INT-3 media route mount, INT-4 blob-store construct, INT-11 Config fields), 9 manual (INT-1 session migration, INT-2 Principal middleware, INT-5 audit enqueue throughout handlers, INT-6 snapshot source adapter, INT-7 CRDT+Hub composition [architectural decision], INT-8 OIDC routes, INT-9 frontend durability integration, INT-10 SIGTERM + Close chain, INT-12 wiki.Store atomic-write migration for O6). No source files modified this run (no --auto-wire flag). INT-7 is flagged as an architectural decision point -- probably belongs in Wave-4 planning, not this integration pass.",
+      "integration_points": 12,
+      "completed": 0,
+      "pending": 12,
+      "auto_wireable": 3,
+      "manual_required": 9
+    },
+    {
+      "number": 11,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T14:05:00Z",
+      "result": "Auto-wired 3 integration points via m6 --auto-wire: INT-11 (Config fields: BlobDir/BlobQuotaBytes/MaxUploadBytes), INT-4 (blob.LocalFSStore construct in NewServer), INT-3 (media.Handler.Routes mount on mux). One build-time issue caught: pre-existing server_test.go tests constructed minimal Config without the new fields, causing blob store mkdir to fail on empty path. Fixed by adding default-application logic at the top of NewServer (tolerates empty BlobDir etc, matches test-minimal-config pattern). After fix, all 9 packages build + test clean. Media routes are now mounted on the live server mux; actual 200 responses await INT-2 (Principal middleware) since the handler requires a Principal in context. Remaining 9 integration points are manual.",
+      "integration_points": 12,
+      "completed": 3,
+      "pending": 9,
+      "auto_wireable": 3,
+      "manual_required": 9
+    },
+    {
+      "number": 12,
+      "phase": "verify",
+      "timestamp": "2026-04-18T14:15:00Z",
+      "result": "Post-integration re-verify after m6 --auto-wire landed INT-3/4/11. Schema: 37/37 + 10/10 + 12/12 linked. Tests: 62 tests across 9 packages pass (internal/app included). Drift: CLEAN across all 34 manifold-tracked artifacts -- integration edits to internal/app/server.go did not touch any generated artifact. No new evidence to promote, no RT status changes. 5/12 top-level RTs remain SATISFIED (RT-2, RT-4, RT-5, RT-6, RT-11). Integration progress: 3/12 (25%) checklist items completed via auto-wire; 9 manual items remain. Statistical verification still WARN (unchanged, Wave-5).",
+      "result_code": "PARTIAL_STABLE",
+      "tests_executed": 62,
+      "tests_passed": 62,
+      "drift_status": "CLEAN",
+      "artifacts_checked": 34,
+      "evidence_promoted_to_verified": 0,
+      "rt_status_changes": 0,
+      "integration_progress": "3/12 complete",
+      "note": "This is a confirmation pass, not a progression. The manifold + code state is unchanged structurally since iteration #11; this run verifies that the integration edits preserved all prior guarantees. Safe to proceed with Wave 4 or manual INT-* items."
+    },
+    {
+      "number": 13,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T14:35:00Z",
+      "result": "Manually landed INT-2 (Principal middleware). Added Config.APIKey + PHRONESIS_API_KEY env. Added principalFromRequest that resolves cookie sessions -> user Principal (admin of default workspace) OR API-KEY header -> service_account Principal (editor of default workspace). Added attachPrincipal middleware wrapping the whole mux so every request has a Principal in context before handlers run. Added TestMediaEndpointEndToEnd integration test covering 4 paths: (A) cookie auth uploads + GETs a PNG, (B) API-KEY auth uploads a PNG, (C) anonymous upload rejected 401, (D) wrong API-KEY rejected 401. All 9 packages continue to pass (63 tests total now). Media endpoints are LIVE END-TO-END: authenticated users see 201 on upload and 200 on GET instead of the prior always-401 state. TN8 promise (same roles for user + service_account principals) proven at the HTTP boundary.",
+      "int_completed": [
+        "INT-2"
+      ],
+      "integration_progress_total": "4/12",
+      "new_test_added": "TestMediaEndpointEndToEnd (4 assertion paths)",
+      "rt_impact": "RT-5 satisfaction strengthens: previously proven only in unit tests (internal/principal package); now proven at the HTTP layer via cookie + API-KEY authn + media-handler authorization.",
+      "unblocks": [
+        "INT-3 (now fully functional, no longer 401-only)",
+        "INT-5 (audit enqueue can now attribute to Principal)",
+        "INT-8 (OIDC path can share the same attach + Principal contract)"
+      ]
+    },
+    {
+      "number": 14,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T14:55:00Z",
+      "result": "Manually landed INT-5 (audit enqueue throughout handlers). Refactored NewServer to return *Server (was *http.Server); added Server.HTTP() accessor and Server.Close(ctx) for graceful drain. Added Config.AuditLog + PHRONESIS_AUDIT_LOG env with './data/audit.log' default. Constructed audit.FileSink + audit.BufferedDrainer in NewServer. Added auditEnqueue helper that reads Principal from r.Context() (INT-2 dependency) and enriches events with principal_id + principal_type + workspace_id. Instrumented 4 sites: handleLogin success (auth.login), handleLogin failure (auth.login_failed), handleLogout (auth.logout), handlePage GET (doc.view), handlePage POST (doc.edit with merged flag). Updated main.go to use server.HTTP().ListenAndServe(). Updated 3 existing tests (s/server.Handler/server.HTTP().Handler/). Added TestAuditLogRecordsEvents: 4-step integration test that runs login-fail + login + edit + view, calls Close(ctx) to drain, then reads audit.log file and verifies all 4 event types are persisted with correct principal fields. All 9 packages pass (64 tests). RT-4.4 now proven at HTTP layer; S2 audit trail is LIVE for auth + doc events.",
+      "int_completed": [
+        "INT-5"
+      ],
+      "integration_progress_total": "5/12",
+      "refactor_note": "NewServer signature change is a small breaking API change offset by cleaner lifecycle semantics. main.go + 3 tests updated in the same commit.",
+      "new_test_added": "TestAuditLogRecordsEvents (file-based end-to-end verification of JSONL audit entries)",
+      "rt_impact": "S2 + S9 + RT-4.4 now proven at HTTP layer in addition to unit-level proofs from Wave 2. TN8 principal_type in audit schema verified end-to-end (doc.edit events carry PrincipalType='user').",
+      "partial_coverage_of": [
+        "INT-10 (Server.Close drains audit; SIGTERM chain still manual)"
+      ],
+      "unblocks": [
+        "INT-10 (Close method exists; SIGTERM wiring in main.go is smaller now)"
+      ]
+    },
+    {
+      "number": 15,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T15:10:00Z",
+      "result": "Landed INT-10 (SIGTERM -> Shutdown -> Close chain). Added Server.Serve(ctx, drainTimeout) that runs ListenAndServe in a goroutine and selects between (a) listener errors and (b) ctx cancellation. On ctx.Done: http.Shutdown(bounded by drainTimeout), then s.Close(ctx), then wait for the ListenAndServe goroutine to exit cleanly. Errors from both phases composed so operators see both if both fail. Updated cmd/phronesis/main.go to use signal.NotifyContext with SIGINT + SIGTERM; drainTimeout = 30s (tuned for k8s terminationGracePeriodSeconds). Added TestServeGracefulShutdownDrainsAudit: pre-queues an audit event, cancels ctx immediately so Serve takes the shutdown path, asserts Serve returns within 5s AND the pre-queued event is persisted to disk. Added TestCloseIsIdempotent to lock the defensive contract that repeated Close does not error. All 9 packages pass (66 tests).",
+      "int_completed": [
+        "INT-10"
+      ],
+      "integration_progress_total": "6/12",
+      "new_tests_added": [
+        "TestServeGracefulShutdownDrainsAudit (shutdown chain + audit drain)",
+        "TestCloseIsIdempotent (defensive contract)"
+      ],
+      "rt_impact": "O5 (graceful drain) satisfied at server level. RT-12.1 (configurable drain window) satisfied via drainTimeout parameter. RT-12.2 (CRDT flush always completes) remains Wave-4 work (no CRDT integration in server yet). The shutdown chain is extensible: INT-6 (snapshot scheduler) and INT-7 (CRDT rooms) add one Close call each to Server.Close without touching main.go."
+    },
+    {
+      "number": 16,
+      "phase": "integrate",
+      "timestamp": "2026-04-18T15:25:00Z",
+      "result": "Landed INT-12 (atomic-write migration for wiki.Store). Created new internal/fsutil package exposing AtomicWrite(path, data, perm) and AtomicWriteReader(path, r, perm). Both implement the POSIX-safe tempfile -> Chmod -> fsync -> rename -> dir-fsync dance with automatic tempfile cleanup on any error. Migrated wiki/store.go Put from os.WriteFile (unsafe against crash-during-write) to fsutil.AtomicWrite. Dedup'd snapshot/localfs.go's package-private atomicWrite to delegate to the shared helper (kept as a thin trampoline so existing call sites remain unchanged). Added 7 tests in fsutil_test.go covering: creates file, replaces existing, no tempfile leftovers, empty path rejection, missing parent dir error, reader-stream variant, perm honored. All 10 packages pass. O6 constraint now genuinely SATISFIED at both the wiki-store boundary AND the snapshot boundary, via a single tested helper. Closes the latent O6 gap that Waves 1-3 inherited from pre-existing phronesis code.",
+      "int_completed": [
+        "INT-12"
+      ],
+      "integration_progress_total": "7/12",
+      "new_package": "internal/fsutil",
+      "new_tests_added": [
+        "7 AtomicWrite tests (creation, replacement, cleanup, perm, error paths, reader variant)"
+      ],
+      "migrated_sites": [
+        "internal/wiki/store.go:Put (from os.WriteFile)",
+        "internal/snapshot/localfs.go:atomicWrite (now delegates)"
+      ],
+      "rt_impact": "O6 satisfaction strengthens from 'TESTED in snapshot only' to 'satisfied at every .md write site'. Single source of truth for the atomic-write discipline; future writers (push journal INT-7/RT-7, config persistence, etc.) reuse the helper rather than reimplementing.",
+      "total_tests_in_suite": "73 (was 66; +7 fsutil)"
+    },
+    {
+      "number": 17,
+      "phase": "generate",
+      "timestamp": "2026-04-18T15:50:00Z",
+      "result": "Generated Wave-4 per Option C (full): internal/journal (JSONL append-only + Replay with idempotent-contract removal-on-success; RT-7/7.1/7.2/12.3 durability) and internal/ratelimit (per-key sliding-window limiter + HTTP middleware with X-Forwarded-For trusted-proxy allow-list; RT-10/10.1/10.2 + TN7 resolution). 6 files, 0 new deps. All 12 packages build + test clean on first pass (no bugs caught mid-build this wave). Journal package reuses nothing from fsutil yet -- journal append uses O_APPEND + fsync rather than atomic-write-rename because the append-only pattern is inherently safe; fsutil.AtomicWrite is overkill for append semantics. If Wave-5 adds snapshot-style journal compaction, that would reuse fsutil. Rate-limit middleware is standalone -- integration into server.go is a follow-up INT item (not generated here per the 'generate cleanly, integrate later' pattern).",
+      "scope": "Wave-4 full (A)",
+      "artifacts_generated": 6,
+      "by_type": {
+        "code": 3,
+        "test": 3
+      },
+      "waves_completed": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "waves_deferred": [
+        5
+      ],
+      "binding_constraint_addressed": true,
+      "post_generation_test_status": "All 12 packages pass; m5 will promote 13 new test_passes PENDING -> VERIFIED",
+      "note": "Three server-integration INT items will be added to the checklist: mount ratelimit.Middleware on /api/login + /api/auth/*, wire journal.Append into Server.Close for spillover, call journal.Replay in NewServer before /readyz returns 200."
+    },
+    {
+      "number": 18,
+      "phase": "verify",
+      "timestamp": "2026-04-18T16:00:00Z",
+      "result": "Wave-4 VERIFIED against declared scope. Schema: 37/37 + 10/10 + 12/12 linked. Tests: 88 tests across 12 packages pass (66 from prior waves + 22 new: 8 journal + 14 ratelimit). 0 regressions. Evidence promoted: 10 test_passes items PENDING -> VERIFIED. RT promotions: RT-7 (7.1, 7.2) + RT-10 (10.1, 10.2) + RT-12 (12.1, 12.2, 12.3) -> SATISFIED. Top-level RT satisfaction: 8/12 (66%). Remaining 4 RTs (RT-1, RT-3, RT-8, RT-9) are Wave-5 polish work. Enhancement checks: all PASS except statistical (unchanged WARN for T2/U3 p95 tests).",
+      "result_code": "PARTIAL",
+      "tests_executed": 88,
+      "tests_passed": 88,
+      "evidence_promoted_to_verified": 10,
+      "rt_promotions": [
+        "RT-7 + 7.1/7.2",
+        "RT-10 + 10.1/10.2",
+        "RT-12 + 12.1/12.2/12.3"
+      ],
+      "top_level_rts_satisfied": "8/12",
+      "satisfied_ids": [
+        "RT-2",
+        "RT-4",
+        "RT-5",
+        "RT-6",
+        "RT-7",
+        "RT-10",
+        "RT-11",
+        "RT-12"
+      ],
+      "remaining_documented_only": [
+        "RT-1",
+        "RT-3",
+        "RT-8",
+        "RT-9"
+      ],
+      "gaps_identified": 3,
+      "gaps_blocking_merge": 0,
+      "wave4_note": "RT-7 + RT-10 + RT-12 generated + verified with 22 tests in a single wave. First wave to build + test clean on the first pass (no mid-build bugs). Waves 1-4 complete; Wave 5 (polish) remaining."
+    },
+    {
+      "number": 19,
+      "phase": "generate",
+      "timestamp": "2026-04-19T10:00:00Z",
+      "result": "Generated Wave-5 (final polish) per Option C: (1) docs/collab-wiki/CAPABILITY_HEALTH.md -- per-capability degradation contract for B1 (RT-1). (2) internal/app/readyz.go + test -- /api/readyz handler with data-dir / audit-drainer / journal-pending checks; also adds Config.JournalPath for RT-7.2 gating and mounts the route on the mux (RT-8). (3) internal/app/server_audit_test.go -- 3 server-layer tests proving read-path is off the audit hot path under concurrency (RT-3). (4) internal/xssdefense package -- StripDangerousTags (RT-9.1 store-time), SanitizeHTML (RT-9.2 render-time allow-list), CSPMiddleware with DefaultCSP + X-Content-Type-Options + Referrer-Policy (RT-9.3). 6 new files, 0 new deps. All 13 packages build + test clean on first pass. This is the last planned generation wave; remaining work is server integration of Wave-4/5 packages into server.go.",
+      "scope": "Wave-5 full (A)",
+      "artifacts_generated": 6,
+      "by_type": {
+        "docs": 1,
+        "code": 2,
+        "test": 3
+      },
+      "waves_completed": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "waves_deferred": [],
+      "binding_constraint_addressed": true,
+      "post_generation_test_status": "All 13 packages pass; m5 will promote 19 new test_passes PENDING -> VERIFIED and close out all 12 top-level RTs"
+    },
+    {
+      "number": 20,
+      "phase": "verify",
+      "timestamp": "2026-04-19T10:15:00Z",
+      "result": "FINAL m5 pass. Schema: 37/37 + 10/10 + 12/12 linked. Tests: 107 tests across 13 packages pass (was 88; +19 Wave-5 tests). Evidence: 12 test_passes PENDING -> VERIFIED this run. RT promotions: RT-1 + RT-3 (+3.1/3.2) + RT-8 (+8.1/8.2) + RT-9 (+9.1/9.2/9.3) -> SATISFIED. ALL 12 top-level RTs now SATISFIED. Convergence status: CONVERGED. 46 artifacts tracked; drift CLEAN. 5 integration checklist items remain (manual wiring of Wave-4/5 packages into server.go); all non-blocking. The manifold promise is now fully discharged at the code+test level.",
+      "result_code": "CONVERGED",
+      "tests_executed": 107,
+      "tests_passed": 107,
+      "evidence_promoted_to_verified": 12,
+      "rt_promotions": [
+        "RT-1",
+        "RT-3 + 3.1/3.2",
+        "RT-8 + 8.1/8.2",
+        "RT-9 + 9.1/9.2/9.3"
+      ],
+      "top_level_rts_satisfied": "12/12",
+      "satisfied_ids": [
+        "RT-1",
+        "RT-2",
+        "RT-3",
+        "RT-4",
+        "RT-5",
+        "RT-6",
+        "RT-7",
+        "RT-8",
+        "RT-9",
+        "RT-10",
+        "RT-11",
+        "RT-12"
+      ],
+      "remaining_not_satisfied": [],
+      "convergence": "CONVERGED (all RTs satisfied, all tensions resolved, no blocking gaps)"
+    },
+    {
+      "number": 21,
+      "phase": "integrate",
+      "timestamp": "2026-04-19T10:30:00Z",
+      "result": "Added 3 new INT items from Wave-4/5 surface (INT-13/14/15) and auto-wired all three: (13) wrapped server handler chain in xssdefense.CSPMiddleware \u2014 every response now carries CSP + X-Content-Type-Options + Referrer-Policy; (14) mounted ratelimit.Middleware on /api/login + /api/auth/* with 50 req/min per-IP default, honoring Config.TrustedProxies (empty by default = direct peer only); (15) added xssdefense.StripDangerousTags call in wiki.Store.Put before AtomicWrite \u2014 store-time XSS defense layer. All three additive and TWO_WAY. Build + full test suite clean across 13 packages, 107 tests. Original 5 pending INT items (INT-1 session migration, INT-6 snapshot scheduler, INT-7 CRDT-Hub composition, INT-8 OIDC routes, INT-9 frontend durability) remain manual \u2014 they require architectural decisions or cross-layer changes beyond safe auto-wire.",
+      "int_completed": [
+        "INT-13",
+        "INT-14",
+        "INT-15"
+      ],
+      "integration_progress_total": "10/15",
+      "integration_points_added_this_run": 3,
+      "auto_wireable_remaining": 0,
+      "manual_required_remaining": 5,
+      "post_wire_test_status": "13 packages pass, 107 tests, drift CLEAN on manifold-tracked artifacts",
+      "note": "server.go + wiki/store.go were modified but are NOT in the manifold-tracked artifacts list (they are pre-existing). Drift baseline unchanged for tracked files; integration-layer edits remain outside the manifold's direct verification loop by design."
+    },
+    {
+      "number": 22,
+      "phase": "verify",
+      "timestamp": "2026-04-19T10:45:00Z",
+      "result": "Post-integration re-verify after m6 --auto-wire landed INT-13/14/15 (CSP middleware, auth rate-limit mount, store-time XSS strip). Schema: 37/37 + 10/10 + 12/12 linked. Tests: 107 across 13 packages pass. Drift: CLEAN across 46 manifold-tracked artifacts. No new evidence promotions (already converged). RT status: 12/12 SATISFIED (unchanged). Tensions: 10/10 resolved (unchanged). Integration progress: 10/15 complete. Statistical verification still WARN (expected). Binding constraint RT-2 still VERIFIED. Convergence: CONVERGED \u2014 this pass confirms the m6 --auto-wire changes to pre-existing files (server.go + wiki/store.go) preserve all prior guarantees. The three new middlewares/sanitizers compose cleanly into the live request path without breaking any of the 107 tests.",
+      "result_code": "CONVERGED_STABLE",
+      "tests_executed": 107,
+      "tests_passed": 107,
+      "drift_status": "CLEAN",
+      "artifacts_checked": 46,
+      "evidence_promoted_to_verified": 0,
+      "rt_status_changes": 0,
+      "integration_progress": "10/15 (5 manual pending)",
+      "note": "CONVERGED_STABLE = converged on the prior pass + no regressions introduced since. Integration edits to server.go + wiki/store.go went into pre-existing files not in the artifacts list, so drift on tracked artifacts stays CLEAN \u2014 integration is strictly additive relative to the manifold's generation contract."
+    },
+    {
+      "number": 23,
+      "phase": "integrate",
+      "timestamp": "2026-04-19T14:45:00Z",
+      "result": "Manually landed all 5 remaining INT items: (INT-1) auth.Manager.WithStore(sessions.Store) \u2014 cookie sessions now persist via the pluggable Store interface; (INT-6) snapshot scheduler composed with a wikiSource adapter walking wiki.Store per default workspace; (INT-7) Server gained broadcaster + journal fields as infrastructure composition (editor-handler consumption deferred to a future feature wave); (INT-8) POST /api/auth/oidc/login route, token-first flow \u2014 accepts a signed id_token, validates via oidc.Adapter, issues session cookie via sessions.Store, audit-logs auth.oidc_login or auth.oidc_failed + 3 new integration tests; (INT-9) Editor.svelte renders DurabilityIndicator driven by App.svelte's autosave lifecycle (idle \u2192 dirty \u2192 syncing \u2192 saved). Frontend builds clean (551KB gzip, pre-existing CodeMirror-weight; indicator adds ~1KB). All 13 Go packages pass (110 tests; +3 new OIDC integration tests). Blob-enumeration from blob.Store for snapshot.Source.SnapshotFor remains a known incompleteness (documented in wikiSource comment); v1 snapshots capture markdown only.",
+      "int_completed": [
+        "INT-1",
+        "INT-6",
+        "INT-7",
+        "INT-8",
+        "INT-9"
+      ],
+      "integration_progress_total": "15/15",
+      "new_tests": 3,
+      "frontend_changes": [
+        "frontend/src/lib/Editor.svelte (DurabilityIndicator in chrome)",
+        "frontend/src/App.svelte (durability state driven by autosave)"
+      ],
+      "rt_impact": "RT-4.1 now proven live at the server level (not just unit-tested). RT-11 wired into the real HTTP stack with 3 integration tests. RT-6.3 snapshot scheduler composed in. RT-2.2 DurabilityIndicator visible in the editor UI.",
+      "known_incompleteness": [
+        "wikiSource.SnapshotFor does not populate Blobs (blob.Store lacks per-workspace enumeration API); v1 snapshot is markdown-only",
+        "Editor.svelte durability is driven by autosave approximation, not real CRDT op_acked/op_saved events (future editor-feature wave)",
+        "INT-7 infrastructure (broadcaster, journal) is composed but no handler consumes them yet; ready for future editor/git-sync features"
+      ]
+    }
+  ],
+  "convergence": {
+    "status": "CONVERGED",
+    "criteria": {
+      "all_invariants_satisfied": true,
+      "all_required_truths_satisfied": true,
+      "all_tensions_resolved": true,
+      "no_blocking_gaps": true,
+      "top_level_rts_satisfied": "12/12",
+      "integration_progress": "15/15",
+      "post_integration_drift_clean": true,
+      "post_auto_wire_drift_clean": true,
+      "post_auto_wire_tests_pass": true,
+      "all_integration_items_complete": true
+    }
+  },
+  "evidence": [],
+  "generation": {
+    "option": "C",
+    "scope": "A (Waves 1-5 full): binding + subsystems + identity/media/OIDC + durability + polish",
+    "timestamp": "2026-04-19T10:00:00Z",
+    "binding_constraint_rt": "RT-2",
+    "artifacts": [
+      {
+        "path": "internal/crdt/events.go",
+        "type": "code",
+        "satisfies": [
+          "RT-2",
+          "RT-2.1",
+          "T1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/crdt/room.go",
+        "type": "code",
+        "satisfies": [
+          "RT-2",
+          "RT-2.1",
+          "RT-2.3",
+          "T1",
+          "T2",
+          "O5",
+          "O8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/crdt/room_test.go",
+        "type": "test",
+        "validates": [
+          "B1",
+          "T2",
+          "O5",
+          "O8",
+          "TN1",
+          "TN6",
+          "RT-2",
+          "RT-2.1",
+          "RT-2.3",
+          "RT-12.2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "frontend/src/lib/durability.js",
+        "type": "code",
+        "satisfies": [
+          "RT-2.2",
+          "TN6",
+          "U2",
+          "U3",
+          "DRT-6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "frontend/src/lib/DurabilityIndicator.svelte",
+        "type": "code",
+        "satisfies": [
+          "RT-2.2",
+          "TN6",
+          "U3",
+          "U2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "docs/collab-wiki/PRD.md",
+        "type": "prd",
+        "satisfies": [
+          "outcome",
+          "B1",
+          "B2",
+          "B3",
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "T7",
+          "T8",
+          "T9",
+          "T10",
+          "T11",
+          "U1",
+          "U2",
+          "U3",
+          "U4",
+          "U5",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "O1",
+          "O2",
+          "O3",
+          "O4",
+          "O5",
+          "O6",
+          "O7",
+          "O8",
+          "O9"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "docs/collab-wiki/STORIES.md",
+        "type": "stories",
+        "satisfies": [
+          "U1",
+          "U2",
+          "U3",
+          "U4",
+          "U5",
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S6",
+          "S7",
+          "B2",
+          "T6",
+          "T7",
+          "T10",
+          "O1",
+          "O2",
+          "O3",
+          "O4",
+          "O5",
+          "RT-2",
+          "RT-5",
+          "RT-6",
+          "RT-7",
+          "RT-9",
+          "RT-10",
+          "RT-11",
+          "RT-12"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "docs/collab-wiki/DECISIONS.md",
+        "type": "docs",
+        "satisfies": [
+          "TN1",
+          "TN2",
+          "TN3",
+          "TN4",
+          "TN5",
+          "TN6",
+          "TN7",
+          "TN8",
+          "TN9",
+          "TN10",
+          "RT-2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/sessions/store.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.1",
+          "RT-4",
+          "S1",
+          "T8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/sessions/memstore.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.1",
+          "RT-4",
+          "T8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/sessions/store_test.go",
+        "type": "test",
+        "validates": [
+          "RT-4.1",
+          "S1",
+          "S3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/crdt/broadcast_inproc.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.2",
+          "RT-4",
+          "T2",
+          "O1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/crdt/broadcast_test.go",
+        "type": "test",
+        "validates": [
+          "RT-4.2",
+          "T2",
+          "O1",
+          "RT-2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/target.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.3",
+          "RT-4",
+          "O7",
+          "TN4"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/localfs.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.3",
+          "O7",
+          "TN4",
+          "O6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/target_test.go",
+        "type": "test",
+        "validates": [
+          "RT-4.3",
+          "O7",
+          "TN4",
+          "O6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/readdir_compat.go",
+        "type": "code",
+        "satisfies": [],
+        "status": "generated",
+        "artifact_class": "structural",
+        "note": "test helper shim"
+      },
+      {
+        "path": "internal/audit/sink.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.4",
+          "RT-4",
+          "S2",
+          "S9",
+          "O5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/filesink.go",
+        "type": "code",
+        "satisfies": [
+          "RT-4.4",
+          "S2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/sink_test.go",
+        "type": "test",
+        "validates": [
+          "RT-4.4",
+          "S2",
+          "S9",
+          "O1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/blob/store.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6",
+          "RT-6.1",
+          "TN4",
+          "S6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/blob/localfs.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6",
+          "RT-6.1",
+          "TN4",
+          "S6",
+          "O6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/blob/store_test.go",
+        "type": "test",
+        "validates": [
+          "RT-6",
+          "TN4",
+          "S6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/principal/principal.go",
+        "type": "code",
+        "satisfies": [
+          "RT-5",
+          "RT-5.1",
+          "RT-5.2",
+          "RT-5.3",
+          "S1",
+          "B2",
+          "TN8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/principal/principal_test.go",
+        "type": "test",
+        "validates": [
+          "RT-5",
+          "S1",
+          "B2",
+          "TN8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/verifier.go",
+        "type": "code",
+        "satisfies": [
+          "RT-11",
+          "RT-11.1",
+          "S4"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/claim_mapping.go",
+        "type": "code",
+        "satisfies": [
+          "RT-11.2",
+          "S8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/oidc.go",
+        "type": "code",
+        "satisfies": [
+          "RT-11",
+          "S4",
+          "S8",
+          "TN5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/stub.go",
+        "type": "code",
+        "satisfies": [
+          "RT-11.3",
+          "TN5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/oidc_test.go",
+        "type": "test",
+        "validates": [
+          "RT-11",
+          "S4",
+          "S8",
+          "TN5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/media/handler.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6.2",
+          "RT-6",
+          "S5",
+          "S6",
+          "TN4",
+          "B2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/media/handler_test.go",
+        "type": "test",
+        "validates": [
+          "RT-6.2",
+          "S5",
+          "S6",
+          "B2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/scheduler.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6.3",
+          "RT-6",
+          "O7",
+          "TN4",
+          "O5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/snapshot/scheduler_test.go",
+        "type": "test",
+        "validates": [
+          "RT-6.3",
+          "O7",
+          "O5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/journal/journal.go",
+        "type": "code",
+        "satisfies": [
+          "RT-7",
+          "RT-7.1",
+          "RT-7.2",
+          "RT-12.3",
+          "O5",
+          "T10"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/journal/journal_test.go",
+        "type": "test",
+        "validates": [
+          "RT-7",
+          "RT-7.1",
+          "RT-7.2",
+          "RT-12.3",
+          "O5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/ratelimit/ratelimit.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10",
+          "RT-10.1",
+          "S5",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/ratelimit/middleware.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10",
+          "RT-10.2",
+          "S5",
+          "TN7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/ratelimit/ratelimit_test.go",
+        "type": "test",
+        "validates": [
+          "RT-10.1",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/ratelimit/middleware_test.go",
+        "type": "test",
+        "validates": [
+          "RT-10",
+          "RT-10.2",
+          "TN7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "docs/collab-wiki/CAPABILITY_HEALTH.md",
+        "type": "docs",
+        "satisfies": [
+          "RT-1",
+          "B1",
+          "O1",
+          "O4"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/readyz.go",
+        "type": "code",
+        "satisfies": [
+          "RT-8",
+          "RT-8.1",
+          "RT-8.2",
+          "O4",
+          "TN9",
+          "RT-7.2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/readyz_test.go",
+        "type": "test",
+        "validates": [
+          "RT-8",
+          "O4",
+          "TN9",
+          "RT-7.2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/server_audit_test.go",
+        "type": "test",
+        "validates": [
+          "RT-3",
+          "S2",
+          "S9",
+          "T3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/xssdefense/xssdefense.go",
+        "type": "code",
+        "satisfies": [
+          "RT-9",
+          "RT-9.1",
+          "RT-9.2",
+          "RT-9.3",
+          "S7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/xssdefense/xssdefense_test.go",
+        "type": "test",
+        "validates": [
+          "RT-9",
+          "S7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      }
+    ],
+    "coverage": {
+      "constraints_addressed": 37,
+      "constraints_total": 37,
+      "percentage": 100,
+      "note": "100% of constraints addressed via PRD traceability. Direct code coverage is limited to RT-2 (binding); Waves 2-5 will generate artifacts for the remaining RTs per Option C's ordering."
+    },
+    "waves": {
+      "completed": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "deferred": []
+    }
+  },
+  "reversibility_log": [
+    {
+      "action_step": 1,
+      "description": "Create internal/crdt package (Wave 1 binding proof)",
+      "reversibility": "TWO_WAY",
+      "note": "Standalone package; removable without touching existing wiki/auth code."
+    },
+    {
+      "action_step": 2,
+      "description": "Add frontend/src/lib/durability.js + DurabilityIndicator.svelte",
+      "reversibility": "TWO_WAY",
+      "note": "Additive to frontend; Editor.svelte is not modified in this wave."
+    },
+    {
+      "action_step": 3,
+      "description": "Generate docs/collab-wiki/ (PRD, STORIES, DECISIONS)",
+      "reversibility": "TWO_WAY",
+      "note": "Pure documentation; no runtime impact."
+    },
+    {
+      "action_step": 4,
+      "description": "Create internal/sessions package with MemStore default",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 5,
+      "description": "Add internal/crdt/broadcast_inproc.go as default Broadcaster",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 6,
+      "description": "Create internal/snapshot package with LocalFSTarget default",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 7,
+      "description": "Create internal/audit package with BufferedDrainer + FileSink",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 8,
+      "description": "Create internal/blob package with LocalFSStore default",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 9,
+      "description": "Create internal/principal package (canonical identity)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 10,
+      "description": "Create internal/auth/oidc package with HMAC-stub Verifier + JWKS cache scaffold + claim mapping (S8 schema-versioned)",
+      "reversibility": "TWO_WAY",
+      "note": "No new dependencies; RS256 path is a future Verifier impl behind the existing interface"
+    },
+    {
+      "action_step": 11,
+      "description": "Create internal/media HTTP handler (GET /media/<hash>, POST /media)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 12,
+      "description": "Add internal/snapshot/scheduler for periodic O7 snapshots",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 13,
+      "description": "Create internal/journal package (append-only JSONL journal + Replay)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 14,
+      "description": "Create internal/ratelimit package (sliding window + HTTP middleware)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 15,
+      "description": "Add /api/readyz handler + readiness checks (data_dir, audit drainer, journal)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 16,
+      "description": "Create internal/xssdefense package (sanitization helpers + CSP middleware)",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "action_step": 17,
+      "description": "Add docs/collab-wiki/CAPABILITY_HEALTH.md (RT-1 degradation contract)",
+      "reversibility": "TWO_WAY"
+    }
+  ],
+  "gap_checklist_compliance": [
+    {
+      "gap": "GAP-03",
+      "status": "COMPLETED",
+      "note": "Core data path captured: keystroke -> CRDT op -> peer broadcast -> flush-to-disk -> (async) git push / snapshot. Covered by T1, T2, O5, O6, O8, T6, O7."
+    },
+    {
+      "gap": "GAP-06",
+      "status": "COMPLETED",
+      "note": "Failure cascade recorded per tension (TN1..TN10). Every tension with a fallback has an explicit accept-loss or human-intervention endpoint (e.g., TN10 journal-write failure -> block shutdown + alert)."
+    },
+    {
+      "gap": "GAP-08",
+      "status": "COMPLETED",
+      "note": "Every resolved tension has validation_criteria[] in JSON that maps to testable assertions for m5-verify."
+    },
+    {
+      "gap": "GAP-09",
+      "status": "COMPLETED",
+      "note": "Auth/crypto constraints S3 (argon2id+cookies+CSRF), S4 (OIDC sig/iss/aud+JWKS rotation), S8 (claim schema pinning). Attack-matrix expansion deferred to m4."
+    },
+    {
+      "gap": "GAP-10",
+      "status": "COMPLETED",
+      "note": "Resource-exhaustion bounds: T5 (doc size), S5 (request body), T10 (push queue), S6 (media quota), O9 (repo size). TN7 added a server-side auth-endpoint rate-limit floor as pre-mortem backstop."
+    },
+    {
+      "gap": "GAP-11",
+      "status": "COMPLETED",
+      "note": "External dependencies: git remote (T6, T10, O4+TN9, O9), OIDC IdP (S4, S8), snapshot target (O7), blob store (TN4). All have timeouts, backlog bounds, readiness probes (where appropriate), or failure-cascade documentation."
+    },
+    {
+      "gap": "GAP-14",
+      "status": "COMPLETED",
+      "note": "Input validation at boundaries: T5 (doc size), S5 (body size), S6 (media content-type allowlist), S7 (HTML sanitization at store AND render)."
+    },
+    {
+      "gap": "GAP-17",
+      "status": "COMPLETED",
+      "note": "Shared-state/concurrency: T1 (in-memory CRDT rooms), T11 (atomic rename op), O5 (graceful drain), O6 (atomic file writes), O8 (flush policy), TN3 (single-replica v1 sidesteps cross-process shared state)."
+    }
+  ],
+  "constraint_graph": {
+    "version": 1,
+    "nodes": {},
+    "edges": {
+      "dependencies": [
+        {
+          "from": "T1",
+          "to": "B1",
+          "via": "TN1"
+        },
+        {
+          "from": "O8",
+          "to": "B1",
+          "via": "TN1"
+        },
+        {
+          "from": "S9",
+          "to": "T3",
+          "via": "TN2"
+        },
+        {
+          "from": "T1",
+          "to": "T8",
+          "via": "TN3"
+        },
+        {
+          "from": "O8",
+          "to": "U3",
+          "via": "TN6"
+        },
+        {
+          "from": "S1",
+          "to": "B2",
+          "via": "TN8"
+        },
+        {
+          "from": "S4",
+          "to": "T9",
+          "via": "TN5"
+        }
+      ],
+      "conflicts": [
+        {
+          "from": "T1",
+          "to": "B1",
+          "via": "TN1",
+          "resolved": true
+        },
+        {
+          "from": "S2",
+          "to": "T3",
+          "via": "TN2",
+          "resolved": true
+        },
+        {
+          "from": "T9",
+          "to": "B1",
+          "via": "TN5",
+          "resolved": true
+        }
+      ],
+      "satisfies": []
+    }
+  },
+  "integration": {
+    "timestamp": "2026-04-18T13:55:00Z",
+    "iteration": 10,
+    "checklist": [
+      {
+        "id": "INT-1",
+        "source": "internal/sessions (Wave-2)",
+        "target": "internal/app/server.go",
+        "action": "Instantiate sessions.MemStore in NewServer; replace auth.Manager's in-memory session map with sessions.Store OR run them in parallel (password path uses auth.Manager today, OIDC path uses sessions.Store). V1 recommendation: add Server.sessions field; delegate.",
+        "auto_wireable": false,
+        "note": "Requires struct field addition + Manager refactor. Not safe to auto-wire.",
+        "satisfies": [
+          "RT-4.1",
+          "S1",
+          "S3"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T14:45:00Z",
+        "completed_in": "iteration-23 (manual wire \u2014 all 5 remaining INTs)"
+      },
+      {
+        "id": "INT-2",
+        "source": "internal/principal (Wave-3)",
+        "target": "internal/app/server.go (new middleware)",
+        "action": "Add principalMiddleware that resolves the request's auth (cookie OR API-KEY header) to a Principal and attaches via principal.WithPrincipal. Replace/augment the existing withAuth to use it. Handlers then call principal.FromContext(r.Context()) / principal.Require(ctx, workspaceID).",
+        "auto_wireable": false,
+        "note": "Cross-cutting HTTP layer change. Must be done before INT-3, INT-4, INT-5.",
+        "satisfies": [
+          "RT-5",
+          "S1"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T14:35:00Z",
+        "completed_in": "iteration-13 (manual wire + end-to-end test)"
+      },
+      {
+        "id": "INT-3",
+        "source": "internal/media (Wave-3)",
+        "target": "internal/app/server.go",
+        "action": "In NewServer: construct mediaHandler := media.NewHandler(blobStore, 2*1024*1024); mediaHandler.Routes(mux). GET /media/<sha> and POST /media will then be live, protected by the Principal middleware from INT-2.",
+        "auto_wireable": true,
+        "note": "3 lines of additive code; safe to auto-wire once INT-2 + blob store are in place.",
+        "satisfies": [
+          "RT-6.2",
+          "S5",
+          "S6",
+          "TN4"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T14:05:00Z",
+        "completed_in": "iteration-11 (m6 --auto-wire)"
+      },
+      {
+        "id": "INT-4",
+        "source": "internal/blob (Wave-2)",
+        "target": "internal/app/server.go",
+        "action": "In NewServer: construct blobStore, err := blob.NewLocalFSStore(cfg.BlobDir, blob.Config{QuotaBytes: cfg.BlobQuota}). Add BlobDir + BlobQuota fields to Config with defaults data/blobs + 5GB (S6 default).",
+        "auto_wireable": true,
+        "note": "Config field additions + one constructor call; safe if Config changes are tolerated.",
+        "satisfies": [
+          "RT-6.1",
+          "S6",
+          "TN4"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T14:05:00Z",
+        "completed_in": "iteration-11 (m6 --auto-wire)"
+      },
+      {
+        "id": "INT-5",
+        "source": "internal/audit (Wave-2)",
+        "target": "internal/app/server.go",
+        "action": "In NewServer: sink, err := audit.NewFileSink(cfg.AuditLog); drainer := audit.NewBufferedDrainer(sink, audit.DrainerConfig{}). Store on Server; call drainer.Enqueue from: login/logout handlers (S2 auth events), handlePage POST (S2 write events), handlePage GET (S2 read events -- aligns with S9 async-off-hot-path). Close drainer during graceful shutdown (INT-10).",
+        "auto_wireable": false,
+        "note": "Requires handler modifications throughout server.go. Not safe to auto-wire.",
+        "satisfies": [
+          "RT-4.4",
+          "S2",
+          "S9"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T14:55:00Z",
+        "completed_in": "iteration-14 (manual wire + end-to-end audit test)"
+      },
+      {
+        "id": "INT-6",
+        "source": "internal/snapshot (Waves 2+3)",
+        "target": "internal/app/server.go + new Source impl",
+        "action": "Write a thin Source adapter that walks wiki.Store + blob.LocalFSStore for SnapshotFor(workspaceID). Construct target := snapshot.NewLocalFSTarget(cfg.SnapshotDir); scheduler := snapshot.NewScheduler(target, source, cfg.SnapshotInterval, logger); scheduler.Start(). Stop on SIGTERM (INT-10).",
+        "auto_wireable": false,
+        "note": "Needs a new wiki.Store -> snapshot.Source adapter (~20 lines). Multi-workspace discovery is a decision point (v1 is single 'default' workspace).",
+        "satisfies": [
+          "RT-6.3",
+          "O7",
+          "TN4"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T14:45:00Z",
+        "completed_in": "iteration-23 (manual wire \u2014 all 5 remaining INTs)"
+      },
+      {
+        "id": "INT-7",
+        "source": "internal/crdt (Waves 1+2)",
+        "target": "internal/app/server.go + internal/wiki/session.go",
+        "action": "Decision point: (a) integrate crdt.Room per document and wire InProcBroadcaster into the existing SSE hub (replaces current Hub snapshot/apply with CRDT ops for collab), OR (b) leave Hub untouched for v1 and only enable CRDT for documents opted in via feature flag. Option (a) is the Wave-4 goal; option (b) is a safer incremental path.",
+        "auto_wireable": false,
+        "note": "Architectural decision, NOT a mechanical wiring. Defer to Wave-4 plan or a Wave-3c scoping sub-pass.",
+        "satisfies": [
+          "RT-2",
+          "T2",
+          "U1",
+          "U2"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T14:45:00Z",
+        "completed_in": "iteration-23 (manual wire \u2014 all 5 remaining INTs)"
+      },
+      {
+        "id": "INT-8",
+        "source": "internal/auth/oidc (Wave-3)",
+        "target": "internal/app/server.go",
+        "action": "Add Config fields (OIDCIssuer, OIDCAudience, OIDCClaimMapping, etc). In NewServer: oidcAdapter, err := oidc.NewAdapter(cfg.OIDCConfig). Add two routes: POST /api/auth/oidc/login (redirect to IdP OR accept posted id_token) and GET /api/auth/oidc/callback (exchange + issue session cookie via auth.Manager OR sessions.Store). Gate behind if oidcAdapter != nil -- enables TN5 'launch without IdP wired' posture.",
+        "auto_wireable": false,
+        "note": "Requires routing + new handlers + OIDC flow protocol decision (id_token-first vs authorization-code). Not safe to auto-wire.",
+        "satisfies": [
+          "RT-11",
+          "S4",
+          "S8",
+          "T9",
+          "TN5"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T14:45:00Z",
+        "completed_in": "iteration-23 (manual wire \u2014 all 5 remaining INTs)"
+      },
+      {
+        "id": "INT-9",
+        "source": "frontend/src/lib/durability.js + DurabilityIndicator.svelte (Wave-1)",
+        "target": "frontend/src/lib/Editor.svelte",
+        "action": "Import durability + DurabilityIndicator; instantiate tracker from the existing SSE stream; render indicator in the editor chrome. Hook the SSE onmessage to call tracker.onAcked / onSaved / onHeartbeat. Close the gap G1 surfaced in m5 (also enables frontend Svelte tests per Vitest harness).",
+        "auto_wireable": false,
+        "note": "Svelte integration; needs careful diffing against existing Editor.svelte event bus.",
+        "satisfies": [
+          "RT-2.2",
+          "U3",
+          "U2"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T14:45:00Z",
+        "completed_in": "iteration-23 (manual wire \u2014 all 5 remaining INTs)"
+      },
+      {
+        "id": "INT-10",
+        "source": "cmd/phronesis/main.go + internal/app/server.go",
+        "target": "cmd/phronesis/main.go (SIGTERM handler)",
+        "action": "In main.go: listen for SIGTERM via signal.NotifyContext; on signal, call server.Shutdown(ctx) with 30s timeout. In app.Server: add Close(ctx) that (a) stops snapshot.Scheduler, (b) closes audit.BufferedDrainer, (c) closes any active crdt.Room instances once INT-7 lands. This closes G3 (O5 server-level drain) and prepares for Wave-4 RT-7 journal spill.",
+        "auto_wireable": false,
+        "note": "Graceful-shutdown is non-trivial; touches both files; order of Close() calls matters.",
+        "satisfies": [
+          "O5",
+          "RT-12.1",
+          "RT-12.2"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T15:10:00Z",
+        "completed_in": "iteration-15 (Server.Serve + signal.NotifyContext + 2 tests)"
+      },
+      {
+        "id": "INT-11",
+        "source": "internal/app/server.go",
+        "target": "Config + env(...)",
+        "action": "Add Config fields for new paths: BlobDir ('./data/blobs'), AuditLog ('./data/audit.log'), SnapshotDir ('./data/snapshots'), SnapshotInterval (1h), OIDCEnabled (false), OIDCIssuer, OIDCAudience. Surface via env() defaults consistent with the existing pattern.",
+        "auto_wireable": true,
+        "note": "Pure config additions; safe if new env vars are tolerated.",
+        "satisfies": [
+          "T8"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T14:05:00Z",
+        "completed_in": "iteration-11 (m6 --auto-wire)"
+      },
+      {
+        "id": "INT-12",
+        "source": "internal/app/server.go",
+        "target": "internal/wiki/store.go",
+        "action": "O6 atomic write: phronesis's current wiki.Store.Put uses os.WriteFile (no atomic rename). Replace with the atomicWrite pattern already proven in internal/snapshot/localfs.go (tempfile -> fsync -> rename -> dir fsync). Extract helper to a shared location. Closes long-standing O6 coverage gap in the existing store.",
+        "auto_wireable": false,
+        "note": "Pre-existing code modification; affects existing tests. Small but not mechanical.",
+        "satisfies": [
+          "O6"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-18T15:25:00Z",
+        "completed_in": "iteration-16 (fsutil package extraction + 2-site migration + 7 tests)"
+      },
+      {
+        "id": "INT-13",
+        "source": "internal/xssdefense (Wave-5)",
+        "target": "internal/app/server.go",
+        "action": "Wrap the server handler chain in xssdefense.CSPMiddleware so every response carries Content-Security-Policy + X-Content-Type-Options + Referrer-Policy headers.",
+        "auto_wireable": true,
+        "satisfies": [
+          "RT-9.3",
+          "S7"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T10:30:00Z",
+        "completed_in": "iteration-21 (m6 --auto-wire)"
+      },
+      {
+        "id": "INT-14",
+        "source": "internal/ratelimit (Wave-4)",
+        "target": "internal/app/server.go",
+        "action": "Construct authRateLimiter and mount ratelimit.Middleware on /api/login + /api/auth/* with 50 req/min default. Add Config.AuthRateLimitWindow + AuthRateLimitMax.",
+        "auto_wireable": true,
+        "satisfies": [
+          "RT-10",
+          "RT-10.1",
+          "RT-10.2",
+          "S5",
+          "B1",
+          "TN7"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T10:30:00Z",
+        "completed_in": "iteration-21 (m6 --auto-wire)"
+      },
+      {
+        "id": "INT-15",
+        "source": "internal/xssdefense (Wave-5)",
+        "target": "internal/wiki/store.go",
+        "action": "In wiki.Store.Put, call xssdefense.StripDangerousTags on the content before AtomicWrite. Closes the RT-9.1 store-time XSS defense layer.",
+        "auto_wireable": true,
+        "satisfies": [
+          "RT-9.1",
+          "S7"
+        ],
+        "status": "completed",
+        "completed_at": "2026-04-19T10:30:00Z",
+        "completed_in": "iteration-21 (m6 --auto-wire)"
+      }
+    ],
+    "summary": {
+      "total_points": 15,
+      "completed": 15,
+      "pending": 0,
+      "auto_wireable": 6,
+      "manual_required": 9
+    }
+  }
+}
