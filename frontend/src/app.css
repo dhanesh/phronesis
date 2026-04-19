@@ -1,0 +1,22 @@
+:root {
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: #1f241c;
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 176, 0.55), transparent 35%),
+    linear-gradient(180deg, #f3efe4 0%, #ebe5d6 100%);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}

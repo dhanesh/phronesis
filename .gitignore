@@ -12,8 +12,8 @@ frontend/dist/
 .idea/
 *.swp
 
-# Go build artifacts
-phronesis
+# Go build artifacts (compiled binary at repo root, anchored to avoid
+# accidentally matching cmd/phronesis/)
 /phronesis
 *.test
 *.out
