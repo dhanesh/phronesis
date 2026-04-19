@@ -51,15 +51,20 @@ func NewManager(username, password string) *Manager {
 	}
 }
 
-// WithStore returns a copy of m that uses store for session persistence.
-// Safe to call once during server wiring; do not change after requests
-// start arriving.
+// WithStore configures m to persist sessions via the supplied Store and
+// returns m for chaining. MUST be called before any requests are served;
+// switching stores at runtime is not supported.
+//
+// When a store is set, the in-memory sessionsMap is no longer used; its
+// backing memory is released to let the GC reclaim it.
 //
 // Satisfies: RT-4.1, INT-1
 func (m *Manager) WithStore(store sessions.Store) *Manager {
-	clone := *m
-	clone.store = store
-	return &clone
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.store = store
+	m.sessionsMap = nil
+	return m
 }
 
 func (m *Manager) Login(username, password string) (string, error) {
@@ -111,23 +116,60 @@ func (m *Manager) Logout(token string) {
 }
 
 func (m *Manager) Username(r *http.Request) (string, bool) {
-	cookie, err := r.Cookie(CookieName)
-	if err != nil {
+	resolved, ok := m.Resolve(r)
+	if !ok {
 		return "", false
 	}
+	if resolved.UserID != "" {
+		return resolved.UserID, true
+	}
+	return resolved.Username, true
+}
 
+// Resolved captures everything Manager knows about the current request's
+// session. When the sessions.Store path is active, all Session fields
+// (PrincipalType, WorkspaceID, Metadata) are populated. On the legacy
+// in-memory path, only Username is set and callers fall back to defaults.
+//
+// Satisfies: INT-1, I1 review fix (OIDC sessions retain auth_method + claims
+// across requests so principalFromRequest can build a correctly-typed
+// principal instead of stamping everything as auth_method=password).
+type Resolved struct {
+	// UserID is populated on the store-backed path (matches sessions.Session.UserID).
+	UserID string
+	// Username is populated on the in-memory path (legacy Session.Username).
+	Username string
+	// PrincipalType is "user" or "service_account"; empty on the in-memory path.
+	PrincipalType string
+	// WorkspaceID the session is scoped to; empty on the in-memory path.
+	WorkspaceID string
+	// Metadata passes provider-specific extras (e.g., auth_method=oidc).
+	Metadata map[string]string
+}
+
+// Resolve returns the full session context for r, or ok=false when the
+// request is unauthenticated or expired.
+func (m *Manager) Resolve(r *http.Request) (Resolved, bool) {
+	cookie, err := r.Cookie(CookieName)
+	if err != nil {
+		return Resolved{}, false
+	}
 	token := strings.TrimSpace(cookie.Value)
 	if token == "" {
-		return "", false
+		return Resolved{}, false
 	}
 
 	if m.store != nil {
 		s, err := m.store.Get(context.Background(), token)
 		if err != nil {
-			// ErrNotFound OR expired (the Store treats them identically).
-			return "", false
+			return Resolved{}, false
 		}
-		return s.UserID, true
+		return Resolved{
+			UserID:        s.UserID,
+			PrincipalType: s.PrincipalType,
+			WorkspaceID:   s.WorkspaceID,
+			Metadata:      s.Metadata,
+		}, true
 	}
 
 	m.mu.RLock()
@@ -137,10 +179,9 @@ func (m *Manager) Username(r *http.Request) (string, bool) {
 		if ok {
 			m.Logout(token)
 		}
-		return "", false
+		return Resolved{}, false
 	}
-
-	return session.Username, true
+	return Resolved{Username: session.Username}, true
 }
 
 func randomToken() (string, error) {

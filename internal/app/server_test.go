@@ -471,6 +471,64 @@ func TestOIDCLoginIssuesSessionCookie(t *testing.T) {
 	}
 }
 
+// @constraint RT-5 I1-fix
+// Regression guard: cookie-authenticated OIDC session must produce a
+// Principal whose Claims["auth_method"] reflects the OIDC origin, NOT
+// the default "password". Before the I1 review fix, principalFromRequest
+// would stamp every cookie session as auth_method=password, dropping the
+// metadata stored by issueOIDCSession.
+func TestOIDCCookieSessionCarriesOIDCAuthMethod(t *testing.T) {
+	secret := []byte("stub-secret-at-least-32-bytes-long!!")
+	cfg := Config{
+		Addr:          ":0",
+		PagesDir:      t.TempDir(),
+		FrontendDist:  t.TempDir(),
+		AdminUser:     "admin",
+		AdminPassword: "secret",
+		AuditLog:      filepath.Join(t.TempDir(), "audit.log"),
+		OIDCEnabled:   true,
+		OIDCIssuer:    "https://idp.test",
+		OIDCAudience:  "phronesis",
+		OIDCSecret:    string(secret),
+	}
+	server, err := NewServer(cfg)
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	defer server.Close(context.Background())
+
+	provider := newStubOIDCProvider("https://idp.test", "phronesis", secret)
+	token, _ := provider.Issue("alice", "Alice")
+
+	// Perform OIDC login to get a session cookie.
+	body, _ := json.Marshal(map[string]string{"id_token": token})
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/auth/oidc/login", bytes.NewReader(body))
+	loginRes := httptest.NewRecorder()
+	server.HTTP().Handler.ServeHTTP(loginRes, loginReq)
+	if loginRes.Code != http.StatusOK {
+		t.Fatalf("oidc login: %d", loginRes.Code)
+	}
+	cookie := loginRes.Result().Cookies()[0]
+
+	// Now craft a follow-up request bearing the cookie and resolve the
+	// principal directly via the server's resolver.
+	followReq := httptest.NewRequest(http.MethodGet, "/api/pages", nil)
+	followReq.AddCookie(cookie)
+	p, ok := server.principalFromRequest(followReq)
+	if !ok {
+		t.Fatal("principalFromRequest: want ok=true, got false")
+	}
+	if got := p.Claims["auth_method"]; got != "oidc" {
+		t.Errorf("auth_method: got %q, want \"oidc\" (I1 regression — metadata dropped)", got)
+	}
+	if p.ID != "alice" {
+		t.Errorf("Principal.ID: got %q, want alice", p.ID)
+	}
+	if p.WorkspaceID != defaultWorkspaceID {
+		t.Errorf("Principal.WorkspaceID: got %q, want %q", p.WorkspaceID, defaultWorkspaceID)
+	}
+}
+
 // @constraint RT-11 INT-8
 // OIDC route returns 404 when OIDC is not enabled (default).
 func TestOIDCLoginNotFoundWhenDisabled(t *testing.T) {

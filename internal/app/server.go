@@ -472,13 +472,35 @@ func (s *Server) auditEnqueue(action string, r *http.Request, resourceID string,
 // Both paths converge on principal.Principal, so downstream authz is identical
 // regardless of auth mechanism.
 func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, bool) {
-	if username, ok := s.auth.Username(r); ok {
+	if resolved, ok := s.auth.Resolve(r); ok {
+		// Prefer the store-backed session fields (OIDC sets PrincipalType +
+		// WorkspaceID + auth_method=oidc metadata) and fall back to defaults
+		// for the legacy in-memory path which only carries username.
+		// Satisfies: I1 review fix, RT-5 (correct auth_method preserved in audit).
+		ptype := principal.Type(resolved.PrincipalType)
+		if ptype == "" {
+			ptype = principal.TypeUser
+		}
+		id := resolved.UserID
+		if id == "" {
+			id = resolved.Username
+		}
+		wsID := resolved.WorkspaceID
+		if wsID == "" {
+			wsID = defaultWorkspaceID
+		}
+		claims := map[string]string{"auth_method": "password"}
+		if resolved.Metadata != nil {
+			if am, ok := resolved.Metadata["auth_method"]; ok && am != "" {
+				claims["auth_method"] = am
+			}
+		}
 		return principal.Principal{
-			Type:        principal.TypeUser,
-			ID:          username,
-			WorkspaceID: defaultWorkspaceID,
+			Type:        ptype,
+			ID:          id,
+			WorkspaceID: wsID,
 			Role:        principal.RoleAdmin,
-			Claims:      map[string]string{"auth_method": "password"},
+			Claims:      claims,
 		}, true
 	}
 	if s.cfg.APIKey != "" {
