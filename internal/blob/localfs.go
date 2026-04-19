@@ -234,7 +234,7 @@ func (s *LocalFSStore) readMeta(wsDir, hash string) (Info, error) {
 	if err := json.Unmarshal(b, &m); err != nil {
 		return Info{}, err
 	}
-	return Info{Hash: m.Hash, Size: m.Size, ContentType: m.ContentType}, nil
+	return Info(m), nil
 }
 
 func safeID(id string) string {

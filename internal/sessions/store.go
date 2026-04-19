@@ -23,10 +23,10 @@ import (
 // Satisfies: S1 (principal-type captured), S3 (session fields needed for
 // secure-cookie emission; cookie flags are the HTTP layer's concern).
 type Session struct {
-	ID            string            // opaque token; the cookie value or bearer principal id
-	UserID        string            // empty for service-account principals
-	WorkspaceID   string            // the workspace this session is scoped to
-	PrincipalType string            // "user" or "service_account" (RT-5)
+	ID            string // opaque token; the cookie value or bearer principal id
+	UserID        string // empty for service-account principals
+	WorkspaceID   string // the workspace this session is scoped to
+	PrincipalType string // "user" or "service_account" (RT-5)
 	CreatedAt     time.Time
 	ExpiresAt     time.Time         // hard expiry (absolute)
 	Metadata      map[string]string // free-form (e.g., oidc_provider, pat_label)

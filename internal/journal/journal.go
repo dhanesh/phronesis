@@ -47,9 +47,9 @@ type Entry struct {
 
 // Journal owns an append-only file on disk. Safe for concurrent Append.
 type Journal struct {
-	path string
-	mu   sync.Mutex
-	f    *os.File
+	path   string
+	mu     sync.Mutex
+	f      *os.File
 	closed bool
 }
 

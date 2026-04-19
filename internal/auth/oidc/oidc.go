@@ -16,10 +16,10 @@ import (
 //
 // Satisfies: RT-11, S4, S8
 type Config struct {
-	Issuer       string        // must match id_token "iss" claim (S4)
-	Audience     string        // must match id_token "aud" claim (S4)
-	Verifier     Verifier      // signature verification strategy (RT-11.1)
-	ClaimMapping ClaimMapping  // id_token -> Principal translation (RT-11.2)
+	Issuer       string           // must match id_token "iss" claim (S4)
+	Audience     string           // must match id_token "aud" claim (S4)
+	Verifier     Verifier         // signature verification strategy (RT-11.1)
+	ClaimMapping ClaimMapping     // id_token -> Principal translation (RT-11.2)
 	Clock        func() time.Time // injectable for tests; defaults to time.Now
 	Leeway       time.Duration    // allowed clock skew on exp/nbf; default 0
 }
@@ -52,13 +52,13 @@ var ErrInvalidToken = errors.New("oidc: invalid token")
 
 // Authenticate validates a signed id_token and returns the resulting
 // Principal. Validates, in order:
-//   1. JWT compact shape (3 base64url segments)
-//   2. Alg + kid from header (rejects alg=none)
-//   3. Signature via cfg.Verifier
-//   4. exp (not expired) and nbf (already valid, if present)
-//   5. iss matches Config.Issuer (S4)
-//   6. aud matches Config.Audience (S4)
-//   7. ClaimMapping.Apply to build Principal (RT-11.2, S8)
+//  1. JWT compact shape (3 base64url segments)
+//  2. Alg + kid from header (rejects alg=none)
+//  3. Signature via cfg.Verifier
+//  4. exp (not expired) and nbf (already valid, if present)
+//  5. iss matches Config.Issuer (S4)
+//  6. aud matches Config.Audience (S4)
+//  7. ClaimMapping.Apply to build Principal (RT-11.2, S8)
 //
 // Note on iat: RFC 7519 makes iat optional and the Verifier can't meaningfully
 // enforce "issued at" bounds without a policy (e.g., reject tokens older than

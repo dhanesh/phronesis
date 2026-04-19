@@ -77,6 +77,27 @@ The compiled frontend is emitted to `frontend/dist`, and the Go server serves th
 - Go `1.24.5`
 - Node.js `22.x`
 - npm `10.x`
+- `goreleaser` (only for local releases; `brew install goreleaser`). CI uses
+  `goreleaser-action@v6` with a pinned version — see
+  [docs/dist-packaging/README.md](./docs/dist-packaging/README.md).
+
+### Quick start
+
+The project ships a [`Makefile`](./Makefile) with seven targets covering the
+common dev loop. Run `make help` for the full list.
+
+```bash
+make test    # Backend tests with -race (dev stub frontend — no npm build needed)
+make lint    # go vet + staticcheck (staticcheck pinned via go.mod tool directive)
+make build   # Production binary: builds frontend + go build -tags=prod
+make clean   # Remove build outputs
+```
+
+The longhand commands below still work; `make` wraps them with the right
+flags (deterministic ldflags, `-tags=prod`, frontend staging) so production
+binaries match what CI emits. See
+[docs/dist-packaging/README.md](./docs/dist-packaging/README.md) for the
+details.
 
 ### Run the Backend
 
@@ -84,7 +105,9 @@ The compiled frontend is emitted to `frontend/dist`, and the Go server serves th
 go run ./cmd/phronesis
 ```
 
-By default the server listens on `:8080`.
+By default the server listens on `:8080`. Binaries built without
+`-tags=prod` (such as `go run` or plain `go build`) serve a dev-stub
+frontend and log a startup warning.
 
 ### Build the Frontend
 
@@ -106,14 +129,14 @@ npm run dev
 Backend tests:
 
 ```bash
-go test ./...
+go test ./...       # or: make test
 ```
 
 Frontend production build check:
 
 ```bash
 cd frontend
-npm run build
+npm run build       # also covered by: make build
 ```
 
 ## Configuration

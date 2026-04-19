@@ -74,14 +74,14 @@ type JWKSCache struct {
 	JWKSURI string
 	TTL     time.Duration
 
-	mu       sync.RWMutex
-	entries  map[string]jwksEntry // keyed by kid
+	mu        sync.RWMutex
+	entries   map[string]jwksEntry // keyed by kid
 	lastFetch time.Time
 }
 
 type jwksEntry struct {
-	key  []byte
-	alg  string
+	key []byte
+	alg string
 }
 
 // NewJWKSCache constructs a cache. TTL defaults to 1h if zero.

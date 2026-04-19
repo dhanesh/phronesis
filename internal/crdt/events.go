@@ -46,9 +46,9 @@ type OpAckedEvent struct {
 // Satisfies: RT-2.1, RT-2.3, O8
 type OpSavedEvent struct {
 	RoomID     string
-	ThroughSeq int64     // all ops with Seq <= ThroughSeq are disk-durable
+	ThroughSeq int64 // all ops with Seq <= ThroughSeq are disk-durable
 	FlushedAt  time.Time
-	FlushDurMs int64     // observed flush duration; feeds O1 metrics + RT-2.4
+	FlushDurMs int64 // observed flush duration; feeds O1 metrics + RT-2.4
 }
 
 // Broadcaster is how a Room fans an op out to peer clients.

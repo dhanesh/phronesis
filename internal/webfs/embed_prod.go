@@ -11,12 +11,18 @@ import (
 //
 // `dist/` is NOT checked into git. `make build` copies the contents of
 // `frontend/dist/` into `internal/webfs/dist/` immediately before invoking
-// `go build -tags=prod ./cmd/phronesis`. If the directory is missing or
-// empty, this compile unit fails at build time with
-//   "pattern dist/*: no matching files found"
-// — which is exactly the loud failure RT-9's acceptance criteria demand,
-// and which prevents accidentally shipping a binary with the dev stub
-// frontend.
+// `go build -tags=prod ./cmd/phronesis`. If the directory is missing the
+// compile fails with
+//
+//	"pattern dist: no matching files found"
+//
+// and if the directory is present-but-empty the compile fails with
+//
+//	"pattern dist: cannot embed directory dist: contains no embeddable files"
+//
+// — either failure is the loud compile-time signal RT-9's acceptance
+// criteria require, preventing an accidental ship of a binary with the
+// dev stub frontend.
 //
 //go:embed dist
 var embedded embed.FS

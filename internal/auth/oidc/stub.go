@@ -38,13 +38,13 @@ func NewStubProvider(issuer, audience string, secret []byte) *StubProvider {
 
 // Claims carries the payload fields callers can set; unset fields are omitted.
 type Claims struct {
-	Subject  string
-	Email    string
-	Name     string
-	Groups   []string
-	TTL      time.Duration
+	Subject   string
+	Email     string
+	Name      string
+	Groups    []string
+	TTL       time.Duration
 	NotBefore time.Duration // relative to now
-	Extra    map[string]any
+	Extra     map[string]any
 }
 
 // Issue returns an HS256-signed id_token with the given claims.

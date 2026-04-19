@@ -132,13 +132,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # T7: validate .goreleaser.yaml schema against the pinned goreleaser
+      # version BEFORE building. Fails in seconds instead of minutes on
+      # config drift. See DECISIONS.md ADR-3.
+      - name: goreleaser check (T7)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: check
+
+      # I4 (review response): if HOMEBREW_TAP_TOKEN is missing we want to
+      # scope the release to skip the Homebrew mirror, not fail the whole
+      # atomic release. Per TN2, GH Release is the atomic root; Homebrew
+      # is a best-effort mirror.
+      - name: compute goreleaser skip flags
+        id: skip
+        run: |
+          flags=""
+          if [ -z "${{ secrets.HOMEBREW_TAP_TOKEN }}" ]; then
+            echo "::warning::HOMEBREW_TAP_TOKEN secret not set; skipping Homebrew publish for this release."
+            flags="--skip=homebrew"
+          fi
+          echo "flags=${flags}" >> "$GITHUB_OUTPUT"
+
       - name: run goreleaser (pinned action version; tool version derived from action)
         id: gh-release
         uses: goreleaser/goreleaser-action@v6
         with:
           # RT-5 adjacency: pin the tool version. Bumps are intentional.
           version: "~> v2"
-          args: release --clean
+          args: release --clean ${{ steps.skip.outputs.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -146,21 +169,32 @@ jobs:
   # Stage 3: mirror-channel audit. Non-blocking for GH Release; if
   # `brew audit` fails the release still stands and a human acts on the
   # alert. (S5 / RT-10.)
+  #
+  # Review response I1: original implementation used `brew audit Formula/...`
+  # which doesn't parse as a tap-qualified name. Rewrote to drop the
+  # formula into a local in-place tap, then audit by the tap-qualified
+  # formula identifier. Gated on secrets.HOMEBREW_TAP_TOKEN presence so
+  # the first release (before tap provisioning) doesn't flake the step.
   audit-brew:
     needs: release
+    if: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
     runs-on: macos-14
     name: brew audit (S5 / RT-10)
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout tap
+        uses: actions/checkout@v4
         with:
           repository: dhanesh/homebrew-phronesis
-          # Trailing `/` avoids the tap-name-mismatch warning.
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-phronesis
           ref: main
 
-      - name: brew audit --strict --new
+      - name: stage formula into a local tap
         run: |
-          cd homebrew-phronesis
-          brew tap-new --no-git local/phronesis || true
-          brew audit --strict --new Formula/phronesis.rb
+          TAP_DIR="$(brew --repository)/Library/Taps/local/homebrew-phronesis"
+          mkdir -p "$TAP_DIR/Formula"
+          cp homebrew-phronesis/Formula/phronesis.rb "$TAP_DIR/Formula/"
+
+      - name: brew audit --strict --new
+        run: brew audit --strict --new local/phronesis/phronesis

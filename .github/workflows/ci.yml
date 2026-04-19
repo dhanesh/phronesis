@@ -48,6 +48,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: gofmt
+        # T6 also covers gofmt. Fail if any Go file outside frontend/ is
+        # unformatted. Review response M3.
+        run: |
+          UNFMT="$(gofmt -l . | grep -v '^frontend/' || true)"
+          if [ -n "$UNFMT" ]; then
+            echo "::error::gofmt violations:"
+            echo "$UNFMT"
+            exit 1
+          fi
+
       - name: go vet
         run: go vet ./...
 

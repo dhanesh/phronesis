@@ -2,7 +2,6 @@ package crdt
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 )
@@ -149,6 +148,6 @@ func TestRoomThroughInProcBroadcaster(t *testing.T) {
 }
 
 // stubFlusher is a no-op flusher for tests that only exercise broadcast paths.
-type stubFlusher struct{ mu sync.Mutex }
+type stubFlusher struct{}
 
 func (s *stubFlusher) Flush(roomID string, ops []Op) error { return nil }

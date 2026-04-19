@@ -27,9 +27,9 @@ import (
 // propagation (principal_type field distinguishes user vs service_account).
 type Event struct {
 	At            time.Time
-	Action        string            // e.g., "auth.login", "doc.edit", "admin.role_change", "doc.view"
+	Action        string // e.g., "auth.login", "doc.edit", "admin.role_change", "doc.view"
 	PrincipalID   string
-	PrincipalType string            // "user" | "service_account" (RT-5)
+	PrincipalType string // "user" | "service_account" (RT-5)
 	WorkspaceID   string
 	ResourceID    string            // optional: document id, user id, etc.
 	Metadata      map[string]string // free-form attributes (ip, ua, request_id)
@@ -49,9 +49,9 @@ type Sink interface {
 type BufferedDrainer struct {
 	sink     Sink
 	buf      chan Event
-	batch    int                  // max batch size handed to sink.Write
-	interval time.Duration        // max wait before flushing a partial batch
-	onDrop   func(dropped int)    // observability hook (O1 counter)
+	batch    int               // max batch size handed to sink.Write
+	interval time.Duration     // max wait before flushing a partial batch
+	onDrop   func(dropped int) // observability hook (O1 counter)
 	done     chan struct{}
 	wg       sync.WaitGroup
 	closed   chan struct{}

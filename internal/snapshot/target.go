@@ -27,7 +27,7 @@ type Snapshot struct {
 
 // Info is a lightweight summary returned by Target.List.
 type Info struct {
-	ID          string    // opaque, target-specific
+	ID          string // opaque, target-specific
 	WorkspaceID string
 	At          time.Time
 	Size        int64 // bytes on target; -1 if unknown

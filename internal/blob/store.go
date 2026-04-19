@@ -77,9 +77,9 @@ func ComputeHash(data []byte) string {
 //
 // Satisfies: S6
 type Config struct {
-	AllowedTypes    map[string]struct{} // content-types permitted by Put
-	QuotaBytes      int64               // per-workspace byte cap; 0 = unlimited
-	MaxBlobBytes    int64               // per-blob byte cap; 0 = unlimited
+	AllowedTypes map[string]struct{} // content-types permitted by Put
+	QuotaBytes   int64               // per-workspace byte cap; 0 = unlimited
+	MaxBlobBytes int64               // per-blob byte cap; 0 = unlimited
 }
 
 // DefaultAllowedTypes matches the default in S6 (png, jpeg, gif, webp, mp4, pdf).

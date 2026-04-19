@@ -153,6 +153,17 @@ func LoadConfig() Config {
 const defaultWorkspaceID = "default"
 
 func NewServer(cfg Config) (*Server, error) {
+	// Review response I5/M5: emit the frontend-mode signal at construction
+	// time so operators see it immediately in logs rather than on the first
+	// HTTP request. The stub warning is explicitly loud so a missing
+	// -tags=prod on a production build is impossible to overlook.
+	if webfs.IsStub() {
+		log.Printf("[phronesis] WARNING: dev-stub frontend active. " +
+			"Build with `make build` or `go build -tags=prod ./cmd/phronesis` for production.")
+	} else {
+		log.Printf("[phronesis] frontend: serving embedded production assets")
+	}
+
 	// Apply defaults for Wave-2/3 Config fields so minimal Configs (e.g. tests)
 	// continue to work unchanged. LoadConfig sets richer defaults via env().
 	if cfg.BlobDir == "" {
@@ -248,19 +259,19 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	app := &Server{
-		cfg:               cfg,
-		auth:              authManager,
-		store:             store,
-		hub:               wiki.NewHub(store),
-		staticFS:          staticHandler(cfg.FrontendDist),
-		blobStore:         blobStore,
-		media:             mediaHandler,
-		auditSink:         auditSink,
-		auditDrainer:      auditDrainer,
-		sessionStore:      sessionStore,
-		broadcaster:       broadcaster,
-		journal:           journalFile,
-		oidc:              oidcAdapter,
+		cfg:          cfg,
+		auth:         authManager,
+		store:        store,
+		hub:          wiki.NewHub(store),
+		staticFS:     staticHandler(cfg.FrontendDist),
+		blobStore:    blobStore,
+		media:        mediaHandler,
+		auditSink:    auditSink,
+		auditDrainer: auditDrainer,
+		sessionStore: sessionStore,
+		broadcaster:  broadcaster,
+		journal:      journalFile,
+		oidc:         oidcAdapter,
 	}
 
 	// INT-6: snapshot scheduler. When SnapshotDir is non-empty, construct
@@ -818,13 +829,6 @@ func Must(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func wrap(err error, message string) error {
-	if err == nil {
-		return nil
-	}
-	return errors.New(message + ": " + err.Error())
 }
 
 // handleOIDCLogin is the token-first OIDC login handler (INT-8).

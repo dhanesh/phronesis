@@ -21,13 +21,13 @@ func TestLocalFSStoreRestoreRoundTrip(t *testing.T) {
 		WorkspaceID: "ws-alpha",
 		At:          time.Date(2026, 4, 18, 12, 0, 0, 0, time.UTC),
 		Markdown: map[string][]byte{
-			"home.md":          []byte("# Home\n\nWelcome."),
-			"notes/daily.md":   []byte("- item 1\n- item 2\n"),
+			"home.md":           []byte("# Home\n\nWelcome."),
+			"notes/daily.md":    []byte("- item 1\n- item 2\n"),
 			"deep/very/nest.md": []byte("deep"),
 		},
 		Blobs: map[string][]byte{
 			"abc123deadbeef": []byte("\x89PNG\r\n\x1a\n"),
-			"ff00":            []byte("tiny blob"),
+			"ff00":           []byte("tiny blob"),
 		},
 	}
 

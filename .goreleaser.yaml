@@ -23,6 +23,12 @@ before:
     - cmd: bash -c "rm -rf internal/webfs/dist && mkdir -p internal/webfs/dist && cp -R frontend/dist/. internal/webfs/dist/"
     - go mod download
 
+# Review response I3: proxy:true uses GOPROXY for module resolution,
+# eliminating local GOPATH vendoring as a source of byte-level
+# non-determinism. Required for T2's full cross-machine guarantee.
+gomod:
+  proxy: true
+
 builds:
   - id: phronesis
     main: ./cmd/phronesis

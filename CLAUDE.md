@@ -72,8 +72,12 @@ This file describes the current project stack and implementation boundaries for 
 
 ## Development Conventions
 
-- Use `go test ./...` for backend verification.
-- Use `npm run build` in `frontend/` for frontend verification.
+- Prefer `make test` / `make lint` / `make build` over raw `go` / `npm`
+  invocations. The Makefile wraps them with the right flags (deterministic
+  ldflags, `-tags=prod`, frontend staging). Raw `go test ./...` and
+  `cd frontend && npm run build` still work as a fallback.
+- Backend tests use a dev-stub frontend (see `internal/webfs/`) so
+  `make test` runs without a prior `npm run build`.
 - Prefer ASCII unless a file already requires Unicode.
 - Keep public behavior and docs aligned with the actual codebase state.
 - If changing stack choices, update this file and the README in the same change.

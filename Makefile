@@ -62,7 +62,13 @@ build: ## Build production binary (embeds frontend, deterministic ldflags)
 test: ## Run backend test suite (dev stub frontend — no npm build needed)
 	go test -race -timeout=90s ./...
 
-lint: ## Run go vet + staticcheck (pinned via go.mod tool directive)
+lint: ## Run gofmt + go vet + staticcheck (all three gate CI)
+	@UNFMT="$$(gofmt -l . 2>/dev/null | grep -v '^frontend/' || true)"; \
+	if [ -n "$$UNFMT" ]; then \
+		echo "error: gofmt violations; run 'gofmt -w <file>' on:" >&2; \
+		echo "$$UNFMT" >&2; \
+		exit 1; \
+	fi
 	go vet ./...
 	go tool staticcheck ./...
 
@@ -72,8 +78,14 @@ release: ## Publish to all channels (set CHANNEL=homebrew|docker|nfpm|github to 
 		exit 1; \
 	fi
 	@if [ -n "$(CHANNEL)" ]; then \
+		case '$(CHANNEL)' in \
+			github)   SKIP='docker,homebrew,nfpm' ;; \
+			docker)   SKIP='archive,homebrew,nfpm' ;; \
+			homebrew) SKIP='archive,docker,nfpm' ;; \
+			nfpm)     SKIP='archive,docker,homebrew' ;; \
+			*) echo "error: invalid CHANNEL=$(CHANNEL); expected one of: github|docker|homebrew|nfpm" >&2; exit 1 ;; \
+		esac; \
 		echo "→ releasing channel: $(CHANNEL)"; \
-		SKIP="$$(case '$(CHANNEL)' in github) echo 'docker,homebrew,nfpm';; docker) echo 'archive,homebrew,nfpm';; homebrew) echo 'archive,docker,nfpm';; nfpm) echo 'archive,docker,homebrew';; *) echo 'none';; esac)"; \
 		goreleaser release --clean --skip="$$SKIP"; \
 	else \
 		echo "→ releasing all channels"; \
@@ -88,3 +100,15 @@ docker: ## Build local multi-arch container image (goreleaser snapshot, no publi
 
 clean: ## Remove build outputs (binary, frontend/dist, webfs/dist, goreleaser dist)
 	rm -rf phronesis dist $(WEBFS_DIST) $(FRONTEND_DIST)
+
+# Review response I2: internal/webfs/dist/ is populated by `make build`
+# and gitignored. It should never be present when committing. This is
+# not a user-facing target (no ## docstring) so `make help` stays at 7
+# entries. Pre-commit hook or release playbook can invoke it as:
+#   make -s _check-clean || { echo "run: make clean"; exit 1; }
+.PHONY: _check-clean
+_check-clean:
+	@if [ -d "$(WEBFS_DIST)" ] && [ -n "$$(ls -A $(WEBFS_DIST) 2>/dev/null)" ]; then \
+		echo "warn: $(WEBFS_DIST) has content; run 'make clean' before commit to avoid accidental force-adds" >&2; \
+		exit 1; \
+	fi

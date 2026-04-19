@@ -27,15 +27,16 @@ func TestPrincipalTypeDistinguishesUserVsServiceAccount(t *testing.T) {
 
 // @constraint RT-5 B2 TN8
 // The three RBAC roles implement a strict inclusion ladder:
-//   viewer  can read
-//   editor  can read + write
-//   admin   can read + write + admin
+//
+//	viewer  can read
+//	editor  can read + write
+//	admin   can read + write + admin
 func TestRBACRoleLadder(t *testing.T) {
 	tests := []struct {
-		role   Role
-		read   bool
-		write  bool
-		admin  bool
+		role  Role
+		read  bool
+		write bool
+		admin bool
 	}{
 		{RoleViewer, true, false, false},
 		{RoleEditor, true, true, false},

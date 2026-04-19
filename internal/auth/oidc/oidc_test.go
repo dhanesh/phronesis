@@ -108,9 +108,9 @@ func TestAuthenticateRejectsWrongAudience(t *testing.T) {
 	// Recreate adapter with the new provider's claim (secret identical), and
 	// check it falls out at aud validation.
 	adapter2, err := NewAdapter(Config{
-		Issuer:       "https://idp.test",
-		Audience:     "collab-wiki", // adapter expects collab-wiki; provider issues other-service
-		Verifier:     mismatchedAudProvider.Verifier(),
+		Issuer:   "https://idp.test",
+		Audience: "collab-wiki", // adapter expects collab-wiki; provider issues other-service
+		Verifier: mismatchedAudProvider.Verifier(),
 		ClaimMapping: ClaimMapping{
 			SchemaVersion:    CurrentSchemaVersion,
 			UserIDClaim:      "sub",

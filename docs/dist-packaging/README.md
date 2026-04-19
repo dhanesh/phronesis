@@ -92,6 +92,18 @@ cd /tmp/phronesis-verify && make build && shasum -a 256 phronesis
 | `make test` (local, fresh clone) | p95 ≤ 30s (T5) | `time make test` |
 | Full release on CI (`git push --tags` → all channels published) | p95 ≤ 10 min (O5 / RT-7) | GH Actions run summary, trailing 10 releases |
 
+### Test-timeout triplet
+
+Three different timeout values exist in the repo on purpose:
+
+| Location | Timeout | Intent |
+|----------|---------|--------|
+| `T5` constraint (docs) | 30s | The contract — what we promise p95 will hit on a fresh clone. |
+| `Makefile`'s `test` target | 90s | Local flake tolerance. A slow disk or cold module cache should not flake the dev loop. |
+| `.github/workflows/ci.yml` | 120s | CI runner variance. Shared runners occasionally take 2–3× local wall-clock. |
+
+The three are intentionally different. The 30s figure is the budget we measure against; the 90s and 120s are operational ceilings that prevent CI flakes from masking real regressions. A test suite that *regularly* breaches 30s locally is a T5 violation even if it fits under 90s — the Makefile timeout is a safety net, not the target.
+
 ## Further reading
 
 - [`DECISIONS.md`](DECISIONS.md) — why each choice was made; traces back to constraints and tensions.

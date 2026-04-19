@@ -494,7 +494,8 @@
           "source": "Makefile",
           "target": "README.md",
           "action": "Add 'Quick start' subsection preferring `make test` / `make build` / `make help`; keep raw `go run` + `npm run build` as the fallback path.",
-          "status": "pending",
+          "status": "completed",
+          "completed_at": "2026-04-19T18:45:00Z",
           "auto_wireable": true,
           "blocking": false,
           "satisfies": ["U1", "RT-6"]
@@ -537,7 +538,8 @@
           "source": "Makefile",
           "target": "CLAUDE.md (project-level instructions)",
           "action": "Add a line under 'Development Conventions' preferring `make test` / `make lint` over raw `go test ./...` so future contributors default to the new entry points.",
-          "status": "pending",
+          "status": "completed",
+          "completed_at": "2026-04-19T18:45:00Z",
           "auto_wireable": true,
           "blocking": false,
           "satisfies": ["U1"]
@@ -547,7 +549,8 @@
           "source": "Makefile (release target)",
           "target": "Local dev environment docs",
           "action": "Current docs/dist-packaging/README.md covers the `brew install goreleaser` requirement for local release. Optionally cross-reference from the top-level README's Development section so it's discoverable before the reader digs into the feature docs.",
-          "status": "pending",
+          "status": "completed",
+          "completed_at": "2026-04-19T18:45:00Z",
           "auto_wireable": true,
           "blocking": false,
           "satisfies": ["T7"]
@@ -555,11 +558,12 @@
       ],
       "summary": {
         "total_points": 6,
-        "completed": 0,
-        "pending": 6,
+        "completed": 3,
+        "pending": 3,
         "auto_wireable": 3,
         "manual_required": 3,
-        "blocking_pre_release": 2
+        "blocking_pre_release": 2,
+        "auto_wire_completed_at": "2026-04-19T18:45:00Z"
       },
       "in_repo_integration_pre_done_by_m4": [
         "internal/app/server.go was refactored to use webfs.FS() during m4 generation — no post-hoc mod-declaration or import work needed.",
@@ -742,6 +746,45 @@
       "manual_required": 3,
       "blocking_pre_release": 2,
       "mode": "check-only"
+    },
+    {
+      "number": 8,
+      "phase": "integrate",
+      "timestamp": "2026-04-19T18:45:00Z",
+      "result": "Auto-wire pass executed 3 doc-level integrations. INT-D1: Added 'Quick start' subsection to README.md preferring `make test`/`make build`/`make help`, with raw `go run` + `npm run build` kept as the fallback path; added a warning note that non-prod builds serve the dev stub. INT-D5: Updated CLAUDE.md 'Development Conventions' to prefer Makefile entry points, noting the webfs stub lets `make test` run without a prior `npm run build`. INT-D6: Added goreleaser-install pointer in README's Prerequisites section with a deep-link to docs/dist-packaging/README.md. Both top-level README and CLAUDE.md now reference the new Makefile surface. 3 integration points remain pending — all external (INT-D2 tap repo creation, INT-D3 HOMEBREW_TAP_TOKEN provisioning, INT-D4 first v*.*.* tag push) and outside the scope of what auto-wire can perform.",
+      "integration_points": 6,
+      "completed": 3,
+      "pending": 3,
+      "auto_wireable": 3,
+      "manual_required": 3,
+      "blocking_pre_release": 2,
+      "mode": "auto-wire"
+    },
+    {
+      "number": 9,
+      "phase": "review",
+      "timestamp": "2026-04-19T19:15:00Z",
+      "result": "superpowers:code-reviewer walked the 8f1bc4e diff and surfaced 2 Critical, 5 Important, 7 Minor findings. All Critical + Important addressed; 6 of 7 Minor addressed. C1 (Critical — staticcheck v0.5.1 fails under Go 1.24's export-data format version:2; bumped to v0.6.1 which supports Go 1.24 without forcing the go.mod floor past 1.24.5). C2 (Critical — T7 contract required `goreleaser check` but workflow ran release directly; added check step before release). I1 (broken audit-brew step: `brew audit Formula/phronesis.rb` was syntactically invalid; rewrote to stage formula into a local in-place tap then audit by tap-qualified name; gated on HOMEBREW_TAP_TOKEN presence so first release doesn't fail the step). I2 (dist/ housekeeping: added hidden `_check-clean` Makefile target that warns + exits non-zero if internal/webfs/dist/ has content; intended for pre-commit hooks / release playbooks without polluting the 7-target help surface). I3 (added `gomod: proxy: true` to .goreleaser.yaml for full cross-machine determinism per T2). I4 (guarded HOMEBREW_TAP_TOKEN: missing secret now scopes --skip=homebrew rather than failing the atomic release, preserving TN2's GH-Release-as-atomic-root invariant). I5/M5 (moved startup warning from webfs sync.Once to server.NewServer canonical call site, making the warning testable — added TestNewServerLogsFrontendMode with log.SetOutput capture; warning now fires at server construction, not on first request). M1 (corrected embed_prod.go comment — the real error messages are `pattern dist: no matching files found` for missing dir and `pattern dist: cannot embed directory dist: contains no embeddable files` for empty dir). M2 (Makefile CHANNEL validation now errors explicitly on unknown values instead of silently producing --skip=none). M3 (added gofmt check to both `make lint` and ci.yml; auto-formatted 12 pre-existing drift files from the collab-wiki artifacts). M4 (added `<meta name=\"robots\" content=\"noindex,nofollow\">` to stub/index.html so accidentally-exposed dev stubs don't get indexed). M7 (documented the 30s-budget / 90s-Makefile / 120s-CI timeout triplet in docs/dist-packaging/README.md with explicit rationale for why each differs). Also cleared 3 pre-existing staticcheck findings that surfaced once v0.6.1 was active: deleted unused `wrap` in server.go; converted struct literal to `Info(m)` conversion in blob/localfs.go (identical layout); removed unused `mu sync.Mutex` from stubFlusher in broadcast_test.go. M6 (tag deletion reversibility classification): reviewed — already properly recorded in reversibility_log as REVERSIBLE_WITH_COST with consumer-facing blast radius noted. Tests green (full suite + new startup-log test); staticcheck clean; gofmt clean; `make test` ~19s; `make lint` passes; `_check-clean` passes.",
+      "review_findings": {
+        "critical": 2,
+        "important": 5,
+        "minor": 7
+      },
+      "addressed": {
+        "critical": 2,
+        "important": 5,
+        "minor": 6
+      },
+      "deferred": {
+        "important": 0,
+        "minor": 1
+      },
+      "deferred_items": [
+        {"id": "M6", "reason": "Already properly recorded in reversibility_log as REVERSIBLE_WITH_COST; reviewer's nuance is about wording not classification"}
+      ],
+      "pre_existing_lint_fixes": 3,
+      "files_auto_formatted": 12,
+      "new_test": "internal/app/webfs_startup_test.go:TestNewServerLogsFrontendMode"
     }
   ],
   "convergence": {
