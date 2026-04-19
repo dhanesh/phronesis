@@ -91,6 +91,14 @@ type Server struct {
 	http     *http.Server
 	staticFS http.Handler
 
+	// shutdownCh is closed by http.Server's RegisterOnShutdown callback.
+	// Long-lived handlers (e.g., SSE) select on it alongside r.Context().Done()
+	// so http.Shutdown doesn't have to wait for every client to disconnect.
+	// Without this, a single open /api/pages/<name>/events stream would hold
+	// Shutdown for the full drainTimeout budget. See commit log for the bug
+	// that motivated this (Ctrl-C with active SSE = 30s hang).
+	shutdownCh chan struct{}
+
 	// Wave-2/3 additions (INT-3, INT-4, INT-5).
 	blobStore    blob.Store
 	media        *media.Handler
@@ -328,6 +336,11 @@ func NewServer(cfg Config) (*Server, error) {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	app.http = server
+
+	// Wire the server-shutdown signal so long-lived handlers (SSE) can exit
+	// promptly instead of waiting for the client to disconnect.
+	app.shutdownCh = make(chan struct{})
+	server.RegisterOnShutdown(func() { close(app.shutdownCh) })
 
 	// INT-6: start the snapshot scheduler after the Server is fully
 	// assembled. Stop is handled by Server.Close.
@@ -720,6 +733,11 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, name strin
 	for {
 		select {
 		case <-ctx.Done():
+			return
+		case <-s.shutdownCh:
+			// Server-initiated shutdown: return promptly so http.Shutdown
+			// doesn't block waiting for this long-lived handler. The client
+			// will reconnect when the new server comes up.
 			return
 		case <-heartbeat.C:
 			fmt.Fprint(w, ": ping\n\n")
