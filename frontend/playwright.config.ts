@@ -1,14 +1,16 @@
 // Satisfies: T1 (Playwright), T2 (Chromium only), O2 (≤5min p95 via sharding),
 //            O3 (retries=2 CI / 0 local), O4 (trace+screenshot+video).
-// Run via: cd frontend && npx playwright test --config ../playwright.config.ts
+// Run via: cd frontend && npx playwright test
 import { defineConfig, devices } from '@playwright/test';
 import * as path from 'path';
 
-const ROOT = __dirname; // repo root — config file lives here
+// Config lives in frontend/ so @playwright/test resolves via frontend/node_modules.
+// All test artifacts are anchored to the repo root for consistent CI artifact paths.
+const REPO_ROOT = path.resolve(__dirname, '..');
 
 export default defineConfig({
-  testDir: path.join(ROOT, 'tests', 'e2e'),
-  outputDir: path.join(ROOT, 'test-results'),
+  testDir: path.join(REPO_ROOT, 'tests', 'e2e'),
+  outputDir: path.join(REPO_ROOT, 'test-results'),
 
   // O3: CI retries=2 to absorb flakes; local=0 for speed
   retries: process.env.CI ? 2 : 0,
@@ -26,12 +28,12 @@ export default defineConfig({
   // RT-7 + RT-9: blob reporter for shard merging; JSON for flake-monitor; list for CI output
   reporter: process.env.CI
     ? [
-        ['blob', { outputFolder: path.join(ROOT, 'blob-report') }],
+        ['blob', { outputFolder: path.join(REPO_ROOT, 'blob-report') }],
         ['list'],
-        ['json', { outputFile: path.join(ROOT, 'test-results', 'results.json') }],
+        ['json', { outputFile: path.join(REPO_ROOT, 'test-results', 'results.json') }],
       ]
     : [
-        ['html', { open: 'on-failure', outputFolder: path.join(ROOT, 'playwright-report') }],
+        ['html', { open: 'on-failure', outputFolder: path.join(REPO_ROOT, 'playwright-report') }],
         ['list'],
       ],
 
