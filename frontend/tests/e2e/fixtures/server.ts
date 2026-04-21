@@ -9,8 +9,9 @@ const BASE_PORT = 4100;
 const MAX_WORKERS_PER_SHARD = 4;
 
 // PHRONESIS_BIN is set in CI to the downloaded binary path; locally defaults to repo-root binary.
+// Path: frontend/tests/e2e/fixtures/ → ../../../.. → repo root → phronesis
 const BINARY = process.env.PHRONESIS_BIN
-  ?? path.resolve(__dirname, '..', '..', '..', 'phronesis');
+  ?? path.resolve(__dirname, '..', '..', '..', '..', 'phronesis');
 
 async function waitForReady(url: string, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

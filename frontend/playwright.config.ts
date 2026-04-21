@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const REPO_ROOT = path.resolve(fileURLToPath(import.meta.url), '..', '..');
 
 export default defineConfig({
-  testDir: path.join(REPO_ROOT, 'tests', 'e2e'),
+  testDir: './tests/e2e',
   outputDir: path.join(REPO_ROOT, 'test-results'),
 
   // O3: CI retries=2 to absorb flakes; local=0 for speed
