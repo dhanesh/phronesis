@@ -4,14 +4,15 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 const BASE_PORT = 4100;
 const MAX_WORKERS_PER_SHARD = 4;
 
 // PHRONESIS_BIN is set in CI to the downloaded binary path; locally defaults to repo-root binary.
-// Path: frontend/tests/e2e/fixtures/ → ../../../.. → repo root → phronesis
+// Path: frontend/tests/e2e/fixtures/ → up 4 levels → repo root → phronesis
 const BINARY = process.env.PHRONESIS_BIN
-  ?? path.resolve(__dirname, '..', '..', '..', '..', 'phronesis');
+  ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'phronesis');
 
 async function waitForReady(url: string, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

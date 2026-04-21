@@ -4,8 +4,9 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
-const E2E_ROOT = __dirname; // tests/e2e/
+const E2E_ROOT = path.dirname(fileURLToPath(import.meta.url)); // frontend/tests/e2e/
 
 const REQUIRED_DIRS = ['auth', 'wiki', 'collab', 'blob', 'admin', 'rate-limit'];
 
