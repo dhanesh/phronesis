@@ -3,10 +3,11 @@
 // Run via: cd frontend && npx playwright test
 import { defineConfig, devices } from '@playwright/test';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
-// Config lives in frontend/ so @playwright/test resolves via frontend/node_modules.
-// All test artifacts are anchored to the repo root for consistent CI artifact paths.
-const REPO_ROOT = path.resolve(__dirname, '..');
+// Config lives in frontend/ (ESM scope — no __dirname) so @playwright/test resolves
+// via frontend/node_modules. All artifacts anchored to the repo root for CI paths.
+const REPO_ROOT = path.resolve(fileURLToPath(import.meta.url), '..', '..');
 
 export default defineConfig({
   testDir: path.join(REPO_ROOT, 'tests', 'e2e'),
