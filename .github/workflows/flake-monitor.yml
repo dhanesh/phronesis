@@ -41,45 +41,9 @@ jobs:
 
       - name: compute flake rate
         id: flake
-        run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          const path = require('path');
-
-          const dataDir = 'flake-data';
-          if (!fs.existsSync(dataDir)) { console.log('No flake data found'); process.exit(0); }
-
-          const runs = fs.readdirSync(dataDir);
-          let totalSpecs = 0, totalFlakes = 0;
-          const specFlakes = {};
-
-          for (const run of runs) {
-            const resultsPath = path.join(dataDir, run, 'results.json');
-            if (!fs.existsSync(resultsPath)) continue;
-            try {
-              const report = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-              for (const suite of (report.suites ?? [])) {
-                for (const spec of (suite.specs ?? [])) {
-                  const title = spec.title;
-                  totalSpecs++;
-                  const retried = spec.tests?.some(t => t.results?.some(r => r.retry > 0 && r.status === 'passed'));
-                  if (retried) {
-                    totalFlakes++;
-                    specFlakes[title] = (specFlakes[title] ?? 0) + 1;
-                  }
-                }
-              }
-            } catch {}
-          }
-
-          const flakeRate = totalSpecs > 0 ? (totalFlakes / totalSpecs * 100).toFixed(2) : '0.00';
-          console.log(`Flake rate: ${flakeRate}% (${totalFlakes}/${totalSpecs} specs retried-then-passed)`);
-          console.log('Per-spec flake counts:', JSON.stringify(specFlakes, null, 2));
-
-          const summary = `## E2E Flake Rate Report\n\n**Trailing ${runs.length} runs** | **Rate: ${flakeRate}%** | Threshold: 5%\n\n${Object.entries(specFlakes).map(([k,v]) => `- \`${k}\`: ${v} flakes`).join('\n') || '_No flakes detected_'}`;
-          fs.writeFileSync(process.env.GITHUB_STEP_SUMMARY ?? '/dev/null', summary);
-          fs.writeFileSync('flake-rate.txt', flakeRate);
-          EOF
+        env:
+          FLAKE_DATA_DIR: flake-data
+        run: node scripts/compute-flake-rate.js
 
       - name: open flake-alert issue if threshold exceeded
         if: always()
