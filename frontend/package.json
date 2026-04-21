@@ -18,6 +18,7 @@
     "svelte": "^5.28.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.50.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "vite": "^6.3.5"
   }
