@@ -6,13 +6,14 @@ import * as os from 'os';
 import * as path from 'path';
 import { test as serverTest } from './server';
 
-type AuthFixtures = {
+// Only workerAuthFile is worker-scoped (computed once per worker process).
+// storageState and baseURL are test-scoped Playwright built-ins — we override their
+// values but cannot change their scope.
+type AuthWorkerFixtures = {
   workerAuthFile: string;
-  storageState: string;
-  baseURL: string;
 };
 
-export const test = serverTest.extend<Record<string, never>, AuthFixtures>({
+export const test = serverTest.extend<{}, AuthWorkerFixtures>({
   // Log in once per worker via POST /api/login; save cookie to disk as storageState JSON.
   workerAuthFile: [
     async ({ workerBaseURL, workerPort }, use) => {
@@ -36,20 +37,14 @@ export const test = serverTest.extend<Record<string, never>, AuthFixtures>({
     { scope: 'worker' },
   ],
 
-  // Override Playwright's built-in storageState fixture with our worker-scoped path.
-  // This causes every browser context to start authenticated.
-  storageState: [
-    async ({ workerAuthFile }, use) => {
-      await use(workerAuthFile);
-    },
-    { scope: 'worker' },
-  ],
+  // Override Playwright's built-in storageState (test-scoped) to point to worker auth file.
+  // This causes every browser context created in specs to start authenticated.
+  storageState: async ({ workerAuthFile }, use) => {
+    await use(workerAuthFile);
+  },
 
-  // Override baseURL so specs can use relative paths (/w/page, /api/...).
-  baseURL: [
-    async ({ workerBaseURL }, use) => {
-      await use(workerBaseURL);
-    },
-    { scope: 'worker' },
-  ],
+  // Override Playwright's built-in baseURL (test-scoped) so specs can use relative paths.
+  baseURL: async ({ workerBaseURL }, use) => {
+    await use(workerBaseURL);
+  },
 });
