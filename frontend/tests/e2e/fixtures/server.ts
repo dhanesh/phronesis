@@ -76,9 +76,9 @@ type ServerFixtures = {
 
 export const test = base.extend<Record<string, never>, ServerFixtures>({
   workerPort: [
-    async ({ workerIndex }, use) => {
+    async ({}, use, workerInfo) => {
       const shardIndex = parseInt(process.env.SHARD_INDEX ?? '0', 10);
-      await use(BASE_PORT + shardIndex * MAX_WORKERS_PER_SHARD + workerIndex);
+      await use(BASE_PORT + shardIndex * MAX_WORKERS_PER_SHARD + workerInfo.workerIndex);
     },
     { scope: 'worker' },
   ],
