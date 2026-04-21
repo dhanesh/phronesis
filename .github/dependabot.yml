@@ -1,0 +1,22 @@
+# Satisfies: RT-10 (O5) — Playwright version bumps surfaced as human-reviewed PRs.
+# Auto-merge is intentionally disabled so Playwright upgrades must pass a fresh e2e run.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "playwright"
+    ignore:
+      - dependency-name: "@playwright/test"
+        # Never auto-update Playwright — requires manual e2e validation (O5 / pre-mortem #3)
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

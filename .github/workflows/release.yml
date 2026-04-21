@@ -99,8 +99,10 @@ jobs:
   # Depends on all smoke jobs passing (per-platform atomicity via O4
   # inside this gate; cross-platform independence via GH Actions's
   # job-level isolation).
+  # GATE: e2e dependency enables B2 (release gate). Wire in PR 3 only — after
+  # RT-3 spec coverage is complete. Do not merge this release.yml change in PR 1 or 2.
   release:
-    needs: smoke
+    needs: [smoke, e2e]   # was: needs: smoke — e2e gate added (B2, RT-2)
     runs-on: ubuntu-24.04
     name: release (goreleaser)
     outputs:
