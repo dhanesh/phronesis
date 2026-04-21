@@ -28,12 +28,13 @@ jobs:
       matrix:
         # RT-11: explicitly pinned runner labels. Do NOT use `*-latest` —
         # drift would break the platform smoke guarantee (TN6).
+        # macos-13 (Intel) was retired by GitHub in 2025; macos-15-intel is the successor.
         include:
           - os: ubuntu-24.04
             platform: linux-amd64
           - os: ubuntu-24.04-arm
             platform: linux-arm64
-          - os: macos-13
+          - os: macos-15-intel
             platform: darwin-amd64
           - os: macos-14
             platform: darwin-arm64
@@ -114,7 +115,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        # shard_index = shard - 1; explicit to avoid GHA arithmetic expression issues.
+        include:
+          - shard: 1
+            shard_index: 0
+          - shard: 2
+            shard_index: 1
+          - shard: 3
+            shard_index: 2
     name: e2e (shard ${{ matrix.shard }}/3)
     steps:
       - uses: actions/checkout@v4
@@ -136,7 +144,7 @@ jobs:
       - name: run e2e shard ${{ matrix.shard }}/3
         run: cd frontend && npx playwright test --config ../playwright.config.ts --shard=${{ matrix.shard }}/3
         env:
-          SHARD_INDEX: ${{ matrix.shard - 1 }}
+          SHARD_INDEX: ${{ matrix.shard_index }}
           PHRONESIS_BIN: ${{ github.workspace }}/phronesis
           CI: 'true'
       - name: upload blob report (shard ${{ matrix.shard }})

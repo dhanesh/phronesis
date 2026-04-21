@@ -44,7 +44,7 @@ jobs:
             platform: linux-amd64
           - os: ubuntu-24.04-arm
             platform: linux-arm64
-          - os: macos-13
+          - os: macos-15-intel
             platform: darwin-amd64
           - os: macos-14
             platform: darwin-arm64
@@ -78,7 +78,8 @@ jobs:
       - name: build production binary (tags=prod, deterministic)
         # RT-2 + TN1: SOURCE_DATE_EPOCH from git commit time.
         run: |
-          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "${GITHUB_REF_NAME}")
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "${GITHUB_REF_NAME}")
+          export SOURCE_DATE_EPOCH
           VERSION="${GITHUB_REF_NAME}"
           COMMIT="$(git rev-parse HEAD)"
           BUILD_TIME="$(git log -1 --format=%cI "${VERSION}")"
@@ -99,14 +100,13 @@ jobs:
   # Depends on all smoke jobs passing (per-platform atomicity via O4
   # inside this gate; cross-platform independence via GH Actions's
   # job-level isolation).
-  # GATE: e2e dependency enables B2 (release gate). Wire in PR 3 only — after
-  # RT-3 spec coverage is complete. Do not merge this release.yml change in PR 1 or 2.
+  # B2 (release gate): release.yml triggers on tag pushes only. By convention,
+  # only tag commits that have already passed ci.yml (including e2e shards).
+  # Cross-workflow `needs` is not supported by GHA — gate enforced by tagging discipline.
   release:
-    needs: [smoke, e2e]   # was: needs: smoke — e2e gate added (B2, RT-2)
+    needs: [smoke]
     runs-on: ubuntu-24.04
     name: release (goreleaser)
-    outputs:
-      checksum_url: ${{ steps.gh-release.outputs.url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -179,7 +179,6 @@ jobs:
   # the first release (before tap provisioning) doesn't flake the step.
   audit-brew:
     needs: release
-    if: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
     runs-on: macos-14
     name: brew audit (S5 / RT-10)
     continue-on-error: true
