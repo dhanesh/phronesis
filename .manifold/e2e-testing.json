@@ -1,0 +1,837 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "e2e-testing",
+  "phase": "GENERATED",
+  "domain": "software",
+  "created": "2026-04-19T19:50:00Z",
+  "updated": "2026-04-22T02:00:00Z",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "B2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "B3",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "threshold": {
+          "kind": "statistical",
+          "flake_rate": "< 5%",
+          "window": "trailing 50 CI runs"
+        }
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "browsers": "chromium"
+        }
+      },
+      {
+        "id": "T3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T5",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "T7",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "T8",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "note": "Pre-mortem #2: CodeMirror 6's async render would race naive assertions. Playwright's web-first assertions with auto-retry are the documented fix."
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "U2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation"
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "S3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "p95": "5m",
+          "measured_on": "GitHub Actions, trailing 10 runs"
+        }
+      },
+      {
+        "id": "O3",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "technical-reality"
+      },
+      {
+        "id": "O4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder"
+      },
+      {
+        "id": "O5",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "note": "Pre-mortem #3: silent Playwright major-version bump broke auth. Pin + human-acknowledged upgrades."
+      },
+      {
+        "id": "O6",
+        "type": "goal",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "alert_threshold": "flake_rate > 5% over trailing 20 runs"
+        },
+        "note": "Pre-mortem #1: flakes accrete until the team disables the gate. Early observability is the countermeasure."
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "trade_off",
+      "between": ["B1", "O2"],
+      "status": "resolved",
+      "resolution": "3-shard Playwright matrix on GH Actions (--shard=1/3, 2/3, 3/3). Each shard runs ~8-9 specs, ~2 min wall-clock. Total stays within O2's 5-min budget. Sharding is the canonical 2026 Playwright CI parallelism solution.",
+      "validation_criteria": [
+        "playwright.config.ts reads SHARD_INDEX/SHARD_TOTAL env vars; default totalShards=1 for local runs",
+        "CI e2e job uses strategy.matrix.shard: [1, 2, 3]",
+        "p95 of longest-running shard across 10 runs is ≤ 5 min"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "T4", "effect": "TIGHTENED", "note": "Shard-level port assignment must be globally unique: worker_port = base_port + (shard_index × max_workers + worker_index)"},
+        {"constraint_id": "O1", "effect": "TIGHTENED", "note": "e2e job becomes a matrix job; a merge/summary step is needed to combine shard test-results into a unified report artifact"},
+        {"constraint_id": "O4", "effect": "TIGHTENED", "note": "Each shard uploads its own artifacts independently; merge-artifacts action needed in summary job"},
+        {"constraint_id": "O2", "effect": "LOOSENED", "note": "3 shards in parallel, each ~2 min, comfortably within 5-min budget"}
+      ]
+    },
+    {
+      "id": "TN2",
+      "type": "resource_tension",
+      "between": ["T3", "O2"],
+      "status": "resolved",
+      "resolution": "Build-once pattern: a build-binary CI job runs make build and uploads the phronesis binary as a GH Actions artifact. Each e2e shard downloads the artifact (~5-10s) rather than rebuilding (~60-90s). All shards test the same binary.",
+      "validation_criteria": [
+        "ci.yml has a build-binary job with actions/upload-artifact for the phronesis binary",
+        "e2e shard jobs have needs: [build-binary] and actions/download-artifact",
+        "No shard job invokes make build"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "O1", "effect": "TIGHTENED", "note": "build-binary becomes a prerequisite to e2e shards; adds ~90s to critical path but typically hides behind parallel test+lint job"},
+        {"constraint_id": "T3", "effect": "LOOSENED", "note": "Single binary build ensures all shards test the same binary; eliminates any cross-shard build divergence"},
+        {"constraint_id": "O2", "effect": "LOOSENED", "note": "Shard startup drops from 90s to 5-10s; budget comfortably met"}
+      ]
+    },
+    {
+      "id": "TN3",
+      "type": "hidden_dependency",
+      "between": ["B2", "B3", "O3"],
+      "status": "resolved",
+      "resolution": "Accept the dependency triangle: O3 (retries=2) masks flakes from B2's gate; B3 (≤5% flake rate) bounds the masking window; O6 (observability) fires before B3 degrades to the point where B2 breaks. The chain is by design. Add structured per-run retry logging (JSON reporter) to make O6's computation more precise.",
+      "validation_criteria": [
+        "playwright.config.ts retries=2 in CI, retries=0 locally",
+        "O6 flake-rate weekly job is implemented and files GH Issues at > 5% trailing-20-run rate",
+        "release.yml has needs: [e2e] dependency before goreleaser step"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "O6", "effect": "LOOSENED", "note": "O6 is the explicit countermeasure for this dependency; its existence resolves the tension"}
+      ]
+    },
+    {
+      "id": "TN4",
+      "type": "trade_off",
+      "between": ["T2", "B1"],
+      "status": "resolved",
+      "resolution": "B1 = feature coverage breadth (every shipping feature exercised end-to-end on the configured browser). T2 = browser scope boundary. They operate on orthogonal axes — T2 restricts which browser B1 runs against, not which features are covered. No gap in B1. Optional: post-stabilisation nightly informational Firefox+WebKit job.",
+      "validation_criteria": [
+        "B1 constraint description explicitly notes Chromium-scoped for v1",
+        "All specs run in the single configured browser (Chromium); no spec is tagged browser-specific",
+        "CI runbook documents optional future nightly Firefox/WebKit job (non-blocking)"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "B1", "effect": "LOOSENED", "note": "Semantics clarified: B1 = feature breadth, T2 = browser breadth; orthogonal axes, no conflict"}
+      ]
+    },
+    {
+      "id": "TN5",
+      "type": "hidden_dependency",
+      "between": ["S2", "B1"],
+      "status": "resolved",
+      "resolution": "B1's OIDC surface = phronesis handler code (internal/auth/oidc/), not the external OIDC protocol or a real IdP. The stub HMAC verifier exercises the same handler path as a real OIDC token; the difference is in token minting, not handler behavior. Adversarial OIDC cases (expired tokens, invalid sigs) belong in internal/auth/oidc/oidc_test.go (already present). S2 is the correct e2e scope.",
+      "validation_criteria": [
+        "At least one spec sets PHRONESIS_OIDC_ENABLED=1 and mints a token via the stub HMAC path",
+        "Spec asserts an OIDC-authenticated session reaches a protected route",
+        "No spec attempts a real external OIDC provider network call"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "B1", "effect": "LOOSENED", "note": "OIDC coverage confirmed in-scope via stub path; no gap in B1"},
+        {"constraint_id": "S2", "effect": "LOOSENED", "note": "Stub usage explicitly justified by B1 semantics"}
+      ]
+    },
+    {
+      "id": "TN6",
+      "type": "resource_tension",
+      "between": ["O3", "O2"],
+      "status": "resolved",
+      "resolution": "O2's p95 is measured on passing (green) runs. A retry storm is incident mode, not p95 mode — and B2 blocks releases during incidents anyway, so wall-clock is irrelevant then. The budget and retry policy are compatible under normal operation (B3 ≤5% flake rate bounds the retry overhead).",
+      "validation_criteria": [
+        "O2 measurement methodology documented in CI runbook: p95 of green runs across trailing 10",
+        "O6 fires when trailing-20-run flake rate > 5%, keeping B3 load-bearing"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "O2", "effect": "LOOSENED", "note": "Measurement scope clarified: p95 of passing runs, not all runs"},
+        {"constraint_id": "B3", "effect": "TIGHTENED", "note": "B3 is now load-bearing for TN6's resolution: if flake rate climbs above 5%, O2 becomes at risk under incident conditions"}
+      ]
+    }
+  ],
+  "blocking_dependencies": [
+    {"blocker": "T3", "blocked": "O2", "tension_id": "TN2", "note": "Binary build time is the primary wall-clock bottleneck; must be resolved before O2 can be met"},
+    {"blocker": "B1", "blocked": "O2", "tension_id": "TN1", "note": "Spec count drives shard strategy; B1 scope must be confirmed before O2 architecture is finalised"},
+    {"blocker": "B3", "blocked": "B2", "tension_id": "TN3", "note": "Gate integrity (B2) is contingent on flake health (B3); O6 is the load-bearing countermeasure"}
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "SATISFIED",
+        "maps_to": ["T3", "O2"],
+        "priority": "binding",
+        "evidence": [
+          {
+            "id": "E1",
+            "type": "content_match",
+            "path": ".github/workflows/ci.yml",
+            "pattern": "build-binary",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E2",
+            "type": "content_match",
+            "path": ".github/workflows/ci.yml",
+            "pattern": "upload-artifact.*phronesis",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "SATISFIED",
+        "maps_to": ["B1", "O1", "O2"],
+        "evidence": [
+          {
+            "id": "E3",
+            "type": "content_match",
+            "path": ".github/workflows/ci.yml",
+            "pattern": "strategy.matrix.shard",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E4",
+            "type": "content_match",
+            "path": ".github/workflows/release.yml",
+            "pattern": "needs.*e2e",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "SATISFIED",
+        "maps_to": ["B1", "T6"],
+        "evidence": [
+          {
+            "id": "E5",
+            "type": "file_exists",
+            "path": "tests/e2e/",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6",
+            "type": "file_exists",
+            "path": "tests/e2e/coverage.spec.ts",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E7",
+            "type": "file_exists",
+            "path": "tests/e2e/auth/auth.spec.ts",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E8",
+            "type": "file_exists",
+            "path": "tests/e2e/wiki/crud.spec.ts",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E9",
+            "type": "file_exists",
+            "path": "tests/e2e/collab/sse.spec.ts",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "PARTIAL",
+        "maps_to": ["T4", "S3"],
+        "evidence": [
+          {
+            "id": "E10",
+            "type": "content_match",
+            "path": "tests/e2e/fixtures/server.ts",
+            "pattern": "PHRONESIS_PAGES_DIR",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11",
+            "type": "content_match",
+            "path": "playwright.config.ts",
+            "pattern": "base_port.*shard_index",
+            "status": "FAILED",
+            "note": "Port formula lives in fixtures/server.ts (BASE_PORT + SHARD_INDEX * MAX_WORKERS_PER_SHARD + workerIndex), not playwright.config.ts. Pattern mismatch against wrong file. E10 verifies the constraint intent. m5 should verify via server.ts."
+          }
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "SATISFIED",
+        "maps_to": ["T5", "T8", "B3"],
+        "evidence": [
+          {
+            "id": "E12",
+            "type": "file_exists",
+            "path": "tests/e2e/fixtures/auth.ts",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E13",
+            "type": "content_match",
+            "path": "tests/e2e/fixtures/auth.ts",
+            "pattern": "storageState",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E14",
+            "type": "content_match",
+            "path": "tests/e2e/",
+            "pattern": "waitForSelector",
+            "status": "VERIFIED",
+            "note": "Negative check passed: waitForSelector absent (only appears in a comment in auth.spec.ts). .toBe() is used only on JSON API response values (status codes, body fields) — not on DOM content. T8 web-first assertions confirmed via toHaveText/toContainText for all editor-content checks."
+          }
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "SATISFIED",
+        "maps_to": ["S2", "B1"],
+        "evidence": [
+          {
+            "id": "E15",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/stub.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E16",
+            "type": "file_exists",
+            "path": "tests/e2e/auth/oidc.spec.ts",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E17",
+            "type": "content_match",
+            "path": "tests/e2e/auth/oidc.spec.ts",
+            "pattern": "PHRONESIS_OIDC_ENABLED",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "SATISFIED",
+        "maps_to": ["U2", "O4", "O3"],
+        "evidence": [
+          {
+            "id": "E18",
+            "type": "content_match",
+            "path": "playwright.config.ts",
+            "pattern": "trace.*on-first-retry",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E19",
+            "type": "content_match",
+            "path": ".github/workflows/ci.yml",
+            "pattern": "upload-artifact.*playwright-report",
+            "status": "VERIFIED",
+            "note": "Verified via e2e-report job which uploads 'playwright-report' artifact after merging blob reports from all 3 shards."
+          }
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "SATISFIED",
+        "maps_to": ["T7", "B3"],
+        "evidence": [
+          {
+            "id": "E20",
+            "type": "content_match",
+            "path": "tests/e2e/fixtures/network.ts",
+            "pattern": "page\\.route",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "SATISFIED",
+        "maps_to": ["O6", "B3", "B2"],
+        "evidence": [
+          {
+            "id": "E21",
+            "type": "file_exists",
+            "path": ".github/workflows/flake-monitor.yml",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E22",
+            "type": "content_match",
+            "path": ".github/workflows/flake-monitor.yml",
+            "pattern": "cron:",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "SATISFIED",
+        "maps_to": ["O5"],
+        "evidence": [
+          {
+            "id": "E23",
+            "type": "content_match",
+            "path": "frontend/package.json",
+            "pattern": "\"@playwright/test\": \"[0-9]",
+            "status": "VERIFIED",
+            "note": "Exact pin: \"@playwright/test\": \"1.50.0\" — no caret or tilde."
+          },
+          {
+            "id": "E24",
+            "type": "file_exists",
+            "path": ".github/dependabot.yml",
+            "status": "VERIFIED"
+          }
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-1",
+      "reason": "The build-binary CI job is the critical path bottleneck. Without it, each of the 3 shards rebuilds from source (~90s × 3 = 4.5 min before a single assertion runs), making O2 impossible to satisfy regardless of spec count or shard architecture. When RT-1 is closed, the full shard matrix is unblocked and all other RTs can proceed in parallel.",
+      "dependency_chain": ["RT-2", "RT-3", "RT-4", "RT-5", "RT-6", "RT-7", "RT-8", "RT-9", "RT-10"]
+    },
+    "recommended_option": "B",
+    "tension_validation": [
+      {"tension_id": "TN1", "status": "CONFIRMED", "by_option": "B", "reason": "Option B includes 3-shard matrix in harness PR; sharding is built in from the start"},
+      {"tension_id": "TN2", "status": "CONFIRMED", "by_option": "B", "reason": "Option B harness PR includes the build-binary CI job as the first artifact; binding constraint addressed immediately"},
+      {"tension_id": "TN3", "status": "CONFIRMED", "by_option": "B", "reason": "Release gate (B2 wiring) enabled only in PR 3 when B1 is satisfied; O6 job deferred to PR 4 but planned from the start"},
+      {"tension_id": "TN4", "status": "CONFIRMED", "by_option": "B", "reason": "All specs in all PRs run in Chromium only; T2 boundary honored throughout"},
+      {"tension_id": "TN5", "status": "CONFIRMED", "by_option": "B", "reason": "PR 3 includes OIDC stub spec; stub.go already exists (VERIFIED evidence)"},
+      {"tension_id": "TN6", "status": "CONFIRMED", "by_option": "B", "reason": "O2 measurement on green runs; B3 is load-bearing and O6 job (PR 4) provides the observability"}
+    ]
+  },
+  "generation": {
+    "option": "B",
+    "timestamp": "2026-04-22T02:00:00Z",
+    "artifacts": [
+      {
+        "path": ".github/workflows/ci.yml",
+        "type": "infrastructure",
+        "satisfies": ["RT-1", "RT-2", "RT-7"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": ".github/workflows/release.yml",
+        "type": "infrastructure",
+        "satisfies": ["RT-2"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": ".github/workflows/flake-monitor.yml",
+        "type": "infrastructure",
+        "satisfies": ["RT-9"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": ".github/dependabot.yml",
+        "type": "infrastructure",
+        "satisfies": ["RT-10"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "playwright.config.ts",
+        "type": "config",
+        "satisfies": ["RT-7"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/fixtures/server.ts",
+        "type": "test-support",
+        "satisfies": ["RT-4"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/fixtures/auth.ts",
+        "type": "test-support",
+        "satisfies": ["RT-5"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/fixtures/network.ts",
+        "type": "test-support",
+        "satisfies": ["RT-8"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/fixtures/index.ts",
+        "type": "test-support",
+        "satisfies": ["RT-5", "RT-8"],
+        "status": "generated",
+        "artifact_class": "structural"
+      },
+      {
+        "path": "tests/e2e/auth/auth.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3", "RT-5"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/auth/oidc.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3", "RT-6"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/wiki/crud.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/collab/sse.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/collab/crdt.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/blob/upload.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/admin/roles.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/rate-limit/rate-limit.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "tests/e2e/coverage.spec.ts",
+        "type": "test",
+        "satisfies": ["RT-3"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "frontend/package.json",
+        "type": "config",
+        "satisfies": ["RT-10"],
+        "status": "generated",
+        "artifact_class": "substantive"
+      }
+    ],
+    "coverage": {
+      "constraints_addressed": 22,
+      "constraints_total": 22,
+      "percentage": 100
+    }
+  },
+  "reversibility_log": [
+    {"action_step": 1, "description": "Create tests/e2e/ fixture + spec files (19 files total)", "reversibility": "TWO_WAY"},
+    {"action_step": 2, "description": "Create playwright.config.ts at repo root", "reversibility": "TWO_WAY"},
+    {"action_step": 3, "description": "Extend .github/workflows/ci.yml with build-binary + e2e + e2e-report jobs", "reversibility": "TWO_WAY"},
+    {"action_step": 4, "description": "Wire release.yml needs: [e2e] to block releases on gate", "reversibility": "REVERSIBLE_WITH_COST", "cost": "Removing the gate requires a separate PR; any release attempted while e2e is red is blocked until then"},
+    {"action_step": 5, "description": "Pin @playwright/test to 1.50.0 (exact, no caret) in frontend/package.json", "reversibility": "REVERSIBLE_WITH_COST", "cost": "Upgrading Playwright requires manual version bump PR that must pass a full e2e run"},
+    {"action_step": 6, "description": "Create .github/dependabot.yml ignoring @playwright/test auto-upgrades", "reversibility": "TWO_WAY"},
+    {"action_step": 7, "description": "Create .github/workflows/flake-monitor.yml weekly cron job", "reversibility": "TWO_WAY"}
+  ],
+  "draft_required_truths": [
+    {
+      "id": "DRT-1",
+      "seed_from": ["B1", "T6"],
+      "draft_statement": "For the e2e suite to cover every currently-shipping surface without drifting, each feature directory under `tests/e2e/` must have at least one spec per capability, and a meta-test must enumerate required directories so a new feature can't be added without a paired spec file.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-2",
+      "seed_from": ["B2", "O1", "O2"],
+      "draft_statement": "For e2e to block releases without becoming a productivity tax, the GH Actions job must run in parallel with existing CI jobs (not serial) and complete in ≤5 min p95 — otherwise release wall-clock is dominated by the gate.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-3",
+      "seed_from": ["T3", "T4"],
+      "draft_statement": "For tests to be isolated and production-like simultaneously, each worker must boot its own phronesis binary (built via `make build` once per CI run, reused across workers) against a per-worker `PHRONESIS_PAGES_DIR` tempdir on a unique port.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-4",
+      "seed_from": ["T5", "T8"],
+      "draft_statement": "For auth setup to not flake and for editor timing not to flake, the suite must use (a) a shared storageState fixture that logs in once per worker and (b) Playwright's web-first assertions (`expect(locator).toHaveText(...)`) with default 5s retry rather than manual `waitFor` + `toBe`.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-5",
+      "seed_from": ["O3", "O4", "O6"],
+      "draft_statement": "For flake tolerance to not hide real regressions, retries must produce artifacts: trace:'on-first-retry' + screenshot:'only-on-failure' + video:'retain-on-failure', all uploaded as GH Actions artifacts so root-cause analysis is possible without local repro.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-6",
+      "seed_from": ["S2"],
+      "draft_statement": "For OIDC coverage to work without an external IdP, tests must mint tokens using the existing `internal/auth/oidc/stub.go` HMAC shared-secret path, and the test run must explicitly enable OIDC via `PHRONESIS_OIDC_ENABLED=1` + the stub secret fixture.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-7",
+      "seed_from": ["O5"],
+      "draft_statement": "For Playwright upgrades not to silently break auth (pre-mortem #3), the version must be pinned in `frontend/package.json` with an exact match (no caret), and `.github/dependabot.yml` or renovate must surface upgrades as human-reviewed PRs that gate on a fresh e2e suite pass.",
+      "confidence": "medium"
+    }
+  ],
+  "iterations": [
+    {
+      "number": 4,
+      "phase": "generate",
+      "timestamp": "2026-04-22T02:00:00Z",
+      "result": "Generated 19 artifacts in parallel across 6 isolated worktrees (6 groups, ~4x speedup). Group A (CI infrastructure): ci.yml + release.yml + flake-monitor.yml + dependabot.yml — satisfies RT-1⚡ (binding), RT-2, RT-7, RT-9, RT-10. Group B (test infrastructure): playwright.config.ts + 4 fixture files — satisfies RT-4, RT-5, RT-7, RT-8. Group C (auth specs): auth.spec.ts + oidc.spec.ts — satisfies RT-3, RT-6. Group D (wiki/collab specs): crud.spec.ts + sse.spec.ts + crdt.spec.ts — satisfies RT-3. Group E (remaining specs): upload.spec.ts + roles.spec.ts + rate-limit.spec.ts + coverage.spec.ts — satisfies RT-3. Group F (package): frontend/package.json @playwright/test pin — satisfies RT-10. All branches merged to main. Immediate evidence: 9/10 RTs = SATISFIED; RT-4 = PARTIAL (E11 pattern mismatch — wrong file path; intent verified via E10). RT-4 to be corrected in m5. Constraint coverage: 22/22 = 100%.",
+      "required_truths": 10,
+      "by_status": {
+        "SATISFIED": 9,
+        "PARTIAL": 1,
+        "NOT_SATISFIED": 0,
+        "SPECIFICATION_READY": 0
+      },
+      "artifacts_generated": 19,
+      "parallel_groups": 6
+    },
+    {
+      "number": 3,
+      "phase": "anchor",
+      "timestamp": "2026-04-22T01:00:00Z",
+      "result": "Derived 10 required truths via backward reasoning from outcome. RT-1 (build-binary CI job) identified as binding constraint — primary wall-clock bottleneck; when closed, unblocks all other RTs. RT-6 is PARTIAL (stub.go VERIFIED, spec PENDING). All others NOT_SATISFIED. Binding dependency chain: RT-1 → RT-2 → {RT-3 through RT-10}. Recommended Option B (harness-first, 4 PRs): PR1=harness+auth specs (RT-1,RT-2,RT-4,RT-5,RT-7,RT-10), PR2=wiki+collab+SSE specs, PR3=blob+admin+rate-limit+OIDC+release-gate-wire (completes RT-3, RT-6; enables B2), PR4=network-interception+flake-monitor (RT-8, RT-9). All 6 tensions validated against Option B: CONFIRMED. Solution options: A=monolithic, B=harness-first (recommended TWO_WAY), C=meta-test-driven.",
+      "required_truths": 10,
+      "by_status": {
+        "SATISFIED": 0,
+        "PARTIAL": 1,
+        "NOT_SATISFIED": 9,
+        "SPECIFICATION_READY": 0
+      },
+      "solution_options": 3,
+      "selected_option": "Option B"
+    },
+    {
+      "number": 2,
+      "phase": "tension",
+      "timestamp": "2026-04-22T00:00:00Z",
+      "result": "Found 6 tensions (2 trade_offs, 2 resource_tensions, 2 hidden_dependencies). All 6 resolved. Key decisions: (1) 3-shard Playwright matrix to satisfy B1×O2; (2) build-binary CI job to satisfy T3×O2; (3) O6 accepted as the B2×B3×O3 dependency countermeasure; (4) B1 and T2 confirmed orthogonal (feature breadth vs. browser scope); (5) S2 stub confirmed correct scope for B1 OIDC surface; (6) O2 p95 measurement scoped to green runs. Blocking dependencies for m3: T3→O2 (build pattern), B1→O2 (shard count), B3→B2 (gate integrity). Constraint graph edges added.",
+      "tensions_found": 6,
+      "tensions_resolved": 6,
+      "by_type": {"trade_offs": 2, "resource_tensions": 2, "hidden_dependencies": 2}
+    },
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-04-19T20:20:00Z",
+      "result": "Discovered 22 constraints across 5 categories via WebSearch-informed lookup (Playwright 2026 best practices: webServer config, fixture-based auth with storageState, feature-grouped test layout, sharding on CI, network-interception for flake reduction, web-first assertions) plus 4 strategic decisions from user: (1) coverage = every currently-shipping surface (~25 specs), (2) release gate = blocking-on-main with 2 retries, (3) time budget = new O2 ≤5 min p95 on GH Actions, (4) browser = Chromium only for v1. Pre-mortem pass added 3 constraints: T8 (web-first assertions for CodeMirror async render), O5 (Playwright version pin against silent major bumps), O6 (flake-rate observability). Core tactical defaults encoded: test server = production binary via make build (T3) for real-embed coverage; data isolation = per-worker PHRONESIS_PAGES_DIR tempdir (T4); OIDC = HMAC stub via existing internal/auth/oidc/stub.go (S2); failure artifacts = trace + screenshot + video on retry (U2 + O4). 7 draft required truths seeded for m3. Open tensions for m2: B1 (broad scope) × O2 (5min budget) — every-surface at 25 specs may not fit 5min p95 even with sharding; T3 (production binary via make build) × T5 (fast auth via storageState) — binary boot takes ~2s, but only needs to happen once per CI run.",
+      "constraints_added": 22,
+      "by_category": {
+        "business": 3,
+        "technical": 8,
+        "user_experience": 2,
+        "security": 3,
+        "operational": 6
+      }
+    }
+  ],
+  "convergence": {
+    "status": "CONVERGED"
+  },
+  "evidence": [],
+  "gap_checklist_compliance": [
+    {
+      "gap": "GAP-03",
+      "status": "COMPLETED",
+      "note": "Data path for e2e tests: Playwright test runner → Chromium → HTTP → phronesis binary → filesystem tempdir. Every transition crosses a process boundary (subprocess for binary, network for HTTP). Covered by T3 (production binary), T4 (per-worker isolation), S3 (ephemeral data)."
+    },
+    {
+      "gap": "GAP-09",
+      "status": "COMPLETED",
+      "note": "Auth surfaces tested: password cookie session (S1 fixture creds), OIDC HMAC stub token (S2), API-KEY header. Attack matrix: test framework intentionally uses the canonical happy paths of each — adversarial test coverage (expired tokens, invalid sigs) is deferred to unit tests in internal/auth/oidc/oidc_test.go (already exists). Justification: e2e validates integration; unit tests validate crypto edges."
+    },
+    {
+      "gap": "GAP-10",
+      "status": "SKIPPED",
+      "skip_reason": "Resource exhaustion concerns are about production runtime behavior. e2e runs against controlled CI environment with explicit test scenarios; DoS-ing the test server is not in scope."
+    },
+    {
+      "gap": "GAP-11",
+      "status": "COMPLETED",
+      "note": "External dependencies: npm registry (Playwright install), Playwright browser binaries download, GitHub Actions runner pool. Mitigations: O5 (version pin prevents transitive drift), CI cache-dependency-path for Playwright browser binaries (standard Playwright pattern), retries=2 (O3) for transient network flakes. No custom external HTTP calls made by the suite itself."
+    },
+    {
+      "gap": "GAP-14",
+      "status": "SKIPPED",
+      "skip_reason": "Tests define their own inputs; no external data ingestion."
+    },
+    {
+      "gap": "GAP-17",
+      "status": "COMPLETED",
+      "note": "Shared state concerns: (a) Playwright workers share Chromium browser binary installation — read-only, no concurrency issue. (b) Per-worker tempdir + unique port covered by T4. (c) storageState (auth fixture) is written once, read many — T5 uses Playwright's documented pattern. (d) CRDT collab test explicitly exercises concurrent writes from two browser contexts; that IS the test."
+    }
+  ],
+  "constraint_graph": {
+    "version": 2,
+    "nodes": {},
+    "edges": {
+      "dependencies": [
+        {"from": "B2", "to": "B3", "via": "TN3", "note": "B2 gate integrity depends on B3 flake health"},
+        {"from": "B2", "to": "O3", "via": "TN3", "note": "B2 uses O3 retries to absorb flakes"},
+        {"from": "B3", "to": "O6", "via": "TN3", "note": "B3 monitoring is provided by O6"},
+        {"from": "B1", "to": "S2", "via": "TN5", "note": "B1's OIDC coverage is fulfilled by S2's stub path"},
+        {"from": "T3", "to": "O2", "via": "TN2", "note": "T3's build requirement is the primary O2 wall-clock bottleneck"},
+        {"from": "B1", "to": "O2", "via": "TN1", "note": "B1 spec count drives the sharding strategy that satisfies O2"}
+      ],
+      "conflicts": [
+        {"between": ["B1", "O2"], "tension_id": "TN1", "resolved": true},
+        {"between": ["T3", "O2"], "tension_id": "TN2", "resolved": true},
+        {"between": ["T2", "B1"], "tension_id": "TN4", "resolved": true},
+        {"between": ["O3", "O2"], "tension_id": "TN6", "resolved": true}
+      ],
+      "satisfies": []
+    }
+  }
+}
