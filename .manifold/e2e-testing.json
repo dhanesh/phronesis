@@ -2,10 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
   "schema_version": 3,
   "feature": "e2e-testing",
-  "phase": "GENERATED",
+  "phase": "VERIFIED",
   "domain": "software",
   "created": "2026-04-19T19:50:00Z",
-  "updated": "2026-04-22T02:00:00Z",
+  "updated": "2026-04-22T03:00:00Z",
   "constraints": {
     "business": [
       {
@@ -358,7 +358,7 @@
       },
       {
         "id": "RT-4",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": ["T4", "S3"],
         "evidence": [
           {
@@ -371,10 +371,10 @@
           {
             "id": "E11",
             "type": "content_match",
-            "path": "playwright.config.ts",
-            "pattern": "base_port.*shard_index",
-            "status": "FAILED",
-            "note": "Port formula lives in fixtures/server.ts (BASE_PORT + SHARD_INDEX * MAX_WORKERS_PER_SHARD + workerIndex), not playwright.config.ts. Pattern mismatch against wrong file. E10 verifies the constraint intent. m5 should verify via server.ts."
+            "path": "tests/e2e/fixtures/server.ts",
+            "pattern": "BASE_PORT.*shardIndex.*MAX_WORKERS",
+            "status": "VERIFIED",
+            "note": "Corrected from m4: formula is in server.ts not playwright.config.ts. Pattern matches: BASE_PORT + shardIndex * MAX_WORKERS_PER_SHARD + workerIndex (line verified in m5)."
           }
         ]
       },

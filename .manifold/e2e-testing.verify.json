@@ -1,0 +1,495 @@
+{
+  "feature": "e2e-testing",
+  "verification": {
+    "timestamp": "2026-04-22T03:00:00Z",
+    "result": "VERIFIED",
+    "strictness": "default",
+    "binding_constraint": {
+      "required_truth_id": "RT-1",
+      "status": "SATISFIED",
+      "check": "PASSED"
+    },
+    "artifact_check": {
+      "declared": 19,
+      "present": 19,
+      "missing": []
+    },
+    "evidence_corrections": [
+      {
+        "id": "E11",
+        "rt": "RT-4",
+        "correction": "Path changed from playwright.config.ts to tests/e2e/fixtures/server.ts; pattern updated to BASE_PORT.*shardIndex.*MAX_WORKERS. Matches line 79.",
+        "old_status": "FAILED",
+        "new_status": "VERIFIED"
+      },
+      {
+        "id": "RT-4",
+        "correction": "Status advanced from PARTIAL to SATISFIED — implementation is correct, m4 evidence spec had wrong file path.",
+        "old_status": "PARTIAL",
+        "new_status": "SATISFIED"
+      }
+    ],
+    "matrix": [
+      {
+        "constraint": "B1",
+        "description": "Coverage spans every currently-shipping surface",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "9 @constraint B1 annotations across specs; coverage.spec.ts meta-test enforces breadth"
+      },
+      {
+        "constraint": "B2",
+        "description": "Failed e2e blocks release tags",
+        "type": "INVARIANT",
+        "code": true,
+        "test": null,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "release.yml needs: [smoke, e2e]; Test=N/A (CI infrastructure behavior)"
+      },
+      {
+        "constraint": "B3",
+        "description": "Flake rate ≤ 5% over trailing 50 CI runs",
+        "type": "GOAL",
+        "code": true,
+        "test": false,
+        "docs": false,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "G1",
+        "notes": "Statistical threshold requires 50 CI run history to measure. No @constraint B3 annotation."
+      },
+      {
+        "constraint": "T1",
+        "description": "Playwright is the test framework",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "@constraint T1 in playwright.config.ts; exact pin in package.json; dependabot.yml"
+      },
+      {
+        "constraint": "T2",
+        "description": "Browser matrix = Chromium only for v1",
+        "type": "BOUNDARY",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "@constraint T2 in playwright.config.ts; single projects entry for chromium"
+      },
+      {
+        "constraint": "T3",
+        "description": "Tests run against production -tags=prod binary",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "server.ts comment // Satisfies: T3; ci.yml build-binary job; PHRONESIS_BIN env var"
+      },
+      {
+        "constraint": "T4",
+        "description": "Per-worker data isolation via PHRONESIS_PAGES_DIR + unique port",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "@constraint T4 in server.ts; port formula BASE_PORT+shardIndex*MAX_WORKERS+workerIndex at line 79; E11 corrected"
+      },
+      {
+        "constraint": "T5",
+        "description": "Auth fixture uses storageState — log in once per worker",
+        "type": "GOAL",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "@constraint T5 in auth.ts; storageState 6 matches; auth.spec.ts validates session"
+      },
+      {
+        "constraint": "T6",
+        "description": "tests/e2e/ with feature-grouped subdirs",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "coverage.spec.ts enumerates REQUIRED_DIRS; directory structure present; meta-test enforces drift"
+      },
+      {
+        "constraint": "T7",
+        "description": "Third-party network calls intercepted via page.route",
+        "type": "GOAL",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": null,
+        "status": "PARTIAL",
+        "gap": "G2",
+        "notes": "network.ts fixture applies page.route globally but no spec asserts an external request was blocked. Defensive constraint — phronesis frontend makes no external calls today."
+      },
+      {
+        "constraint": "T8",
+        "description": "Web-first assertions with default auto-retry throughout",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "5 @constraint T8 annotations; no waitForSelector calls (only in a comment); .toBe() only on API response values"
+      },
+      {
+        "constraint": "U1",
+        "description": "Test titles read as sentences about user behavior",
+        "type": "GOAL",
+        "code": true,
+        "test": null,
+        "docs": false,
+        "ops": null,
+        "status": "PARTIAL",
+        "gap": "G3",
+        "notes": "All 26 test titles are sentence-form. No @constraint U1 annotation. Test=N/A (naming convention, not executable)."
+      },
+      {
+        "constraint": "U2",
+        "description": "Failures produce actionable artifacts (trace + screenshot + video)",
+        "type": "INVARIANT",
+        "code": true,
+        "test": null,
+        "docs": false,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "playwright.config.ts: trace=on-first-retry, screenshot=only-on-failure, video=retain-on-failure. ci.yml uploads playwright-report. Test=N/A (Playwright framework guarantees config behavior). Docs gap: no @constraint U2 annotation — see G4."
+      },
+      {
+        "constraint": "S1",
+        "description": "No real production credentials in test code",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "@constraint S1 in auth.spec.ts; credentials = admin/admin123 (shipped dev defaults, not production)"
+      },
+      {
+        "constraint": "S2",
+        "description": "OIDC tests use existing HMAC stub verifier",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "@constraint S2 in oidc.spec.ts; mintOIDCToken() uses createHmac('sha256'); PHRONESIS_OIDC_ENABLED=1"
+      },
+      {
+        "constraint": "S3",
+        "description": "Test data is ephemeral — tempdir per CI run, auto-cleaned",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "@constraint S3 in server.ts (// Satisfies: S3); tmpdir auto-cleanup in worker teardown"
+      },
+      {
+        "constraint": "O1",
+        "description": "E2E runs as own GH Actions job, parallel to test + lint",
+        "type": "INVARIANT",
+        "code": true,
+        "test": null,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "ci.yml: e2e job runs in parallel with test job (annotation line 109). Test=N/A (CI infrastructure)."
+      },
+      {
+        "constraint": "O2",
+        "description": "E2E suite wall-clock p95 ≤ 5 min on GH Actions",
+        "type": "BOUNDARY",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "G5",
+        "notes": "3-shard + build-binary architecture satisfies Code (BOUNDARY check). Statistical measurement requires 10 CI runs. No history yet."
+      },
+      {
+        "constraint": "O3",
+        "description": "Retries = 2 on first failure, 0 on pass",
+        "type": "GOAL",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": null,
+        "status": "SATISFIED",
+        "notes": "playwright.config.ts: retries: process.env.CI ? 2 : 0. O3 annotation in config comment."
+      },
+      {
+        "constraint": "O4",
+        "description": "All runs upload trace + screenshot + video artifacts on failure",
+        "type": "INVARIANT",
+        "code": true,
+        "test": null,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "playwright.config.ts use.trace + use.screenshot + use.video. ci.yml uploads blob-report-N per shard, playwright-report via e2e-report job. Test=N/A."
+      },
+      {
+        "constraint": "O5",
+        "description": "Playwright version pinned exact in frontend/package.json",
+        "type": "INVARIANT",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "notes": "@playwright/test: 1.50.0 (no caret). dependabot.yml ignores playwright auto-upgrades."
+      },
+      {
+        "constraint": "O6",
+        "description": "Flake-rate dashboard + alerting at >5% threshold",
+        "type": "GOAL",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "G6",
+        "notes": "flake-monitor.yml implements awk-based computation. No unit test for the awk pipeline correctness."
+      }
+    ],
+    "traceability_matrix": {
+      "B1": [
+        "auth/auth.spec.ts",
+        "auth/oidc.spec.ts",
+        "wiki/crud.spec.ts",
+        "collab/sse.spec.ts",
+        "collab/crdt.spec.ts",
+        "blob/upload.spec.ts",
+        "admin/roles.spec.ts",
+        "rate-limit/rate-limit.spec.ts",
+        "coverage.spec.ts"
+      ],
+      "B2": [
+        ".github/workflows/release.yml"
+      ],
+      "T1": [
+        "playwright.config.ts"
+      ],
+      "T2": [
+        "playwright.config.ts"
+      ],
+      "T3": [
+        "tests/e2e/fixtures/server.ts",
+        ".github/workflows/ci.yml"
+      ],
+      "T4": [
+        "tests/e2e/fixtures/server.ts"
+      ],
+      "T5": [
+        "tests/e2e/fixtures/auth.ts"
+      ],
+      "T6": [
+        "tests/e2e/coverage.spec.ts"
+      ],
+      "T7": [
+        "tests/e2e/fixtures/network.ts"
+      ],
+      "T8": [
+        "tests/e2e/auth/auth.spec.ts",
+        "tests/e2e/wiki/crud.spec.ts",
+        "tests/e2e/collab/sse.spec.ts",
+        "tests/e2e/collab/crdt.spec.ts"
+      ],
+      "U2": [
+        "playwright.config.ts"
+      ],
+      "S1": [
+        "tests/e2e/auth/auth.spec.ts"
+      ],
+      "S2": [
+        "tests/e2e/auth/oidc.spec.ts"
+      ],
+      "S3": [
+        "tests/e2e/fixtures/server.ts"
+      ],
+      "O1": [
+        ".github/workflows/ci.yml"
+      ],
+      "O3": [
+        "playwright.config.ts"
+      ],
+      "O4": [
+        "playwright.config.ts",
+        ".github/workflows/ci.yml"
+      ],
+      "O5": [
+        "frontend/package.json",
+        ".github/dependabot.yml"
+      ],
+      "O6": [
+        ".github/workflows/flake-monitor.yml"
+      ]
+    },
+    "coverage": {
+      "invariants": {
+        "satisfied": 14,
+        "partial": 0,
+        "missing": 0,
+        "total": 14,
+        "percentage": 100
+      },
+      "goals": {
+        "satisfied": 2,
+        "partial": 4,
+        "missing": 0,
+        "total": 6,
+        "percentage": 33
+      },
+      "boundaries": {
+        "satisfied": 1,
+        "partial": 1,
+        "missing": 0,
+        "total": 2,
+        "percentage": 50
+      },
+      "overall": {
+        "satisfied": 17,
+        "partial": 5,
+        "missing": 0,
+        "total": 22,
+        "percentage": 77
+      }
+    },
+    "gaps": [
+      {
+        "id": "G1",
+        "constraint": "B3",
+        "type": "GOAL",
+        "severity": "non-blocking",
+        "issue": "Statistical flake-rate threshold (≤ 5% / 50 runs) cannot be verified before CI run history accumulates.",
+        "action": "After 50 main-branch CI runs, re-run /manifold:m5-verify e2e-testing. Flake-monitor.yml will surface any alert before then."
+      },
+      {
+        "id": "G2",
+        "constraint": "T7",
+        "type": "GOAL",
+        "severity": "non-blocking",
+        "issue": "No spec asserts that the page.route() fixture actually blocked a non-localhost request. The interception fires but no test verifies the abort behavior.",
+        "action": "In tests/e2e/fixtures/network.ts or a new spec, add: await page.route('https://example.com/', r => r.abort()); const req = page.waitForRequest('https://example.com/'); // navigate; expect(req).rejects.toThrow(). Alternative: use page.on('requestfailed') to assert a blocked request."
+      },
+      {
+        "id": "G3",
+        "constraint": "U1",
+        "type": "GOAL",
+        "severity": "non-blocking",
+        "issue": "No @constraint U1 annotation in any spec file. Machine traceability gap.",
+        "action": "Add // @constraint U1 comment to each test.describe() block header (26 test titles — all already sentence-form, so the implementation is correct)."
+      },
+      {
+        "id": "G4",
+        "constraint": "U2",
+        "type": "INVARIANT",
+        "severity": "non-blocking",
+        "issue": "No @constraint U2 annotation anywhere. Test=N/A (Playwright framework guarantees behavior configured in playwright.config.ts — not user-testable). Docs gap only.",
+        "action": "Add // @constraint U2 - trace+screenshot+video on failure to playwright.config.ts use block comment. No code change needed."
+      },
+      {
+        "id": "G5",
+        "constraint": "O2",
+        "type": "BOUNDARY",
+        "severity": "non-blocking",
+        "issue": "Statistical boundary (p95 ≤ 5 min) requires 10 CI run history on main. Architecture is implemented (Code ✓); no run history exists yet.",
+        "action": "After 10 main-branch CI runs, check GH Actions timing for the e2e job. If p95 > 5 min, investigate shard balance and binary download times. Re-run /manifold:m5-verify."
+      },
+      {
+        "id": "G6",
+        "constraint": "O6",
+        "type": "GOAL",
+        "severity": "non-blocking",
+        "issue": "The awk-based flake-rate calculation in flake-monitor.yml has no unit test. A logic error in the pipeline would silently fail to alert at the 5% threshold.",
+        "action": "Write a test script at tests/e2e/flake-monitor-test.sh: feed a synthetic results.json (with known retry patterns) and assert the awk computation outputs the expected rate. Add to Makefile as make test-flake-monitor."
+      },
+      {
+        "id": "G7",
+        "constraint": "RT-4",
+        "type": "evidence",
+        "severity": "resolved",
+        "issue": "E11 in m4 had wrong path (playwright.config.ts) and wrong pattern (base_port.*shard_index). Corrected in m5.",
+        "action": "RESOLVED — E11 updated to tests/e2e/fixtures/server.ts with pattern BASE_PORT.*shardIndex.*MAX_WORKERS. RT-4 status advanced to SATISFIED."
+      }
+    ],
+    "genealogy_check": {
+      "assumption_challengers": 0,
+      "regulation_challengers_traded": 0,
+      "result": "PASSED"
+    },
+    "statistical_verification": {
+      "statistical_constraints": [
+        "B3",
+        "O2",
+        "O6"
+      ],
+      "verified_statistically": 0,
+      "notes": "B3 and O2 require CI run history (G1, G5). O6 implementation exists but has no unit test (G6). All three are non-blocking under default strictness."
+    },
+    "reversibility_check": {
+      "one_way_steps": 0,
+      "reversible_with_cost": 2,
+      "two_way": 5,
+      "result": "PASSED — no ONE_WAY steps; REVERSIBLE_WITH_COST steps acknowledged"
+    },
+    "propagation_check": {
+      "tightened_effects": [
+        "T4 (TN1)",
+        "O1 (TN1+TN2)",
+        "O4 (TN1)",
+        "B3 (TN6)"
+      ],
+      "all_confirmed": true,
+      "result": "PASSED"
+    }
+  },
+  "file_hashes": {
+    ".github/workflows/ci.yml": "2dc227128ec1baaea8b384bb59c55b41b7afb7a0bc0a4ee7ba9b025712a8445c",
+    ".github/workflows/release.yml": "9efc8846fb3ce5a154d374d1075f5342e9b36144d9527085551daa556a9e4cd5",
+    ".github/workflows/flake-monitor.yml": "8bbddfe60296e58d39c8faef72ed2d74fed8952c07053041e6308a270674bb10",
+    ".github/dependabot.yml": "1268334b672e571a40244a0e2665746b1e59c12b286b2f47296437b6091a74b8",
+    "playwright.config.ts": "c268baa36f10da517b800b051b16905a98ec6ed754bffde78f68d81126451a3d",
+    "tests/e2e/fixtures/server.ts": "32c90c7757371c81c48855b229ff1fb2e01913d4bb0b0c181939384792afebea",
+    "tests/e2e/fixtures/auth.ts": "5ceb993bf9d0279a9afd29c76d56238d428524b3f524199ae33849533f79d60f",
+    "tests/e2e/fixtures/network.ts": "1c4c165beddd0c504827bbd506e68ca7374bd0505470fd201a104d46828b4520",
+    "tests/e2e/fixtures/index.ts": "2fa0250661194cfb54a5209c6caaaa71158601fa6e1392e7671523e0cf45133b",
+    "tests/e2e/auth/auth.spec.ts": "7fd649747d91ed9a0194221407cc52d6f3591b5cd61cea33f6186315e69249fc",
+    "tests/e2e/auth/oidc.spec.ts": "1349cef09b3a7dca6fc26852705634ed385bac4816d892b37ca064c29450a25a",
+    "tests/e2e/wiki/crud.spec.ts": "237012ab289d85a762938e0e7a5104fe8ff232cd881c5f1dab6955db6faa1d27",
+    "tests/e2e/collab/sse.spec.ts": "ad75eef405dbfbdc883d2bdba6a378c807b77f3d41a6897f5fc641bbcf588d1e",
+    "tests/e2e/collab/crdt.spec.ts": "69f8f4cb3fdffa15e196f8dc96cd584e66d4a7d231f0f9973ab4ee64a885f6b1",
+    "tests/e2e/blob/upload.spec.ts": "654755c958a53babf39e2fe74c3bf1a4d4ebd22cb71cd3c7c393b34b01225e25",
+    "tests/e2e/admin/roles.spec.ts": "215a2fbc077e4eaee5a324f501dbae0ddc92bae57acfd77d9f2588b80844ae8d",
+    "tests/e2e/rate-limit/rate-limit.spec.ts": "570752db34c6a89f407ef9ea32f560bcbcd337af80132d31b152475200ad28a1",
+    "tests/e2e/coverage.spec.ts": "b55086eb7c8b72ecb400e377cdb3af0ca1dd61cda60d79b4a96af5288d47d0fd",
+    "frontend/package.json": "5ec1c82b147ae814c1965df4237e41d7631913baacc85c8d136bdaeb5f292fae"
+  },
+  "hashes_updated_at": "2026-04-21T19:39:22.746Z"
+}
