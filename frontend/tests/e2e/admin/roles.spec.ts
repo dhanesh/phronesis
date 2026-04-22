@@ -16,7 +16,7 @@ test.describe('admin role and RBAC enforcement', () => {
   });
 
   test('unauthenticated request to any protected endpoint is rejected with 401', async ({ browser, baseURL }) => {
-    const ctx = await browser.newContext(); // fresh context, no cookies
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } }); // fresh context, no cookies
     const endpoints = ['/api/pages', '/api/pages/some-page'];
     for (const endpoint of endpoints) {
       const res = await ctx.request.get(`${baseURL}${endpoint}`);

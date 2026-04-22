@@ -15,7 +15,7 @@ test.describe('password authentication', () => {
 
   test('unauthenticated request to protected API is rejected with 401', async ({ browser, baseURL }) => {
     // Use a fresh context WITHOUT storageState to test unauthenticated access.
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const req = await ctx.request.get(`${baseURL}/api/pages`);
     expect(req.status()).toBe(401);
     await ctx.close();

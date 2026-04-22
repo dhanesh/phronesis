@@ -26,6 +26,9 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
+  // SPA tests navigate → session check → data fetch → CodeMirror render; 5s too tight on CI.
+  expect: { timeout: 10000 },
+
   // RT-7 + RT-9: blob reporter for shard merging; JSON for flake-monitor; list for CI output
   reporter: process.env.CI
     ? [

@@ -39,7 +39,7 @@ test.describe('media blob upload', () => {
   });
 
   test('unauthenticated media upload is rejected with 401', async ({ browser, baseURL }) => {
-    const ctx = await browser.newContext(); // no storageState
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } }); // no storageState
     const res = await ctx.request.post(`${baseURL}/media`, {
       headers: { 'Content-Type': 'image/png' },
       data: Buffer.from('fake'),
