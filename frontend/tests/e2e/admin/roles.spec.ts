@@ -43,9 +43,8 @@ test.describe('admin role and RBAC enforcement', () => {
       'hex',
     );
     const res = await page.request.post('/media', {
-      multipart: {
-        file: { name: 'admin-upload.png', mimeType: 'image/png', buffer: pngBytes },
-      },
+      headers: { 'Content-Type': 'image/png' },
+      data: pngBytes,
     });
     expect(res.ok()).toBeTruthy();
   });

@@ -61,7 +61,7 @@ test.describe('wiki page CRUD', () => {
     // Target page should now have a backlink from source.
     const get = await page.request.get(`/api/pages/${target}`);
     const body = await get.json();
-    expect(body.page.backlinks ?? []).toContain(source);
+    expect(body.page.render.backlinks ?? []).toContain(source);
   });
 
   test('tags in page content are extracted and visible on the page', async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe('wiki page CRUD', () => {
 
     const get = await page.request.get(`/api/pages/${name}`);
     const body = await get.json();
-    const tags: string[] = body.page.tags ?? [];
+    const tags: string[] = body.page.render.tags ?? [];
     expect(tags).toContain('golang');
     expect(tags).toContain('testing');
   });
@@ -88,7 +88,7 @@ test.describe('wiki page CRUD', () => {
 
     const get = await page.request.get(`/api/pages/${name}`);
     const body = await get.json();
-    const tasks = body.page.tasks ?? [];
+    const tasks = body.page.render.tasks ?? [];
     expect(tasks.length).toBeGreaterThan(0);
   });
 

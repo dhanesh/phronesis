@@ -29,8 +29,10 @@
   onMount(async () => {
     await loadSession();
     if (authenticated) {
-      await Promise.all([loadPages(), loadPage(pageName)]);
-      connectStream();
+      const match = window.location.pathname.match(/^\/w\/(.+)$/);
+      const initialPage = match ? decodeURIComponent(match[1]) : defaultPage;
+      await Promise.all([loadPages(), loadPage(initialPage)]);
+      // loadPage calls reconnectStream() internally; no extra connectStream() needed.
     }
   });
 
@@ -99,7 +101,7 @@
     authenticated = true;
     password = '';
     await Promise.all([loadPages(), loadPage(pageName)]);
-    connectStream();
+    // loadPage calls reconnectStream() internally; no extra connectStream() needed.
   }
 
   async function logout() {

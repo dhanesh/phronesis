@@ -90,7 +90,7 @@ type uploadResponse struct {
 	URL         string `json:"url"`
 	Hash        string `json:"hash"`
 	Size        int64  `json:"size"`
-	ContentType string `json:"content_type"`
+	ContentType string `json:"contentType"`
 }
 
 // upload accepts a raw-body upload. The caller sets Content-Type; the blob

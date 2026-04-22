@@ -13,11 +13,17 @@ var (
 	tagPattern      = regexp.MustCompile(`(^|\s)#([a-zA-Z0-9][\w/-]*)`)
 )
 
+type Task struct {
+	Text    string `json:"text"`
+	Checked bool   `json:"checked"`
+}
+
 type Result struct {
 	HTML      string   `json:"html"`
 	Tags      []string `json:"tags"`
 	Links     []string `json:"links"`
 	Backlinks []string `json:"backlinks,omitempty"`
+	Tasks     []Task   `json:"tasks,omitempty"`
 }
 
 func RenderMarkdown(markdown string) Result {
@@ -44,6 +50,7 @@ func RenderMarkdown(markdown string) Result {
 
 	linksSet := map[string]struct{}{}
 	tagsSet := map[string]struct{}{}
+	var tasks []Task
 
 	for _, match := range wikiLinkPattern.FindAllStringSubmatch(markdown, -1) {
 		linksSet[normalizeWikiPage(match[1])] = struct{}{}
@@ -83,6 +90,7 @@ func RenderMarkdown(markdown string) Result {
 			continue
 		}
 		if text, checked, ok := parseTask(trimmed); ok {
+			tasks = append(tasks, Task{Text: text, Checked: checked})
 			flushParagraph()
 			if !inList {
 				out.WriteString("<ul>\n")
@@ -117,6 +125,7 @@ func RenderMarkdown(markdown string) Result {
 		HTML:  out.String(),
 		Tags:  sortedKeys(tagsSet),
 		Links: sortedKeys(linksSet),
+		Tasks: tasks,
 	}
 }
 

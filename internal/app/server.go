@@ -755,16 +755,7 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, name strin
 }
 
 func (s *Server) handleWikiPage(w http.ResponseWriter, r *http.Request) {
-	pageName := strings.TrimPrefix(r.URL.Path, "/w/")
-	if pageName == "" {
-		pageName = "home"
-	}
-	page, err := s.hub.Snapshot(pageName)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"page": page})
+	s.serveIndex(w, r)
 }
 
 func (s *Server) handleApp(w http.ResponseWriter, r *http.Request) {

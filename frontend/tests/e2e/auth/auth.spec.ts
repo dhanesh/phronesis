@@ -13,10 +13,10 @@ test.describe('password authentication', () => {
     expect(body.username).toBe('admin');
   });
 
-  test('unauthenticated request to protected API is rejected with 401', async ({ browser }) => {
+  test('unauthenticated request to protected API is rejected with 401', async ({ browser, baseURL }) => {
     // Use a fresh context WITHOUT storageState to test unauthenticated access.
     const ctx = await browser.newContext();
-    const req = await ctx.request.get('/api/pages');
+    const req = await ctx.request.get(`${baseURL}/api/pages`);
     expect(req.status()).toBe(401);
     await ctx.close();
   });

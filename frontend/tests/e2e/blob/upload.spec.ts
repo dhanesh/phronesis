@@ -10,14 +10,11 @@ test.describe('media blob upload', () => {
       'hex',
     );
 
+    // Raw-body upload: Content-Type header names the media type directly.
+    // The server's /media handler expects raw body, not multipart/form-data.
     const res = await page.request.post('/media', {
-      multipart: {
-        file: {
-          name: 'test.png',
-          mimeType: 'image/png',
-          buffer: pngBytes,
-        },
-      },
+      headers: { 'Content-Type': 'image/png' },
+      data: pngBytes,
     });
     expect(res.ok()).toBeTruthy();
 
@@ -33,29 +30,19 @@ test.describe('media blob upload', () => {
 
   test('upload with disallowed content type is rejected', async ({ page }) => {
     const res = await page.request.post('/media', {
-      multipart: {
-        file: {
-          name: 'test.exe',
-          mimeType: 'application/octet-stream',
-          buffer: Buffer.from('MZ'), // fake exe header
-        },
-      },
+      headers: { 'Content-Type': 'application/octet-stream' },
+      data: Buffer.from('MZ'), // fake exe header
     });
     expect(res.ok()).toBeFalsy();
     // Server rejects disallowed content types with 4xx.
     expect(res.status()).toBeGreaterThanOrEqual(400);
   });
 
-  test('unauthenticated media upload is rejected with 401', async ({ browser }) => {
+  test('unauthenticated media upload is rejected with 401', async ({ browser, baseURL }) => {
     const ctx = await browser.newContext(); // no storageState
-    const res = await ctx.request.post('/media', {
-      multipart: {
-        file: {
-          name: 'test.png',
-          mimeType: 'image/png',
-          buffer: Buffer.from('fake'),
-        },
-      },
+    const res = await ctx.request.post(`${baseURL}/media`, {
+      headers: { 'Content-Type': 'image/png' },
+      data: Buffer.from('fake'),
     });
     expect(res.status()).toBe(401);
     await ctx.close();
