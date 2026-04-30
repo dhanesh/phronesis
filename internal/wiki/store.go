@@ -165,7 +165,7 @@ func (s *Store) readPage(name string) (Page, error) {
 // page name. Caller MUST hold s.mu (read or write).
 func (s *Store) backlinksLocked(target string) []string {
 	target = normalizeName(target)
-	var out []string
+	out := []string{}
 	for page, links := range s.pageLinks {
 		if page == target {
 			continue

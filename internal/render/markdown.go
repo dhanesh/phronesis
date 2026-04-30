@@ -23,8 +23,8 @@ type Result struct {
 	HTML      string   `json:"html"`
 	Tags      []string `json:"tags"`
 	Links     []string `json:"links"`
-	Backlinks []string `json:"backlinks,omitempty"`
-	Tasks     []Task   `json:"tasks,omitempty"`
+	Backlinks []string `json:"backlinks"`
+	Tasks     []Task   `json:"tasks"`
 }
 
 func RenderMarkdown(markdown string) Result {
@@ -51,7 +51,7 @@ func RenderMarkdown(markdown string) Result {
 
 	linksSet := map[string]struct{}{}
 	tagsSet := map[string]struct{}{}
-	var tasks []Task
+	tasks := []Task{}
 
 	for _, match := range wikiLinkPattern.FindAllStringSubmatch(markdown, -1) {
 		linksSet[normalizeWikiPage(match[1])] = struct{}{}
