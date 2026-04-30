@@ -1,6 +1,6 @@
 <script>
   import { onDestroy, onMount } from 'svelte';
-  import { Compartment, EditorSelection, EditorState, RangeSetBuilder } from '@codemirror/state';
+  import { Compartment, EditorSelection, EditorState, Facet, RangeSetBuilder } from '@codemirror/state';
   import { keymap, Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
   import { markdown } from '@codemirror/lang-markdown';
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -122,7 +122,7 @@
     }
   }
 
-  const pageFacet = EditorState.facet({
+  const pageFacet = Facet.define({
     combine: (values) => values[0] ?? ''
   });
 
