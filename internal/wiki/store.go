@@ -2,9 +2,11 @@ package wiki
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +19,11 @@ import (
 type Store struct {
 	root string
 	mu   sync.RWMutex
+	// pageLinks maps page name -> outgoing wiki-link targets. Maintained
+	// in lockstep with the on-disk state: built from the FS in NewStore,
+	// refreshed in Put. backlinksLocked walks this map (cheap) instead of
+	// re-reading + re-rendering every .md file on disk on each Get.
+	pageLinks map[string][]string
 }
 
 type Page struct {
@@ -36,7 +43,11 @@ func NewStore(root string) (*Store, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
-	return &Store{root: root}, nil
+	s := &Store{root: root, pageLinks: make(map[string][]string)}
+	if err := s.rebuildLinkGraph(); err != nil {
+		return nil, fmt.Errorf("build link graph: %w", err)
+	}
+	return s, nil
 }
 
 func (s *Store) Get(name string) (Page, error) {
@@ -67,6 +78,13 @@ func (s *Store) Put(name, content string) (Page, error) {
 	if err := fsutil.AtomicWrite(path, []byte(safeContent), 0o644); err != nil {
 		return Page{}, err
 	}
+
+	// Refresh the link-graph entry for this page so subsequent Gets serve
+	// fresh backlinks. Rendering safeContent here matches what's on disk
+	// (AtomicWrite is durable), avoiding a second os.ReadFile.
+	normalized := normalizeName(name)
+	s.pageLinks[normalized] = render.RenderMarkdown(safeContent).Links
+
 	return s.readPage(name)
 }
 
@@ -96,26 +114,12 @@ func (s *Store) List() ([]Summary, error) {
 	return pages, err
 }
 
+// Backlinks returns the names of pages that link to target. Reads the
+// in-memory link graph; no disk I/O.
 func (s *Store) Backlinks(target string) ([]string, error) {
-	summaries, err := s.List()
-	if err != nil {
-		return nil, err
-	}
-	target = normalizeName(target)
-	var backlinks []string
-	for _, summary := range summaries {
-		page, err := s.Get(summary.Name)
-		if err != nil {
-			return nil, err
-		}
-		for _, link := range page.Render.Links {
-			if link == target {
-				backlinks = append(backlinks, summary.Name)
-				break
-			}
-		}
-	}
-	return backlinks, nil
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.backlinksLocked(target), nil
 }
 
 func (s *Store) readPage(name string) (Page, error) {
@@ -142,11 +146,12 @@ func (s *Store) readPage(name string) (Page, error) {
 		return Page{}, err
 	}
 	result := render.RenderMarkdown(string(buf))
-	backlinks, err := s.BacklinksWithoutLock(normalized)
-	if err != nil {
-		return Page{}, err
-	}
-	result.Backlinks = backlinks
+	// Defense layer 2 (RT-9.2): the renderer escapes its own output, but any
+	// raw HTML the user pasted into a markdown source can still flow through
+	// untouched. SanitizeHTML drops non-allowlisted tags and re-strips event
+	// handlers + javascript: URLs. StripDangerousTags at Put time is layer 1.
+	result.HTML = xssdefense.SanitizeHTML(result.HTML)
+	result.Backlinks = s.backlinksLocked(normalized)
 	return Page{
 		Name:      normalized,
 		Content:   string(buf),
@@ -156,9 +161,31 @@ func (s *Store) readPage(name string) (Page, error) {
 	}, nil
 }
 
-func (s *Store) BacklinksWithoutLock(target string) ([]string, error) {
-	var backlinks []string
-	err := filepath.WalkDir(s.root, func(path string, d fs.DirEntry, err error) error {
+// backlinksLocked walks the in-memory link graph for pages that target this
+// page name. Caller MUST hold s.mu (read or write).
+func (s *Store) backlinksLocked(target string) []string {
+	target = normalizeName(target)
+	var out []string
+	for page, links := range s.pageLinks {
+		if page == target {
+			continue
+		}
+		if slices.Contains(links, target) {
+			out = append(out, page)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// rebuildLinkGraph walks the page tree once and caches each page's outgoing
+// links. Called from NewStore so the very first Get already serves backlinks
+// from memory. Takes s.mu for writes.
+func (s *Store) rebuildLinkGraph() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.pageLinks = make(map[string][]string)
+	return filepath.WalkDir(s.root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -169,23 +196,13 @@ func (s *Store) BacklinksWithoutLock(target string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if name == target {
-			return nil
-		}
 		buf, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		result := render.RenderMarkdown(string(buf))
-		for _, link := range result.Links {
-			if link == target {
-				backlinks = append(backlinks, name)
-				break
-			}
-		}
+		s.pageLinks[name] = render.RenderMarkdown(string(buf)).Links
 		return nil
 	})
-	return backlinks, err
 }
 
 func (s *Store) pagePath(name string) (string, error) {
