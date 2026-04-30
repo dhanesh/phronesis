@@ -1,0 +1,47 @@
+package app
+
+import (
+	"net/http"
+
+	"github.com/dhanesh/phronesis/internal/ratelimit"
+	"github.com/dhanesh/phronesis/internal/xssdefense"
+)
+
+// routes assembles the HTTP mux + middleware chain. The middleware order is
+// (outermost -> innermost):
+//
+//	logging -> CSP (INT-13, RT-9.3) -> attachPrincipal (INT-2, RT-5) -> mux
+//
+// CSP sits between logging and principal so every response — including 401s
+// from the principal middleware — carries the Content-Security-Policy header.
+// loggingMiddleware stays outermost so its log line covers the full request,
+// not just the inner handler.
+func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/health", s.handleHealth)
+	mux.HandleFunc("/api/readyz", s.handleReadyz) // Wave-5 / RT-8
+	mux.Handle("/api/login", ratelimit.Middleware(ratelimit.Config{
+		Limiter:      authRateLimiter,
+		PathPrefixes: []string{"/api/login", "/api/auth/"},
+	}, http.HandlerFunc(s.handleLogin)))
+	// INT-8: OIDC login route is always mounted; the handler returns 404
+	// when OIDC is not configured. This keeps the path predictable for
+	// clients and makes "is OIDC enabled?" introspectable via HTTP.
+	mux.Handle("/api/auth/oidc/login", ratelimit.Middleware(ratelimit.Config{
+		Limiter:      authRateLimiter,
+		PathPrefixes: []string{"/api/auth/"},
+	}, http.HandlerFunc(s.handleOIDCLogin)))
+	mux.HandleFunc("/api/logout", s.withAuth(s.handleLogout))
+	mux.HandleFunc("/api/session", s.handleSession)
+	mux.HandleFunc("/api/pages", s.withAuth(s.handlePages))
+	mux.HandleFunc("/api/pages/", s.withAuth(s.handlePageRoutes))
+	mux.HandleFunc("/w/", s.withAuth(s.handleWikiPage))
+
+	// INT-3: mount /media routes BEFORE the catch-all so the ServeMux's
+	// longest-prefix match picks them up.
+	s.media.Routes(mux)
+
+	mux.HandleFunc("/", s.handleApp)
+
+	return loggingMiddleware(xssdefense.CSPMiddleware("", s.attachPrincipal(mux)))
+}
