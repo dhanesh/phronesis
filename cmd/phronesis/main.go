@@ -4,7 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
@@ -50,7 +51,8 @@ func main() {
 	cfg := app.LoadConfig()
 	server, err := app.NewServer(cfg)
 	if err != nil {
-		log.Fatalf("create server: %v", err)
+		slog.Error("create server", slog.String("err", err.Error()))
+		os.Exit(1)
 	}
 
 	// INT-10: SIGTERM/SIGINT cancels ctx, which triggers the server's graceful
@@ -59,9 +61,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	log.Printf("phronesis %s listening on %s", version, cfg.Addr)
+	slog.Info("listening",
+		slog.String("version", version),
+		slog.String("addr", cfg.Addr),
+	)
 	if err := server.Serve(ctx, drainTimeout); err != nil {
-		log.Fatalf("serve: %v", err)
+		slog.Error("serve", slog.String("err", err.Error()))
+		os.Exit(1)
 	}
-	log.Printf("phronesis stopped cleanly")
+	slog.Info("stopped cleanly")
 }
