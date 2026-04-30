@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -147,8 +148,52 @@ func renderInline(text string) string {
 		}
 		return fmt.Sprintf(`<a href="/w/%s" data-wiki-link="%s">%s</a>`, html.EscapeString(target), html.EscapeString(target), html.EscapeString(label))
 	})
-	escaped = mdLinkPattern.ReplaceAllString(escaped, `<a href="$2">$1</a>`)
+	escaped = mdLinkPattern.ReplaceAllStringFunc(escaped, func(match string) string {
+		parts := mdLinkPattern.FindStringSubmatch(html.UnescapeString(match))
+		if len(parts) == 0 {
+			return match
+		}
+		// safeURL drops javascript:, data:, vbscript:, etc. so we never
+		// emit a clickable XSS vector — defense in depth even though CSP
+		// already forbids inline script execution. EscapeString protects
+		// against attribute-quote breakouts on a malformed but-allowed URL.
+		return fmt.Sprintf(`<a href="%s">%s</a>`,
+			html.EscapeString(safeURL(parts[2])),
+			html.EscapeString(parts[1]),
+		)
+	})
 	return escaped
+}
+
+// safeURL returns the input when its scheme is on the allow-list (http,
+// https, mailto) or the URL is relative/fragment-only. For anything else
+// (javascript:, data:, vbscript:, file:, etc.) it returns "#" so the
+// rendered anchor is inert.
+func safeURL(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "#"
+	}
+	// Relative paths and fragment links are safe by construction.
+	if strings.HasPrefix(trimmed, "/") || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "?") {
+		return trimmed
+	}
+	// Scheme-relative URLs (//host/path) inherit the page scheme — safe.
+	if strings.HasPrefix(trimmed, "//") {
+		return trimmed
+	}
+	lower := strings.ToLower(trimmed)
+	switch {
+	case strings.HasPrefix(lower, "http://"),
+		strings.HasPrefix(lower, "https://"),
+		strings.HasPrefix(lower, "mailto:"):
+		return trimmed
+	}
+	// No scheme separator at all — treat as relative path.
+	if !strings.Contains(trimmed, ":") {
+		return trimmed
+	}
+	return "#"
 }
 
 func normalizeWikiPage(name string) string {
@@ -188,15 +233,6 @@ func sortedKeys[T any](set map[string]T) []string {
 	for key := range set {
 		out = append(out, key)
 	}
-	if len(out) < 2 {
-		return out
-	}
-	for i := 0; i < len(out)-1; i++ {
-		for j := i + 1; j < len(out); j++ {
-			if out[j] < out[i] {
-				out[i], out[j] = out[j], out[i]
-			}
-		}
-	}
+	slices.Sort(out)
 	return out
 }
