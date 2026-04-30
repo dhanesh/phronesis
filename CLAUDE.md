@@ -14,19 +14,35 @@ This file describes the current project stack and implementation boundaries for 
 - Go version: `1.24.5`
 - Module path: `github.com/dhanesh/phronesis`
 - HTTP server: standard library `net/http`
-- Auth: custom cookie session auth in `internal/auth`
-- Storage: local filesystem-backed Markdown files in `internal/wiki/store.go`
-- Live updates: server-sent events in `internal/wiki/session.go` and `internal/app/server.go`
-- Markdown rendering: custom renderer in `internal/render/markdown.go`
+- Auth: cookie session auth in `internal/auth` plus optional OIDC token-first
+  login in `internal/auth/oidc`
+- Authorization: `internal/principal` carries the canonical Principal (user vs
+  service account, role, workspace) attached to request context
+- Storage: local filesystem-backed Markdown files in `internal/wiki/store.go`,
+  binary blobs in `internal/blob`, atomic writes in `internal/fsutil`
+- Live updates: server-sent events in `internal/wiki/session.go` and
+  `internal/app/server.go`; CRDT room/broadcaster scaffolding in
+  `internal/crdt` (composed but not yet wired into editor handlers)
+- Persistence side effects: append-only audit log in `internal/audit`,
+  push-spillover journal in `internal/journal`, periodic workspace snapshots
+  in `internal/snapshot`
+- Markdown rendering: custom renderer in `internal/render/markdown.go`,
+  XSS/CSP defenses in `internal/xssdefense`
+- Cross-cutting middleware: rate limiter in `internal/ratelimit`, session
+  store abstraction in `internal/sessions`, embedded frontend assets in
+  `internal/webfs`
 
 ### Frontend
 
-- Framework: Svelte `5`
+- Framework: Svelte `5` (currently authored in legacy / non-runes mode;
+  migration to runes is in progress)
 - Build tool: Vite `8`
-- Language: JavaScript modules, not TypeScript
+- Language: JavaScript modules in `frontend/src`. Tooling configs and the
+  Playwright e2e suite under `frontend/tests/e2e` are TypeScript.
 - Editor: CodeMirror 6
 - Styling: component-scoped CSS in Svelte plus `frontend/src/app.css`
 - Package manager: npm
+- E2E tests: Playwright (Chromium only in v1) under `frontend/tests/e2e`
 
 ### Current Frontend Libraries
 
@@ -39,15 +55,31 @@ This file describes the current project stack and implementation boundaries for 
 - `@lezer/highlight`
 - `vite`
 - `@sveltejs/vite-plugin-svelte`
+- `@playwright/test` (devDependency)
 
 ## Repository Layout
 
 - `cmd/phronesis`: executable entrypoint
-- `internal/app`: server construction, routing, config, static asset serving
-- `internal/auth`: session and credential handling
-- `internal/wiki`: page storage and live session coordination
+- `internal/app`: server construction, routing, config, static asset serving,
+  readyz, OIDC handler glue
+- `internal/auth`: cookie session manager + credential handling
+- `internal/auth/oidc`: OIDC verifier, claim mapping, token-first adapter
+- `internal/principal`: canonical Principal (type/role/workspace) +
+  context propagation
+- `internal/wiki`: page store + live document hub
 - `internal/render`: Markdown rendering and wiki metadata extraction
-- `frontend`: Svelte/Vite application
+- `internal/xssdefense`: store-time and render-time HTML sanitization + CSP
+- `internal/audit`: append-only event log + buffered async drainer
+- `internal/blob`: content-addressed blob store with quotas
+- `internal/media`: HTTP handler for `/media/<sha>` upload/download
+- `internal/sessions`: pluggable session store interface + in-memory impl
+- `internal/ratelimit`: sliding-window limiter + middleware
+- `internal/snapshot`: workspace snapshot scheduler + local-FS target
+- `internal/journal`: append-only push-spillover journal (replay on startup)
+- `internal/crdt`: room + in-process broadcaster scaffolding
+- `internal/fsutil`: atomic-write helper (tempfile + fsync + rename)
+- `internal/webfs`: dev-stub vs prod-embedded frontend FS (build-tagged)
+- `frontend`: Svelte/Vite application + Playwright e2e suite
 - `data/pages`: default on-disk content root used at runtime
 
 ## Architectural Constraints
@@ -88,8 +120,14 @@ This file describes the current project stack and implementation boundaries for 
 - stable HTTP document API
 - CLI interface
 - MCP interface
-- git sync to configurable remote
-- stronger auth and multi-user collaboration semantics
+- git sync to configurable remote (push-journal scaffolding exists in
+  `internal/journal`; no remote driver wired)
+- multi-workspace resolution from URL/subdomain (today everything resolves
+  to the implicit `default` workspace)
+- editor-side wiring of the CRDT room broadcaster in `internal/crdt`
+  (composed in `Server` but not yet consumed by handlers)
+- frontend migration from Svelte 4 legacy syntax (`export let`, `$:`,
+  `on:click`, `createEventDispatcher`) to Svelte 5 runes
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
