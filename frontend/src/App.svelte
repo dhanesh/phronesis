@@ -3,28 +3,31 @@
   import Editor from './lib/Editor.svelte';
 
   const defaultPage = 'home';
-  let checkingSession = true;
-  let authenticated = false;
-  let loginError = '';
-  let bootError = '';
-  let username = 'admin';
-  let password = '';
+  let checkingSession = $state(true);
+  let authenticated = $state(false);
+  let loginError = $state('');
+  let bootError = $state('');
+  let username = $state('admin');
+  let password = $state('');
 
-  let pages = [];
-  let pageName = defaultPage;
-  let page = emptyPage(defaultPage);
-  let draft = '';
-  let status = 'Idle';
-  let mergedNotice = '';
-  let sidebarOpen = true;
+  let pages = $state([]);
+  let pageName = $state(defaultPage);
+  let page = $state(emptyPage(defaultPage));
+  let draft = $state('');
+  let status = $state('Idle');
+  let mergedNotice = $state('');
+  let sidebarOpen = $state(true);
+  // Imperative handles. `editor` is assigned via `bind:this` so it must be
+  // a rune for the assignment to land; the others never escape this script
+  // so plain lets are fine.
   let source;
   let saveTimer;
-  let editor;
+  let editor = $state();
   // INT-9 / RT-2.2: durability state driven by autosave lifecycle. Values
   // from DURABILITY_STATES in durability.js: idle | dirty | syncing | synced
   // | saved | disconnected. This is the v1 approximation; once the server
   // emits op_acked/op_saved over SSE the indicator can drive itself.
-  let durability = 'idle';
+  let durability = $state('idle');
 
   onMount(async () => {
     await loadSession();
@@ -195,14 +198,14 @@
     await loadPages();
   }
 
-  function onEditorChange(event) {
-    draft = event.detail.value;
+  function onEditorChange(detail) {
+    draft = detail.value;
     durability = 'dirty';
     scheduleSave();
   }
 
-  function onNavigate(event) {
-    loadPage(event.detail.page);
+  function onNavigate(detail) {
+    loadPage(detail.page);
   }
 </script>
 
@@ -223,7 +226,7 @@
         Password
         <input bind:value={password} type="password" autocomplete="current-password" />
       </label>
-      <button on:click={login}>Sign in</button>
+      <button onclick={login}>Sign in</button>
       {#if loginError}<p class="error">{loginError}</p>{/if}
     </section>
   </main>
@@ -235,20 +238,20 @@
           <p class="eyebrow">Workspace</p>
           <h2>Pages</h2>
         </div>
-        <button class="ghost" on:click={() => (sidebarOpen = !sidebarOpen)}>{sidebarOpen ? 'Hide' : 'Show'}</button>
+        <button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)}>{sidebarOpen ? 'Hide' : 'Show'}</button>
       </div>
       <div class="page-jump">
         <input bind:value={pageName} placeholder="wiki/url" />
-        <button on:click={() => loadPage(pageName)}>Open</button>
+        <button onclick={() => loadPage(pageName)}>Open</button>
       </div>
       <nav>
-        {#each pages as entry}
-          <button class:selected={entry.name === page.name} class="nav-link" on:click={() => loadPage(entry.name)}>
+        {#each pages as entry (entry.name)}
+          <button class:selected={entry.name === page.name} class="nav-link" onclick={() => loadPage(entry.name)}>
             <span>{entry.name}</span>
           </button>
         {/each}
       </nav>
-      <button class="logout" on:click={logout}>Sign out</button>
+      <button class="logout" onclick={logout}>Sign out</button>
     </aside>
 
     <section class="workspace">
@@ -279,8 +282,8 @@
               value={draft}
               page={page.name}
               {durability}
-              on:change={onEditorChange}
-              on:navigate={onNavigate}
+              onchange={onEditorChange}
+              onnavigate={onNavigate}
             />
           </div>
         </section>
@@ -297,8 +300,8 @@
             <h3>Wiki Graph</h3>
             {#if page.render.links.length}
               <div class="pill-list">
-                {#each page.render.links as link}
-                  <button class="pill" on:click={() => loadPage(link)}>{link}</button>
+                {#each page.render.links as link (link)}
+                  <button class="pill" onclick={() => loadPage(link)}>{link}</button>
                 {/each}
               </div>
             {:else}
@@ -311,8 +314,8 @@
             <h3>Backlinks</h3>
             {#if page.render.backlinks.length}
               <div class="pill-list">
-                {#each page.render.backlinks as link}
-                  <button class="pill ghost-pill" on:click={() => loadPage(link)}>{link}</button>
+                {#each page.render.backlinks as link (link)}
+                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
                 {/each}
               </div>
             {:else}
@@ -325,7 +328,7 @@
             <h3>Metadata</h3>
             {#if page.render.tags.length}
               <div class="pill-list">
-                {#each page.render.tags as tag}
+                {#each page.render.tags as tag (tag)}
                   <span class="tag-chip">#{tag}</span>
                 {/each}
               </div>

@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { Compartment, EditorSelection, EditorState, RangeSetBuilder } from '@codemirror/state';
   import { keymap, Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
   import { markdown } from '@codemirror/lang-markdown';
@@ -8,16 +8,19 @@
   import { DURABILITY_STATES } from './durability.js';
   import DurabilityIndicator from './DurabilityIndicator.svelte';
 
-  export let value = '';
-  export let page = 'home';
-  export let readOnly = false;
   // INT-9: durability state is externally-driven by the parent (App.svelte)
   // based on autosave lifecycle. When server-side op_acked/op_saved events
   // are wired (future editor-feature wave), this prop can be replaced by an
   // internal tracker from durability.js reading the SSE stream.
-  export let durability = DURABILITY_STATES.IDLE;
+  let {
+    value = '',
+    page = 'home',
+    readOnly = false,
+    durability = DURABILITY_STATES.IDLE,
+    onchange,
+    onnavigate,
+  } = $props();
 
-  const dispatch = createEventDispatcher();
   let root;
   let view;
   let suppressChange = false;
@@ -109,7 +112,7 @@
       anchor.title = `Open ${this.target}`;
       anchor.addEventListener('click', (event) => {
         event.preventDefault();
-        dispatch('navigate', { page: this.target, source: 'wikilink' });
+        onnavigate?.({ page: this.target, source: 'wikilink' });
       });
       return anchor;
     }
@@ -139,7 +142,7 @@
           if (!update.docChanged || suppressChange) {
             return;
           }
-          dispatch('change', {
+          onchange?.({
             value: update.state.doc.toString(),
             selection: update.state.selection.main
           });
@@ -189,7 +192,10 @@
     });
   });
 
-  $: if (view) {
+  // Sync the prop value back into the editor when the parent updates it
+  // (e.g., loading a different page or merging a server snapshot).
+  $effect(() => {
+    if (!view) return;
     const currentDoc = view.state.doc.toString();
     if (value !== currentDoc) {
       suppressChange = true;
@@ -198,16 +204,18 @@
       });
       suppressChange = false;
     }
-  }
+  });
 
-  $: if (view) {
+  // Reconfigure compartments when editability or page identity changes.
+  $effect(() => {
+    if (!view) return;
     view.dispatch({
       effects: [
         editableCompartment.reconfigure(EditorView.editable.of(!readOnly)),
         pageCompartment.reconfigure(pageFacet.of(page))
       ]
     });
-  }
+  });
 
   export function focus() {
     view?.focus();
