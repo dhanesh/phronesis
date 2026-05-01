@@ -12,7 +12,7 @@ import type { DecorationFamily } from '../base';
 const WIKI_LINK_REGEX = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
 
 function normalizeWikiName(name: string): string {
-  return (name || '').trim().replaceAll(' ', '-').replaceAll(/^\/+/, '').toLowerCase();
+  return (name || '').trim().replaceAll(' ', '-').replace(/^\/+/, '').toLowerCase();
 }
 
 class WikiLinkWidget extends WidgetType {
