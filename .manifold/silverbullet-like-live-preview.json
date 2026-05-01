@@ -1,0 +1,502 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "silverbullet-like-live-preview",
+  "phase": "ANCHORED",
+  "domain": "software",
+  "created": "2026-05-01T03:05:00+05:30",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "invariant",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "B2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "T2",
+        "type": "boundary",
+        "source": "interview",
+        "threshold": {"kind": "statistical", "p95": "16ms", "scope": "viewport rebuild for typical edits"},
+        "quality": {"specificity": 3, "measurability": 3, "testability": 2}
+      },
+      {
+        "id": "T3",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "T4",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "assumption",
+        "quality": {"specificity": 2, "measurability": 2, "testability": 1}
+      },
+      {
+        "id": "T5",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "invariant",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U2",
+        "type": "goal",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U3",
+        "type": "invariant",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U4",
+        "type": "invariant",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "goal",
+        "source": "interview",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "O2",
+        "type": "boundary",
+        "source": "interview",
+        "threshold": {"kind": "deterministic", "ceiling": "30KB gzipped delta"},
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "O3",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "trade_off",
+      "between": ["U2", "T3"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "Capability vs Simplicity",
+        "principles": ["P15", "P40"]
+      },
+      "resolution_choice": "Use @codemirror/lang-markdown's markdownLanguage export (the GFM-enabled variant) via markdown({base: markdownLanguage}). RT-1 verified 2026-05-01: all V1 Lezer node types present without importing @lezer/markdown directly; package.json untouched.",
+      "propagation_effects": [
+        {"constraint_id": "T3", "effect": "TIGHTENED", "note": "Must verify GFM is reachable without a new top-level package"},
+        {"constraint_id": "U2", "effect": "TIGHTENED", "note": "If GFM unavailable, table/image scope must be relaxed"}
+      ],
+      "validation_criteria": [
+        "package-lock.json shows no new top-level dependency added",
+        "Lezer parse tree on a GFM table source produces distinct Table/TableRow/TableCell nodes"
+      ]
+    },
+    {
+      "id": "TN2",
+      "type": "trade_off",
+      "between": ["U2", "T4"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "physical",
+        "parameters": "Reuse vs Block-level capability",
+        "principles": ["P1"]
+      },
+      "resolution_choice": "A: Two sibling pattern families sharing the same skeleton (ViewPlugin + RangeSetBuilder + selectionTouches). Inline plugins use Decoration.replace; block plugins use Decoration.replace({block: true}) or line decorations. T4 refined to 'reuse the skeleton, not necessarily the exact replace shape.'",
+      "propagation_effects": [
+        {"constraint_id": "T4", "effect": "LOOSENED", "note": "Refined wording captures the actual intent"}
+      ],
+      "validation_criteria": [
+        "Block-level decorations (table, fenced code, blockquote) and inline decorations live in separate modules under frontend/src/lib/editor/decorations/{inline,block}/",
+        "Both module families import the same selectionTouches helper"
+      ]
+    },
+    {
+      "id": "TN3",
+      "type": "resource_tension",
+      "between": ["T2", "U2"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "Speed vs Capability",
+        "principles": ["P10", "P11"]
+      },
+      "resolution_choice": "A: Memoize widget instances keyed by (node range, source-slice hash). WidgetType.eq() short-circuits Decoration.replace. Edits inside a table rebuild only that table.",
+      "propagation_effects": [
+        {"constraint_id": "T2", "effect": "LOOSENED", "note": "Cache cuts amortised cost; p95 budget stays achievable"}
+      ],
+      "validation_criteria": [
+        "Performance test: editing a paragraph adjacent to a 10x10 table produces zero new widget instances for the table",
+        "WidgetType.eq returns true for unchanged widgets across rebuilds"
+      ],
+      "cache_invalidation": {
+        "key": "node range + source-slice hash",
+        "invalidation_trigger": "doc-change covering the range",
+        "rotation_strategy": "automatic via WeakMap; no TTL"
+      }
+    },
+    {
+      "id": "TN4",
+      "type": "trade_off",
+      "between": ["U1", "T2"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "physical",
+        "parameters": "Throughput debounce vs Latency on reveal",
+        "principles": ["P1"]
+      },
+      "resolution_choice": "A: Segment rebuild policy by trigger. Selection-change rebuilds run immediately (cheap; only selectionTouches recheck). Doc-change rebuilds debounced. T2 refined.",
+      "propagation_effects": [
+        {"constraint_id": "T2", "effect": "TIGHTENED", "note": "Spec now distinguishes selection-rebuild (immediate) from doc-rebuild (debounced)"},
+        {"constraint_id": "U1", "effect": "LOOSENED", "note": "No perceived latency on cursor-enter"}
+      ],
+      "validation_criteria": [
+        "e2e: typing arrow-key into a wikilink reveals source within one frame (no 16ms+ ghost)",
+        "Doc-change rebuilds still debounced via requestAnimationFrame"
+      ]
+    },
+    {
+      "id": "TN5",
+      "type": "resource_tension",
+      "between": ["O1", "T2"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "Coverage vs CI cost",
+        "principles": ["P5"]
+      },
+      "resolution_choice": "A: Single Playwright test loads a seed page containing every V1 construct family, then asserts cursor-out (rendered) and cursor-in (source) for each. Reduces ~12 new tests to 1 with thorough assertions. O1 refined.",
+      "propagation_effects": [
+        {"constraint_id": "O1", "effect": "TIGHTENED", "note": "The single test must enumerate every U2 family"}
+      ],
+      "validation_criteria": [
+        "e2e file under frontend/tests/e2e/ contains one describe block per V1 family",
+        "Suite runtime delta < 10s over current baseline"
+      ]
+    },
+    {
+      "id": "TN6",
+      "type": "hidden_dependency",
+      "between": ["O3", "T2"],
+      "status": "resolved",
+      "resolution_choice": "O3 fixture page must fit within one initial viewport so all asserted constructs render on load. Without this, viewport-scoped decoration could leave the asserted construct off-screen and the smoke would pass vacuously.",
+      "propagation_effects": [
+        {"constraint_id": "O3", "effect": "TIGHTENED", "note": "Fixture size constraint added"}
+      ],
+      "validation_criteria": [
+        "O3 fixture markdown is ≤ 30 lines",
+        "Asserted constructs all appear in the initial viewport at default editor height"
+      ]
+    },
+    {
+      "id": "TN7",
+      "type": "hidden_dependency",
+      "between": ["U2", "B2"],
+      "status": "resolved",
+      "resolution_choice": "V1 image decoration accepts (a) absolute URLs subject to S1 allow-list, (b) /media/<sha> paths matching internal/media handler. Wiki-relative paths and attachment shorthands deferred to V2; per U4 they render as raw source.",
+      "propagation_effects": [
+        {"constraint_id": "U2", "effect": "TIGHTENED", "note": "V1 image src scope narrowed to absolute + /media/<sha>"}
+      ],
+      "validation_criteria": [
+        "Unit test: image decoration on /media/abc123 emits <img src='/media/abc123'>",
+        "Unit test: image decoration on relative path './foo.png' produces no decoration (raw source remains)"
+      ]
+    },
+    {
+      "id": "TN8",
+      "type": "resource_tension",
+      "between": ["O2", "U2"],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "Cost vs Capability",
+        "principles": ["P5", "P10"]
+      },
+      "resolution_choice": "A: Single shared Decorator base module — ViewPlugin scaffold, RangeSetBuilder driver, selectionTouches helper, safeURL — exported from frontend/src/lib/editor/decorations/base.ts. Per-family code is node-type matching + widget DOM only. Add CI bundle-size gate (`make build` fails on >30KB delta).",
+      "propagation_effects": [
+        {"constraint_id": "O2", "effect": "TIGHTENED", "note": "Now requires CI gate, not manual check"}
+      ],
+      "validation_criteria": [
+        "frontend/src/lib/editor/decorations/base.ts exists and is imported by every decoration plugin",
+        "make build prints bundle delta and exits non-zero on >30KB regression"
+      ]
+    }
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "SATISFIED",
+        "maps_to": ["U2", "T3"],
+        "evidence": [
+          {"id": "E1", "type": "file_exists", "path": "frontend/node_modules/@codemirror/lang-markdown", "status": "VERIFIED"},
+          {"id": "E2", "type": "content_match", "path": "frontend/node_modules/@codemirror/lang-markdown/dist/index.d.ts", "pattern": "markdownLanguage", "status": "VERIFIED"},
+          {"id": "E3", "type": "test_passes", "path": "scripts/verify-rt1-gfm-parsing.mjs", "test_name": "RT-1: SATISFIED — all 13 required Lezer node types present", "status": "VERIFIED", "verified_at": "2026-05-01T13:00:00+05:30", "note": "markdownLanguage from @codemirror/lang-markdown exposes Table/TableRow/TableCell/FencedCode/Blockquote/Image/ATXHeading1/Emphasis/StrongEmphasis/InlineCode/Link/BulletList/OrderedList without importing @lezer/markdown directly. T3 stays clean."}
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["T1"],
+        "evidence": [
+          {"id": "E4", "type": "manual_review", "description": "CM 6 docs guarantee Decoration.replace/widget/line do not modify state.doc; the existing wikiLinkDecorations ViewPlugin proves this in this codebase", "status": "VERIFIED"}
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["T2", "U1"],
+        "evidence": [
+          {"id": "E5", "type": "content_match", "path": "frontend/node_modules/@codemirror/view/dist/index.d.ts", "pattern": "viewportChanged|selectionSet|docChanged", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["T2", "U2"],
+        "evidence": [
+          {"id": "E6", "type": "manual_review", "description": "WidgetType.eq() contract documented in CM 6; verifying via a benchmark in m4-generate", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["S1"],
+        "evidence": [
+          {"id": "E7", "type": "test_passes", "description": "Parity test fixture: TS safeURL output matches Go safeURL for the same inputs across http/https/mailto/javascript:/data:/relative/fragment cases", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["S2"],
+        "evidence": [
+          {"id": "E8", "type": "manual_review", "description": "Code review of every WidgetType.toDOM in m4-generate output; assert no innerHTML / outerHTML / dangerouslySetInnerHTML", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "SATISFIED",
+        "maps_to": ["T5"],
+        "evidence": [
+          {"id": "E9", "type": "file_exists", "path": "internal/render/markdown.go", "status": "VERIFIED"},
+          {"id": "E10", "type": "file_exists", "path": "internal/wiki/store.go", "status": "VERIFIED"},
+          {"id": "E11", "type": "manual_review", "description": "This work is editor-only by spec (T5); m4 must produce no diff under internal/render or internal/wiki", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "PARTIAL",
+        "maps_to": ["T4"],
+        "evidence": [
+          {"id": "E12", "type": "file_exists", "path": "frontend/src/lib/Editor.svelte", "status": "VERIFIED"},
+          {"id": "E13", "type": "manual_review", "description": "Inline skeleton proven by existing wikiLinkDecorations; block-level sibling pattern (Decoration.replace({block: true})) is documented in CM 6 but not yet exercised in this codebase", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "NOT_SATISFIED",
+        "maps_to": ["O2", "U2"],
+        "evidence": [
+          {"id": "E14", "type": "metric_value", "description": "make build prints gzipped index-*.js size; delta from baseline (191KB) must be ≤ 30KB", "threshold": "30KB", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "SATISFIED",
+        "maps_to": ["O1"],
+        "evidence": [
+          {"id": "E15", "type": "file_exists", "path": "frontend/tests/e2e", "status": "VERIFIED"},
+          {"id": "E16", "type": "content_match", "path": "frontend/tests/e2e", "pattern": "wikilink|wiki-link|cm-wikilink", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-11",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["O3"],
+        "evidence": [
+          {"id": "E17", "type": "manual_review", "description": "Smoke fixture markdown ≤ 30 lines; default editor min-height (60vh) renders all asserted constructs without scroll", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-12",
+        "status": "SPECIFICATION_READY",
+        "maps_to": ["U2", "S1"],
+        "evidence": [
+          {"id": "E18", "type": "test_passes", "description": "Image-URL classifier unit tests: /media/<sha> pass, absolute URLs pass safeURL, relative paths produce no decoration", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-13",
+        "status": "NOT_SATISFIED",
+        "maps_to": ["O2"],
+        "evidence": [
+          {"id": "E19", "type": "file_exists", "path": ".github/workflows", "status": "VERIFIED"},
+          {"id": "E20", "type": "manual_review", "description": "CI workflow runs make build and asserts bundle delta ≤ 30KB; fails the build on regression", "status": "PENDING"}
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-1",
+      "reason": "RT-1 is the single research unknown gating V1 scope. If GFM extensions are not reachable via the already-transitive @lezer/markdown without adding a new top-level dep, U2 (Full) clashes with T3 and forces relaxation. Every other NOT_SATISFIED RT is implementation work that becomes mechanical once RT-1 closes; m4 should generate the RT-1 verification artifact first.",
+      "dependency_chain": ["RT-8", "RT-9", "RT-12", "RT-13"]
+    },
+    "tension_validation": [
+      {"tension_id": "TN1", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN2", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN3", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN4", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN5", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN6", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN7", "status": "CONFIRMED", "by_option": "A"},
+      {"tension_id": "TN8", "status": "CONFIRMED", "by_option": "A"}
+    ],
+    "solution_options": [
+      {"id": "A", "reversibility": "TWO_WAY", "satisfies": ["RT-2", "RT-3", "RT-4", "RT-5", "RT-6", "RT-7", "RT-8", "RT-9", "RT-10", "RT-11", "RT-12", "RT-13"], "depends_on": ["RT-1"]},
+      {"id": "B", "reversibility": "REVERSIBLE_WITH_COST", "satisfies": ["RT-2", "RT-3", "RT-4", "RT-5", "RT-6", "RT-7", "RT-8", "RT-9", "RT-10", "RT-11", "RT-12", "RT-13"], "relaxes": ["U2"]},
+      {"id": "C", "reversibility": "TWO_WAY", "satisfies": ["RT-1", "RT-2", "RT-3", "RT-4", "RT-5", "RT-6", "RT-7", "RT-8", "RT-9", "RT-10", "RT-11", "RT-12", "RT-13"], "relaxes": ["T3"]}
+    ],
+    "recommended_option": "A"
+  },
+  "draft_required_truths": [
+    {
+      "id": "DRT-1",
+      "seed_from": ["T1"],
+      "draft_statement": "CodeMirror's RangeSet decoration system permits Decoration.replace without mutating state.doc",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-2",
+      "seed_from": ["T5"],
+      "draft_statement": "Server-side /api/pages render output is a pure function of file content; editor decorations cannot affect it",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-3",
+      "seed_from": ["S1"],
+      "draft_statement": "safeURL allow-list semantics from internal/render/markdown.go can be ported to the editor without behavior drift",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-4",
+      "seed_from": ["U2"],
+      "draft_statement": "@codemirror/lang-markdown's Lezer tree exposes distinct node types for headings, emphasis, code, links, lists, tables, blockquotes, images sufficient to drive per-construct decorations",
+      "confidence": "medium"
+    },
+    {
+      "id": "DRT-5",
+      "seed_from": ["T2"],
+      "draft_statement": "ViewPlugin.update.viewportChanged + EditorView visible-range API enable off-viewport decoration deferral",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-6",
+      "seed_from": ["T4"],
+      "draft_statement": "The wikiLinkDecorations pattern (ViewPlugin + RangeSetBuilder + Decoration.replace + selectionTouches) generalises to all V1 inline constructs without per-construct re-architecture",
+      "confidence": "medium"
+    }
+  ],
+  "gap_checklist_compliance": [
+    {"gap": "GAP-03", "status": "COMPLETED", "note": "Data path: markdown source -> Lezer parse tree -> ViewPlugin.update -> RangeSetBuilder -> Decoration set -> DOM. No system boundaries crossed."},
+    {"gap": "GAP-09", "status": "SKIPPED", "skip_reason": "No auth/crypto constraints in this feature"},
+    {"gap": "GAP-10", "status": "COMPLETED", "note": "T2 viewport-scoped + debounced rebuild bounds CPU; no unbounded per-keystroke work"},
+    {"gap": "GAP-11", "status": "SKIPPED", "skip_reason": "No external HTTP dependencies introduced; all decoration runs client-side over already-fetched markdown"},
+    {"gap": "GAP-14", "status": "COMPLETED", "note": "Input format is markdown; @codemirror/lang-markdown handles parsing. Raw HTML embedded in markdown is constrained by S2 (textContent only)."},
+    {"gap": "GAP-17", "status": "SKIPPED", "skip_reason": "Editor is single-user per browser tab; no shared state across requests"}
+  ],
+  "iterations": [
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-05-01T03:15:00+05:30",
+      "result": "Discovered 16 constraints across 5 categories; 1 added via pre-mortem (O3)",
+      "constraints_added": 16,
+      "by_category": {"business": 2, "technical": 5, "user_experience": 4, "security": 2, "operational": 3}
+    },
+    {
+      "number": 2,
+      "phase": "tension",
+      "timestamp": "2026-05-01T03:30:00+05:30",
+      "result": "Found 8 tensions, 7 resolved, 1 unresolved (TN1 pending m3 verification)",
+      "tensions_found": 8,
+      "tensions_resolved": 7,
+      "by_type": {"trade_offs": 3, "resource_tensions": 3, "hidden_dependencies": 2}
+    },
+    {
+      "number": 3,
+      "phase": "anchor",
+      "timestamp": "2026-05-01T03:45:00+05:30",
+      "result": "Derived 13 required truths; binding constraint = RT-1 (GFM availability); recommended Option A (Full V1 as specified)",
+      "required_truths": 13,
+      "by_status": {"SATISFIED": 2, "PARTIAL": 1, "NOT_SATISFIED": 3, "SPECIFICATION_READY": 7},
+      "solution_options": 3,
+      "selected_option": "A"
+    }
+  ],
+  "blocking_dependencies": [
+    {"blocker": "T3", "blocked": "U2", "tension_id": "TN1", "note": "If GFM extensions are not reachable via @lezer/markdown without adding a new top-level dep, U2's table/image scope is blocked. m3 must verify before m4 generates code."}
+  ],
+  "convergence": {
+    "status": "IN_PROGRESS"
+  },
+  "constraint_graph": {
+    "version": 1,
+    "nodes": {},
+    "edges": {
+      "dependencies": [],
+      "conflicts": [],
+      "satisfies": []
+    }
+  }
+}
