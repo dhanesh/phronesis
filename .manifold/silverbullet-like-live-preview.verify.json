@@ -6,6 +6,13 @@
     "result": "PARTIAL",
     "phase_after_verify": "GENERATED",
     "convergence": "IN_PROGRESS",
+    "gap_closure_followup": {
+      "timestamp": "2026-05-01T13:55:00+05:30",
+      "commit": "pending",
+      "closed": ["G2", "G4", "G7", "G8"],
+      "still_open_non_blocking": ["G1", "G3", "G5", "G6"],
+      "note": "Tests added to frontend/tests/e2e/live-preview/live-preview.spec.ts (18 tests total). PENDING execution; --run-tests would elevate the new test_passes evidence to VERIFIED and convergence likely to CONVERGED for all invariants."
+    },
     "linking_check": {
       "constraints": "16/16 linked",
       "tensions": "8/8 linked",
@@ -59,7 +66,7 @@
         "issue": "No e2e test that types into the live-preview editor, saves, and asserts the persisted content equals the raw markdown source (no rendered HTML in autosave POST)",
         "severity": "high",
         "action": "Add a test in live-preview.spec.ts: type a heading + bold + table into the editor, observe network POST to /api/pages/<n>, assert request body's `content` field is byte-identical to the typed markdown source",
-        "blocking": true,
+        "blocking": true, "resolved_in_followup": true, "test_added": "frontend/tests/e2e/live-preview/live-preview.spec.ts",
         "rationale": "T1 is the most load-bearing invariant — if a decoration ever mutates state.doc, autosave corrupts the wiki. The structural code-review finding is strong but a direct round-trip test is the canonical T1 gate."
       },
       {
@@ -79,7 +86,7 @@
         "issue": "live-preview.spec.ts asserts cursor-OUT renders decorated forms but never asserts cursor-IN reveals raw source",
         "severity": "high",
         "action": "Extend each family test in live-preview.spec.ts: after the cursor-out assertion, position cursor inside the construct (e.g. via `page.locator('.cm-content').click({ position: ... })`) and assert raw markdown source becomes visible (e.g. `**bold**` text node present)",
-        "blocking": true,
+        "blocking": true, "resolved_in_followup": true, "test_added": "frontend/tests/e2e/live-preview/live-preview.spec.ts",
         "rationale": "U1 is the defining UX contract of SilverBullet-style live preview. Without cursor-in tests, regressions could ship that make the editor un-editable."
       },
       {
@@ -107,7 +114,7 @@
         "issue": "live-preview.spec.ts covers `javascript:` collapsing but not data:, vbscript:, file:, about:",
         "severity": "high",
         "action": "Extend the markdown-links test in live-preview.spec.ts with a fixture containing each unsafe scheme and assert href=='#' for all of them. Same coverage already exists at server side in internal/render/markdown_test.go; this is the editor-side parity check",
-        "blocking": true,
+        "blocking": true, "resolved_in_followup": true, "test_added": "frontend/tests/e2e/live-preview/live-preview.spec.ts",
         "rationale": "S1 is invariant; missing scheme classes are a real attack surface. Editor-side and server-side allow-lists must demonstrate parity in tests."
       },
       {
@@ -117,12 +124,14 @@
         "issue": "No test that injects raw HTML / `<script>` into markdown source and asserts it stays inert in the rendered widgets",
         "severity": "high",
         "action": "Add a test with a fixture containing `**<script>window.__pwned=1</script>**` and `[link](http://x)<script>...</script>`, assert (a) no `<script>` element exists inside the editor, (b) `window.__pwned` remains undefined",
-        "blocking": true,
+        "blocking": true, "resolved_in_followup": true, "test_added": "frontend/tests/e2e/live-preview/live-preview.spec.ts",
         "rationale": "S2 is the textContent-only invariant. Code review confirms current widgets are clean, but a regression test prevents future regressions from a careless `el.innerHTML =` slipping in."
       }
     ],
-    "blocking_gaps_count": 4,
+    "blocking_gaps_count": 0,
     "non_blocking_gaps_count": 4,
+    "blocking_gaps_count_initial": 4,
+    "blocking_gaps_resolved": 4,
     "test_pending_evidence": [
       {"rt_id": "RT-5", "evidence_id": "E7b", "reason": "test exists at frontend/tests/e2e/live-preview/live-preview.spec.ts; not yet executed via Playwright"},
       {"rt_id": "RT-12", "evidence_id": "E18b", "reason": "test exists; not yet executed"}

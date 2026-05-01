@@ -165,3 +165,246 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     expect(decorationCount).toBeGreaterThan(0);
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Safety-property tests (close m5-verify gaps G2, G4, G7, G8). Each one
+// guards a load-bearing INVARIANT that the surface-rendering tests above
+// don't directly exercise.
+// ───────────────────────────────────────────────────────────────────────────
+
+test.describe('live-preview safety properties', () => {
+  // G2 / T1 — decorations are visual-only; autosave POST carries raw
+  // markdown source byte-for-byte, never rendered HTML. If a decoration
+  // ever mutates view.state.doc, this test catches it before the wiki on
+  // disk gets corrupted.
+  // @constraint T1 - decorations are visual-only; document text never mutated
+  test('T1: autosave POST contains raw markdown, not rendered HTML', async ({ page }) => {
+    const name = `lp-roundtrip-${Date.now()}`;
+    await seedPage(page, name);
+
+    // Capture every POST to /api/pages/<name> after the editor mounts.
+    const autosaveBodies: string[] = [];
+    page.on('request', (req) => {
+      if (req.method() === 'POST' && req.url().includes(`/api/pages/${name}`)) {
+        const body = req.postData();
+        if (body) autosaveBodies.push(body);
+      }
+    });
+
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
+
+    // Trigger autosave by typing one character at end of doc.
+    await page.locator('.cm-content').click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type(' ');
+    // Wait for debounced autosave (App.svelte uses ~600ms debounce).
+    await page.waitForTimeout(900);
+
+    expect(autosaveBodies.length).toBeGreaterThan(0);
+    const body = JSON.parse(autosaveBodies[autosaveBodies.length - 1]);
+    // Raw markdown markers must be present in the saved content.
+    // If a decoration mutated the doc, these would be missing.
+    expect(body.content).toContain('# Heading One');
+    expect(body.content).toContain('**bold**');
+    expect(body.content).toContain('| col a | col b |');
+    // And no rendered HTML should have leaked into persistence.
+    expect(body.content).not.toContain('<table');
+    expect(body.content).not.toContain('<strong>');
+    expect(body.content).not.toContain('<h1>');
+  });
+
+  // G4 / U1 — cursor entering a decorated region reveals the raw source
+  // for that one region. Verifies decorations suppress when cursor is
+  // inside, by asserting the literal markdown markers appear in the
+  // rendered .cm-line text only when the cursor sits in the line.
+  // @constraint U1 - cursor inside region reveals source for that one region
+  test('U1: cursor entering a heading line reveals the # marker', async ({ page }) => {
+    const name = `lp-cursor-heading-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    const headingLine = page.locator('.cm-line').filter({ hasText: 'Heading One' });
+    await expect(headingLine).toBeVisible();
+
+    // With the cursor far away (default after load), the `#` should be
+    // hidden by the heading family's Decoration.replace on HeaderMark.
+    const textCursorOutside = await headingLine.textContent();
+    expect(textCursorOutside).not.toContain('#');
+
+    // Click into the heading line. CodeMirror sets selection at the
+    // click position; isCursorInRange now suppresses the replace.
+    await headingLine.click();
+    const textCursorInside = await headingLine.textContent();
+    expect(textCursorInside).toContain('#');
+  });
+
+  // @constraint U1 - cursor inside reveals emphasis source markers
+  test('U1: cursor entering a bold/italic span reveals * markers', async ({ page }) => {
+    const name = `lp-cursor-emphasis-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    const paraLine = page.locator('.cm-line').filter({ hasText: 'Paragraph with' });
+    await expect(paraLine).toBeVisible();
+
+    // Cursor outside: ** and * should be hidden.
+    const textOutside = await paraLine.textContent();
+    expect(textOutside).not.toContain('**');
+    // Note: a single * inside other text is harder to assert non-presence
+    // because the literal asterisk-character could appear elsewhere; the
+    // ** check above is the load-bearing assertion.
+
+    // Click into the line; markers should reveal.
+    await paraLine.click();
+    const textInside = await paraLine.textContent();
+    expect(textInside).toContain('**');
+  });
+
+  // @constraint U1 - cursor entering inline code reveals backticks
+  test('U1: cursor entering inline code reveals backticks', async ({ page }) => {
+    const name = `lp-cursor-code-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    const paraLine = page.locator('.cm-line').filter({ hasText: 'Paragraph with' });
+    await expect(paraLine).toBeVisible();
+
+    const textOutside = await paraLine.textContent();
+    expect(textOutside).not.toContain('`');
+
+    await paraLine.click();
+    const textInside = await paraLine.textContent();
+    expect(textInside).toContain('`');
+  });
+
+  // @constraint U1 - cursor entering a markdown link reveals brackets
+  test('U1: cursor entering a markdown link reveals [label](url) source', async ({ page }) => {
+    const name = `lp-cursor-link-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    // The line `[label](https://example.com) [internal](/w/internal-page)`.
+    const linkLine = page.locator('.cm-line').filter({ hasText: 'label' });
+    await expect(linkLine).toBeVisible();
+
+    // Cursor outside: rendered as chip widget; brackets and URL hidden.
+    const textOutside = await linkLine.textContent();
+    expect(textOutside).not.toContain('](https://');
+    expect(textOutside).not.toContain('[label]');
+
+    // Click on the line (avoid the chip itself — click at line start where
+    // there's no widget). After click, the `Link` node's source becomes
+    // visible because isCursorInRange returns true.
+    await linkLine.click({ position: { x: 2, y: 4 } });
+    const textInside = await linkLine.textContent();
+    expect(textInside).toContain('[label]');
+  });
+
+  // G7 / S1 — every dangerous URL scheme collapses to `#`. The original
+  // surface test only covered `javascript:`; this extends to data:,
+  // vbscript:, file:, about: for parity with the Go-side allow-list.
+  // @constraint S1 - safeURL allow-list rejects all dangerous schemes
+  test('S1: data:/vbscript:/file:/about: all collapse to href="#"', async ({ page }) => {
+    const name = `lp-safeurl-${Date.now()}`;
+    const fixture = `# Schemes
+
+[xss-js](javascript:alert(1))
+
+[xss-data](data:text/html,<script>alert(1)</script>)
+
+[xss-vbs](vbscript:msgbox(1))
+
+[xss-file](file:///etc/passwd)
+
+[xss-about](about:blank)
+
+[ok-http](http://example.com)
+
+[ok-https](https://example.com)
+
+[ok-mailto](mailto:a@b.com)
+
+[ok-relative](/some/path)
+`;
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content: fixture, baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('a.cm-md-link').first()).toBeVisible();
+
+    // Every rendered link's href should either be on the allow-list or
+    // exactly "#" — never a live dangerous scheme.
+    const allHrefs: string[] = await page.locator('a.cm-md-link').evaluateAll((els) =>
+      els.map((e) => (e as HTMLAnchorElement).getAttribute('href') ?? ''),
+    );
+
+    expect(allHrefs.length).toBeGreaterThan(0);
+
+    const dangerous = ['javascript:', 'data:', 'vbscript:', 'file:', 'about:'];
+    for (const href of allHrefs) {
+      const lower = href.toLowerCase();
+      for (const scheme of dangerous) {
+        expect(lower.startsWith(scheme), `dangerous scheme leaked: ${href}`).toBe(false);
+      }
+    }
+
+    // Allow-listed URLs must survive untouched.
+    expect(allHrefs).toContain('http://example.com');
+    expect(allHrefs).toContain('https://example.com');
+    expect(allHrefs).toContain('mailto:a@b.com');
+    expect(allHrefs).toContain('/some/path');
+
+    // Dangerous scheme labels render but their href is "#".
+    const dangerousLabels = ['xss-js', 'xss-data', 'xss-vbs', 'xss-file', 'xss-about'];
+    for (const label of dangerousLabels) {
+      const href = await page.locator(`a.cm-md-link`, { hasText: label }).getAttribute('href');
+      expect(href, `${label} href`).toBe('#');
+    }
+  });
+
+  // G8 / S2 — widget DOM uses textContent only; embedded HTML / script
+  // in markdown source must remain inert. If any widget regresses to
+  // innerHTML, this test fires window.__pwned and we catch it.
+  // @constraint S2 - widget content via textContent only; no innerHTML
+  test('S2: embedded <script> and onerror handlers stay inert', async ({ page }) => {
+    const name = `lp-injection-${Date.now()}`;
+    const fixture = `# Injection probe
+
+Paragraph **<script>window.__pwned=1</script>** with [link](http://x.example)<img src=x onerror="window.__pwned=2">.
+
+Inline \`<script>window.__pwned=3</script>\` code.
+
+| col | <script>window.__pwned=4</script> |
+| --- | --- |
+| <img src=x onerror=window.__pwned=5> | cell |
+
+> blockquote with <script>window.__pwned=6</script>
+`;
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content: fixture, baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
+
+    // No <script> elements should exist anywhere inside the editor.
+    const scriptCount = await page.locator('.cm-editor script').count();
+    expect(scriptCount).toBe(0);
+
+    // No img element with an onerror attribute should have been
+    // constructed by widget DOM.
+    const imgWithOnerror = await page.locator('.cm-editor img[onerror]').count();
+    expect(imgWithOnerror).toBe(0);
+
+    // Give any (would-be) script a generous tick to fire.
+    await page.waitForTimeout(150);
+
+    // The script payloads, if executed, would set window.__pwned. Must be undefined.
+    const pwned = await page.evaluate(() => (window as Window & { __pwned?: unknown }).__pwned);
+    expect(pwned).toBeUndefined();
+  });
+});
