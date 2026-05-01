@@ -1,12 +1,13 @@
 <script>
   import { onDestroy, onMount } from 'svelte';
-  import { Compartment, EditorSelection, EditorState, Facet, RangeSetBuilder } from '@codemirror/state';
-  import { keymap, Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
-  import { markdown } from '@codemirror/lang-markdown';
+  import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
+  import { keymap, EditorView } from '@codemirror/view';
+  import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
   import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
   import { DURABILITY_STATES } from './durability.js';
   import DurabilityIndicator from './DurabilityIndicator.svelte';
+  import { livePreviewExtension, rebuildLivePreview } from './editor/decorations/index.js';
 
   // INT-9: durability state is externally-driven by the parent (App.svelte)
   // based on autosave lifecycle. When server-side op_acked/op_saved events
@@ -24,120 +25,33 @@
   let root;
   let view;
   let suppressChange = false;
+  // Tracks the current page name for the live-preview decoration registry
+  // so wiki-link widgets can self-style as `current` without a CodeMirror
+  // facet round-trip. Initialised in onMount; updated by the
+  // page-reconfigure $effect below.
+  let currentPageName = '';
 
   const editableCompartment = new Compartment();
-  const pageCompartment = new Compartment();
 
-  function normalizeWikiName(name) {
-    return (name || '').trim().replaceAll(' ', '-').replaceAll(/^\/+/, '').toLowerCase();
-  }
-
-  function selectionTouches(selection, from, to) {
-    for (const range of selection.ranges) {
-      if (range.from <= to && range.to >= from) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  function wikiLinkDecorations() {
-    return ViewPlugin.fromClass(
-      class {
-        constructor(view) {
-          this.decorations = this.buildDecorations(view);
-        }
-
-        update(update) {
-          if (
-            update.docChanged ||
-            update.selectionSet ||
-            update.viewportChanged ||
-            update.startState.facet(pageFacet) !== update.state.facet(pageFacet)
-          ) {
-            this.decorations = this.buildDecorations(update.view);
-          }
-        }
-
-        buildDecorations(view) {
-          const builder = new RangeSetBuilder();
-          const text = view.state.doc.toString();
-          const pageName = view.state.facet(pageFacet);
-          const regex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
-          let match;
-          while ((match = regex.exec(text))) {
-            const from = match.index;
-            const to = from + match[0].length;
-            if (selectionTouches(view.state.selection, from, to)) {
-              continue;
-            }
-            const target = normalizeWikiName(match[1]);
-            const label = match[2] || match[1];
-            builder.add(
-              from,
-              to,
-              Decoration.replace({
-                widget: new WikiLinkWidget(label, target, pageName),
-                inclusive: false
-              })
-            );
-          }
-          return builder.finish();
-        }
-      },
-      {
-        decorations: (value) => value.decorations
-      }
-    );
-  }
-
-  class WikiLinkWidget extends WidgetType {
-    constructor(label, target, currentPage) {
-      super();
-      this.label = label;
-      this.target = target;
-      this.currentPage = currentPage;
-    }
-
-    eq(other) {
-      return other.label === this.label && other.target === this.target && other.currentPage === this.currentPage;
-    }
-
-    toDOM() {
-      const anchor = document.createElement('a');
-      anchor.className = `cm-wikilink${this.target === this.currentPage ? ' current' : ''}`;
-      anchor.href = `/w/${this.target}`;
-      anchor.textContent = this.label;
-      anchor.dataset.wikiLink = this.target;
-      anchor.title = `Open ${this.target}`;
-      anchor.addEventListener('click', (event) => {
-        event.preventDefault();
-        onnavigate?.({ page: this.target, source: 'wikilink' });
-      });
-      return anchor;
-    }
-
-    ignoreEvent() {
-      return false;
-    }
-  }
-
-  const pageFacet = Facet.define({
-    combine: (values) => values[0] ?? ''
-  });
-
-  function createState(doc, currentPage) {
+  function createState(doc) {
     return EditorState.create({
       doc,
       extensions: [
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-        markdown(),
+        // markdownLanguage is the GFM-enabled variant exported by
+        // @codemirror/lang-markdown. Tables, task lists, strikethrough,
+        // subscript, superscript, and emoji parse as distinct Lezer node
+        // types — required by U2 (Full V1 coverage) and verified by
+        // RT-1's parsing probe.
+        markdown({ base: markdownLanguage }),
         syntaxHighlighting(defaultHighlightStyle),
         EditorView.lineWrapping,
         editableCompartment.of(EditorView.editable.of(!readOnly)),
-        pageCompartment.of(pageFacet.of(currentPage)),
-        wikiLinkDecorations(),
+        livePreviewExtension({
+          currentPage: () => currentPageName,
+          onnavigate: (target) => onnavigate?.({ page: target, source: 'wikilink' }),
+        }),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged || suppressChange) {
             return;
@@ -186,8 +100,9 @@
   }
 
   onMount(() => {
+    currentPageName = page;
     view = new EditorView({
-      state: createState(value, page),
+      state: createState(value),
       parent: root
     });
   });
@@ -206,14 +121,18 @@
     }
   });
 
-  // Reconfigure compartments when editability or page identity changes.
+  // Editability is reconfigured via the CM compartment on prop change. The
+  // current-page identity is consumed by the live-preview decoration plugin
+  // through a closure (currentPageName), updated here so wiki-link widgets
+  // pick up the new page name on next rebuild without a CM facet.
   $effect(() => {
     if (!view) return;
+    currentPageName = page;
     view.dispatch({
       effects: [
         editableCompartment.reconfigure(EditorView.editable.of(!readOnly)),
-        pageCompartment.reconfigure(pageFacet.of(page))
-      ]
+        rebuildLivePreview.of(),
+      ],
     });
   });
 
