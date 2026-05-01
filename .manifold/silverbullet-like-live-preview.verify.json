@@ -1,0 +1,143 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
+  "verification": {
+    "feature": "silverbullet-like-live-preview",
+    "timestamp": "2026-05-01T13:45:00+05:30",
+    "result": "PARTIAL",
+    "phase_after_verify": "GENERATED",
+    "convergence": "IN_PROGRESS",
+    "linking_check": {
+      "constraints": "16/16 linked",
+      "tensions": "8/8 linked",
+      "required_truths": "13/13 linked",
+      "status": "PASS"
+    },
+    "artifact_existence": {
+      "declared": 23,
+      "verified_present": 23,
+      "missing": 0,
+      "status": "PASS"
+    },
+    "matrix": [
+      {"constraint": "B1", "title": "Single editing surface preserved", "type": "INVARIANT", "code": "SATISFIED", "test": "PARTIAL", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G1", "level": "IMPLEMENTED"},
+      {"constraint": "B2", "title": "Markdown on disk = source of truth", "type": "INVARIANT", "code": "SATISFIED", "test": "SATISFIED", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "TESTED", "test_evidence": "frontend/tests/e2e/wiki/crud.spec.ts asserts POST /api/pages content equals retrieved content — existing round-trip"},
+      {"constraint": "T1", "title": "Decorations are visual-only; doc text not mutated", "type": "INVARIANT", "code": "SATISFIED", "test": "PARTIAL", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G2", "level": "IMPLEMENTED", "code_evidence": "content_match VERIFIED — no `view.dispatch.*changes` in frontend/src/lib/editor/decorations/"},
+      {"constraint": "T2", "title": "Viewport-scoped, debounced rebuild — p95 < 16ms", "type": "BOUNDARY", "threshold_kind": "statistical", "code": "SATISFIED", "test": "MISSING", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G3", "level": "IMPLEMENTED", "note": "Statistical-kind threshold but no perf test exists"},
+      {"constraint": "T3", "title": "No new npm dependencies", "type": "BOUNDARY", "code": "SATISFIED", "test": "SATISFIED", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "VERIFIED", "test_evidence": "git diff a650302..HEAD -- frontend/package.json is empty"},
+      {"constraint": "T4", "title": "Reuse wikiLinkDecorations skeleton", "type": "GOAL", "code": "SATISFIED", "test": "PARTIAL", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "IMPLEMENTED", "note": "Goal-type; PARTIAL test acceptable"},
+      {"constraint": "T5", "title": "Server-side render contract is unchanged", "type": "INVARIANT", "code": "SATISFIED", "test": "SATISFIED", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "VERIFIED", "test_evidence": "git diff a650302..HEAD on internal/render, internal/wiki, internal/app/handlers_pages.go is empty + make test passes"},
+      {"constraint": "U1", "title": "Cursor inside region reveals source", "type": "INVARIANT", "code": "SATISFIED", "test": "PARTIAL", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G4", "level": "IMPLEMENTED", "code_evidence": "isCursorInRange / selectionTouches used by every family", "test_evidence": "live-preview.spec.ts asserts cursor-OUT renders only; no cursor-IN reveal assertion"},
+      {"constraint": "U2", "title": "V1 decoration coverage is the Full set", "type": "GOAL", "code": "SATISFIED", "test": "SATISFIED", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "TESTED"},
+      {"constraint": "U3", "title": "Plain typing must not move cursor or scroll", "type": "INVARIANT", "code": "SATISFIED", "test": "MISSING", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G5", "level": "IMPLEMENTED"},
+      {"constraint": "U4", "title": "Markdown not in U2 renders as raw source", "type": "INVARIANT", "code": "SATISFIED", "test": "MISSING", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G6", "level": "IMPLEMENTED"},
+      {"constraint": "S1", "title": "Editor URL rendering uses safeURL allow-list", "type": "INVARIANT", "code": "SATISFIED", "test": "PARTIAL", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G7", "level": "IMPLEMENTED", "test_evidence": "live-preview.spec.ts asserts javascript: collapses; data:/vbscript:/file: not asserted"},
+      {"constraint": "S2", "title": "Decoration widgets set content via textContent only", "type": "INVARIANT", "code": "SATISFIED", "test": "MISSING", "docs": "SATISFIED", "ops": "N/A", "status": "PARTIAL", "gap": "G8", "level": "IMPLEMENTED", "code_evidence": "manual review of every WidgetType.toDOM — no `.innerHTML =` assignments"},
+      {"constraint": "O1", "title": "Playwright e2e covers each V1 decoration family", "type": "GOAL", "code": "N/A", "test": "SATISFIED", "docs": "SATISFIED", "ops": "N/A", "status": "SATISFIED", "level": "IMPLEMENTED", "note": "Tests exist; not yet executed (PENDING). --run-tests would elevate to TESTED."},
+      {"constraint": "O2", "title": "Bundle delta ≤ 30 KB gzipped", "type": "BOUNDARY", "threshold_kind": "deterministic", "code": "SATISFIED", "test": "SATISFIED", "docs": "SATISFIED", "ops": "SATISFIED", "status": "SATISFIED", "level": "VERIFIED", "test_evidence": "scripts/check-bundle-size.sh measured +2.16 KB / 30 KB; PASS"},
+      {"constraint": "O3", "title": "Smoke e2e fails loud if all decorations break", "type": "INVARIANT", "code": "N/A", "test": "SATISFIED", "docs": "SATISFIED", "ops": "SATISFIED", "status": "SATISFIED", "level": "IMPLEMENTED", "note": "Smoke test exists in spec; PENDING execution"}
+    ],
+    "coverage": {
+      "invariants": {"satisfied": 3, "partial": 7, "missing": 0, "total": 10, "percentage": 30, "list_satisfied": ["B2", "T5", "O3"], "list_partial": ["B1", "T1", "U1", "U3", "U4", "S1", "S2"]},
+      "boundaries": {"satisfied": 2, "partial": 1, "missing": 0, "total": 3, "percentage": 67, "list_satisfied": ["T3", "O2"], "list_partial": ["T2"]},
+      "goals": {"satisfied": 3, "partial": 0, "missing": 0, "total": 3, "percentage": 100, "list_satisfied": ["T4", "U2", "O1"]}
+    },
+    "gaps": [
+      {
+        "id": "G1",
+        "constraint": "B1",
+        "type": "missing_test",
+        "issue": "No explicit assertion that the editor surface is single (no split pane, no second CodeMirror instance)",
+        "severity": "low",
+        "action": "Add a Playwright assertion: `await expect(page.locator('.cm-editor')).toHaveCount(1)` to live-preview.spec.ts (or wiki/crud.spec.ts)",
+        "blocking": false,
+        "rationale": "B1 is structurally upheld by the codebase shape; absence of a test for 'thing not present' is a low-priority gap."
+      },
+      {
+        "id": "G2",
+        "constraint": "T1",
+        "type": "missing_test",
+        "issue": "No e2e test that types into the live-preview editor, saves, and asserts the persisted content equals the raw markdown source (no rendered HTML in autosave POST)",
+        "severity": "high",
+        "action": "Add a test in live-preview.spec.ts: type a heading + bold + table into the editor, observe network POST to /api/pages/<n>, assert request body's `content` field is byte-identical to the typed markdown source",
+        "blocking": true,
+        "rationale": "T1 is the most load-bearing invariant — if a decoration ever mutates state.doc, autosave corrupts the wiki. The structural code-review finding is strong but a direct round-trip test is the canonical T1 gate."
+      },
+      {
+        "id": "G3",
+        "constraint": "T2",
+        "type": "missing_perf_test",
+        "issue": "T2 carries a statistical threshold (p95 < 16ms) but no perf benchmark exists",
+        "severity": "medium",
+        "action": "Add a one-off Node-runnable benchmark under scripts/ (similar to verify-rt1-gfm-parsing.mjs) that constructs an EditorView with the live-preview extension over a fixture document, exercises the rebuild path N times, and reports p50/p95/p99 latencies. Optional: bake into make bundle-size or a sibling make perf target",
+        "blocking": false,
+        "rationale": "Statistical Verification check flags this. Code is structured to honour the budget (viewport-scoped + debounced + memoized) but the actual distribution is unmeasured."
+      },
+      {
+        "id": "G4",
+        "constraint": "U1",
+        "type": "missing_test",
+        "issue": "live-preview.spec.ts asserts cursor-OUT renders decorated forms but never asserts cursor-IN reveals raw source",
+        "severity": "high",
+        "action": "Extend each family test in live-preview.spec.ts: after the cursor-out assertion, position cursor inside the construct (e.g. via `page.locator('.cm-content').click({ position: ... })`) and assert raw markdown source becomes visible (e.g. `**bold**` text node present)",
+        "blocking": true,
+        "rationale": "U1 is the defining UX contract of SilverBullet-style live preview. Without cursor-in tests, regressions could ship that make the editor un-editable."
+      },
+      {
+        "id": "G5",
+        "constraint": "U3",
+        "type": "missing_test",
+        "issue": "No test asserts that plain typing does not move the cursor or scroll the viewport",
+        "severity": "medium",
+        "action": "Add a test: position cursor at end of a paragraph, capture state.selection.main.head + scrollDOM.scrollTop via page.evaluate, type a single 'a', assert new head = old head + 1 and scrollTop unchanged",
+        "blocking": false
+      },
+      {
+        "id": "G6",
+        "constraint": "U4",
+        "type": "missing_test",
+        "issue": "No test asserts that markdown constructs not in U2 (footnotes, math, raw HTML embeds) render as raw source unchanged",
+        "severity": "low",
+        "action": "Add a test with a fixture containing `[^footnote-ref]` and footnote definition, assert no .cm-md-* class is applied to the footnote markup and the raw `[^...]` text is visible",
+        "blocking": false
+      },
+      {
+        "id": "G7",
+        "constraint": "S1",
+        "type": "incomplete_test",
+        "issue": "live-preview.spec.ts covers `javascript:` collapsing but not data:, vbscript:, file:, about:",
+        "severity": "high",
+        "action": "Extend the markdown-links test in live-preview.spec.ts with a fixture containing each unsafe scheme and assert href=='#' for all of them. Same coverage already exists at server side in internal/render/markdown_test.go; this is the editor-side parity check",
+        "blocking": true,
+        "rationale": "S1 is invariant; missing scheme classes are a real attack surface. Editor-side and server-side allow-lists must demonstrate parity in tests."
+      },
+      {
+        "id": "G8",
+        "constraint": "S2",
+        "type": "missing_test",
+        "issue": "No test that injects raw HTML / `<script>` into markdown source and asserts it stays inert in the rendered widgets",
+        "severity": "high",
+        "action": "Add a test with a fixture containing `**<script>window.__pwned=1</script>**` and `[link](http://x)<script>...</script>`, assert (a) no `<script>` element exists inside the editor, (b) `window.__pwned` remains undefined",
+        "blocking": true,
+        "rationale": "S2 is the textContent-only invariant. Code review confirms current widgets are clean, but a regression test prevents future regressions from a careless `el.innerHTML =` slipping in."
+      }
+    ],
+    "blocking_gaps_count": 4,
+    "non_blocking_gaps_count": 4,
+    "test_pending_evidence": [
+      {"rt_id": "RT-5", "evidence_id": "E7b", "reason": "test exists at frontend/tests/e2e/live-preview/live-preview.spec.ts; not yet executed via Playwright"},
+      {"rt_id": "RT-12", "evidence_id": "E18b", "reason": "test exists; not yet executed"}
+    ],
+    "checks": {
+      "binding_constraint": {"rt_id": "RT-1", "status": "SATISFIED", "verified_by": "scripts/verify-rt1-gfm-parsing.mjs"},
+      "genealogy": {"status": "PASS", "note": "T4 has challenger=assumption but is a goal (not invariant); m4 confirmed pattern via shipped block sibling families. No INVARIANT depends on an unconfirmed assumption."},
+      "reversibility": {"status": "PASS", "note": "Option A is TWO_WAY; no ONE_WAY entries in reversibility_log."},
+      "propagation": {"status": "PASS", "note": "All m2 propagation_effects are TIGHTENED or LOOSENED; zero VIOLATED."},
+      "statistical": {"status": "FAIL", "note": "T2 is statistical-kind but has no perf test — see gap G3"}
+    },
+    "drift_baseline": {
+      "captured": false,
+      "note": "Not captured automatically; user can run `manifold drift silverbullet-like-live-preview --update` after accepting the verify result"
+    },
+    "iteration_recorded": 5
+  }
+}

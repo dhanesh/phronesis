@@ -502,6 +502,23 @@
         "60b7698 ci(bundle-size): add gzipped bundle-size gate for live-preview budget",
         "4522718 docs: silverbullet-like-live-preview README + DECISIONS"
       ]
+    },
+    {
+      "number": 5,
+      "phase": "verify",
+      "timestamp": "2026-05-01T13:45:00+05:30",
+      "result": "PARTIAL: 3/10 invariants SATISFIED, 2/3 boundaries SATISFIED, 3/3 goals SATISFIED. 8 gaps identified (4 blocking, 4 non-blocking). Linking, artifact existence, binding constraint, genealogy, reversibility, and propagation checks all PASS. Statistical check FAILS for T2. Phase stays at GENERATED until blocking gaps are closed.",
+      "matrix_satisfied": 8,
+      "matrix_partial": 8,
+      "matrix_missing": 0,
+      "gaps_found": 8,
+      "gaps_blocking": 4,
+      "gaps_resolved": 0,
+      "by_constraint_type": {
+        "invariant": {"satisfied": 3, "partial": 7, "total": 10},
+        "boundary": {"satisfied": 2, "partial": 1, "total": 3},
+        "goal": {"satisfied": 3, "partial": 0, "total": 3}
+      }
     }
   ],
   "blocking_dependencies": [
