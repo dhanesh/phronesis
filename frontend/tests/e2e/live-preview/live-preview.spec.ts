@@ -147,6 +147,11 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     const name = `lp-smoke-${Date.now()}`;
     await seedPage(page, name);
     await page.goto(`/w/${name}`);
+    // Wait for the editor to mount before counting — locator.count() does
+    // not retry, unlike toBeVisible. Without this wait the count races
+    // ahead of decoration application and returns 0 even when everything
+    // works.
+    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
     const decorationCount = await page.locator(
       [
         '.cm-md-heading-1',
@@ -218,6 +223,18 @@ test.describe('live-preview safety properties', () => {
   // for that one region. Verifies decorations suppress when cursor is
   // inside, by asserting the literal markdown markers appear in the
   // rendered .cm-line text only when the cursor sits in the line.
+  //
+  // Important: CodeMirror's default cursor position after mount is byte 0,
+  // which is INSIDE the first heading. Per U1 that correctly reveals the
+  // first heading's source. For these tests we first park the cursor on
+  // the wiki-link line at the bottom of FIXTURE so it is outside every
+  // construct above, then test the cursor-in transition.
+  async function parkCursorAway(page: any): Promise<void> {
+    const parkLine = page.locator('.cm-line', { hasText: 'wiki-page' });
+    await expect(parkLine).toBeVisible();
+    await parkLine.click({ position: { x: 1, y: 4 } });
+  }
+
   // @constraint U1 - cursor inside region reveals source for that one region
   test('U1: cursor entering a heading line reveals the # marker', async ({ page }) => {
     const name = `lp-cursor-heading-${Date.now()}`;
@@ -227,13 +244,10 @@ test.describe('live-preview safety properties', () => {
     const headingLine = page.locator('.cm-line').filter({ hasText: 'Heading One' });
     await expect(headingLine).toBeVisible();
 
-    // With the cursor far away (default after load), the `#` should be
-    // hidden by the heading family's Decoration.replace on HeaderMark.
+    await parkCursorAway(page);
     const textCursorOutside = await headingLine.textContent();
     expect(textCursorOutside).not.toContain('#');
 
-    // Click into the heading line. CodeMirror sets selection at the
-    // click position; isCursorInRange now suppresses the replace.
     await headingLine.click();
     const textCursorInside = await headingLine.textContent();
     expect(textCursorInside).toContain('#');
@@ -248,15 +262,13 @@ test.describe('live-preview safety properties', () => {
     const paraLine = page.locator('.cm-line').filter({ hasText: 'Paragraph with' });
     await expect(paraLine).toBeVisible();
 
-    // Cursor outside: ** and * should be hidden.
+    await parkCursorAway(page);
     const textOutside = await paraLine.textContent();
     expect(textOutside).not.toContain('**');
-    // Note: a single * inside other text is harder to assert non-presence
-    // because the literal asterisk-character could appear elsewhere; the
-    // ** check above is the load-bearing assertion.
 
-    // Click into the line; markers should reveal.
-    await paraLine.click();
+    // Click on the rendered "bold" span (inner of **bold**) so the cursor
+    // lands inside the StrongEmphasis node range, not just the line.
+    await page.locator('.cm-md-strong').first().click();
     const textInside = await paraLine.textContent();
     expect(textInside).toContain('**');
   });
@@ -270,10 +282,13 @@ test.describe('live-preview safety properties', () => {
     const paraLine = page.locator('.cm-line').filter({ hasText: 'Paragraph with' });
     await expect(paraLine).toBeVisible();
 
+    await parkCursorAway(page);
     const textOutside = await paraLine.textContent();
     expect(textOutside).not.toContain('`');
 
-    await paraLine.click();
+    // Click on the rendered "inline code" span so the cursor lands inside
+    // the InlineCode node range.
+    await page.locator('.cm-md-inline-code').first().click();
     const textInside = await paraLine.textContent();
     expect(textInside).toContain('`');
   });
