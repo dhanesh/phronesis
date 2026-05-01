@@ -8,10 +8,37 @@
     "convergence": "IN_PROGRESS",
     "gap_closure_followup": {
       "timestamp": "2026-05-01T13:55:00+05:30",
-      "commit": "pending",
+      "commit": "f949729",
       "closed": ["G2", "G4", "G7", "G8"],
       "still_open_non_blocking": ["G1", "G3", "G5", "G6"],
       "note": "Tests added to frontend/tests/e2e/live-preview/live-preview.spec.ts (18 tests total). PENDING execution; --run-tests would elevate the new test_passes evidence to VERIFIED and convergence likely to CONVERGED for all invariants."
+    },
+    "run_tests_iteration": {
+      "timestamp": "2026-05-01T19:10:00+05:30",
+      "result": "17 of 18 tests FAILED, 1 PASSED (S2 injection)",
+      "passed": ["S2: embedded <script> and onerror handlers stay inert"],
+      "failed_test_count": 17,
+      "root_cause_summary": "Two distinct bugs surfaced during execution. Bug A (one-line, pre-existing latent) blocked decoration plugin construction once any wiki-link source was on the page. After Bug A was fixed and binary rebuilt, Bug B (architectural) replaced it: CodeMirror's ViewPlugin contract forbids block-level decorations, but base.ts emits Decoration.line and Decoration.replace({block:true}) for blockquote / fenced-code / tables families through the same ViewPlugin as inline. Browser throws 'RangeError: Block decorations may not be specified via plugins' at first build, no decorations get applied, all surface-rendering tests fail because no .cm-md-* classes exist in the DOM.",
+      "bugs_found": [
+        {
+          "id": "BUG-A",
+          "severity": "high",
+          "status": "FIXED",
+          "location": "frontend/src/lib/editor/decorations/inline/wiki-links.ts:15",
+          "description": "String.prototype.replaceAll(/^\\\\/+/, '') used a non-global regex; ECMA spec requires global flag, V8 throws TypeError. Code was migrated as-is from the pre-existing Editor.svelte::normalizeWikiName helper, where it was latent until any source containing wiki-link syntax landed in the visible viewport.",
+          "fix": "Changed replaceAll to replace (regex is anchored, semantically equivalent).",
+          "commit": "pending"
+        },
+        {
+          "id": "BUG-B",
+          "severity": "high",
+          "status": "OPEN",
+          "location": "frontend/src/lib/editor/decorations/base.ts (architectural)",
+          "description": "liveDecorationPlugin() builds a single ViewPlugin that emits decorations from all families. CM6 forbids block-level decorations from ViewPlugins — they must come from a StateField via EditorView.decorations.from(field). Three of the V1 families produce block decorations: blockquote (Decoration.line), fenced-code (Decoration.line), tables (Decoration.replace({block: true})). At runtime CM throws RangeError before any decorations apply, so the entire decoration system silently fails.",
+          "fix_proposal": "Refactor base.ts to two paths: keep ViewPlugin for inline families (gives viewport-scoped + selectionSet update), add a StateField for block families (full-doc scope, doc-change update). Family declares its kind via DecorationFamily interface. Composer routes accordingly. ~50-100 lines of refactor; existing inline families need no change.",
+          "blocks": ["G2", "G4", "G7", "G8", "B1", "T1", "U1", "S1", "U2", "RT-2", "RT-3", "RT-8"]
+        }
+      ]
     },
     "linking_check": {
       "constraints": "16/16 linked",
@@ -128,10 +155,19 @@
         "rationale": "S2 is the textContent-only invariant. Code review confirms current widgets are clean, but a regression test prevents future regressions from a careless `el.innerHTML =` slipping in."
       }
     ],
-    "blocking_gaps_count": 0,
+    "blocking_gaps_count": 1,
     "non_blocking_gaps_count": 4,
     "blocking_gaps_count_initial": 4,
-    "blocking_gaps_resolved": 4,
+    "blocking_gaps_resolved_via_tests": 4,
+    "blocking_gaps_blocked_by_bug_b": 4,
+    "new_blocking_gap_g9": {
+      "id": "G9",
+      "constraint": "T4 / RT-8 (architectural)",
+      "type": "architectural_defect",
+      "severity": "high",
+      "issue": "Block decorations cannot be emitted from a ViewPlugin (CM6 contract). base.ts puts inline + block families behind one ViewPlugin. Surfaced by --run-tests. See run_tests_iteration.bugs_found[BUG-B] for full description and proposed fix.",
+      "blocking": true
+    },
     "test_pending_evidence": [
       {"rt_id": "RT-5", "evidence_id": "E7b", "reason": "test exists at frontend/tests/e2e/live-preview/live-preview.spec.ts; not yet executed via Playwright"},
       {"rt_id": "RT-12", "evidence_id": "E18b", "reason": "test exists; not yet executed"}
