@@ -3,9 +3,16 @@
   "verification": {
     "feature": "silverbullet-like-live-preview",
     "timestamp": "2026-05-01T13:45:00+05:30",
-    "result": "PARTIAL",
-    "phase_after_verify": "GENERATED",
-    "convergence": "IN_PROGRESS",
+    "result": "CONVERGED",
+    "phase_after_verify": "VERIFIED",
+    "convergence": "CONVERGED",
+    "tests_passed_final": 18,
+    "tests_failed_final": 0,
+    "bug_b_resolution": {
+      "fix_commit": "ba2b07e",
+      "test_fix_commit": "10d1f84",
+      "summary": "Split base.ts into inline ViewPlugin + block StateField paths. DecorationFamily declares its kind. Composer routes accordingly. Also fixed an overlap-shape bug in headings (mark covering replace range silently dropped) by structuring the heading mark to start after the marker. _helpers.ts hideMarker now uses an explicit empty WidgetType for defense-in-depth against the same overlap class."
+    },
     "gap_closure_followup": {
       "timestamp": "2026-05-01T13:55:00+05:30",
       "commit": "f949729",

@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
   "schema_version": 3,
   "feature": "silverbullet-like-live-preview",
-  "phase": "GENERATED",
+  "phase": "VERIFIED",
   "domain": "software",
   "created": "2026-05-01T03:05:00+05:30",
   "constraints": {
@@ -519,6 +519,19 @@
         "boundary": {"satisfied": 2, "partial": 1, "total": 3},
         "goal": {"satisfied": 3, "partial": 0, "total": 3}
       }
+    },
+    {
+      "number": 6,
+      "phase": "verify",
+      "timestamp": "2026-05-01T19:35:00+05:30",
+      "result": "CONVERGED: 18/18 live-preview e2e tests pass. BUG-A (replaceAll non-global regex) and BUG-B (block decorations from ViewPlugin) both fixed in ba2b07e + 10d1f84 + f41a4d3. Phase advances GENERATED -> VERIFIED. Non-blocking gaps G1/G3/G5/G6 remain open as low/medium-severity follow-ups but do not gate convergence under default strictness rules (boundaries and goals at SATISFIED, all invariants either SATISFIED via test_passes evidence or under-constrained for the e2e suite).",
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "test_pass_rate": 1.0,
+      "bundle_delta_kb": 2.43,
+      "bundle_budget_kb": 30,
+      "phase_after_iteration": "VERIFIED",
+      "convergence": "CONVERGED"
     }
   ],
   "blocking_dependencies": [
@@ -559,7 +572,9 @@
     ]
   },
   "convergence": {
-    "status": "IN_PROGRESS"
+    "status": "CONVERGED",
+    "as_of": "2026-05-01T19:35:00+05:30",
+    "note": "All 16 constraints satisfied (or PARTIAL/SATISFIED for non-blocking gaps G1/G3/G5/G6 documented in verify.json). All 18 live-preview e2e tests pass. RT-1 verified empirically; RT-5 + RT-12 elevated from PARTIAL to SATISFIED via test_passes evidence VERIFIED."
   },
   "constraint_graph": {
     "version": 1,
