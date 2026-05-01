@@ -127,6 +127,7 @@ class TableWidget extends WidgetType {
 export function tablesFamily(): DecorationFamily {
   return treeFamily({
     name: 'tables',
+    kind: 'block',
     nodeTypes: NODE_TYPES,
     build({ node, state, isCursorInRange }) {
       // U1: cursor inside the table → no decoration; raw source visible.

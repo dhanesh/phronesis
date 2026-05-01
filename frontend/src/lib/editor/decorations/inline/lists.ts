@@ -17,6 +17,7 @@ import type { DecorationFamily } from '../base';
 export function listsFamily(): DecorationFamily {
   return treeFamily({
     name: 'lists',
+    kind: 'inline',
     nodeTypes: ['ListMark'] as const,
     build({ node }): Array<Range<Decoration>> | null {
       if (node.to <= node.from) return null;

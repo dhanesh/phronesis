@@ -36,6 +36,7 @@ const NODE_TYPES = ['FencedCode'] as const;
 export function fencedCodeFamily(): DecorationFamily {
   return treeFamily({
     name: 'fenced-code',
+    kind: 'block',
     nodeTypes: NODE_TYPES,
     build({ node, state }) {
       const out: Array<Range<Decoration>> = [];

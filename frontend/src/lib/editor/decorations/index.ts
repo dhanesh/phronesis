@@ -4,7 +4,7 @@
 // lists, images) and block (fenced-code, blockquote, tables) families
 // alongside wiki-links.
 
-import { liveDecorationPlugin } from './base';
+import { liveDecorationExtension } from './base';
 import type { DecorationFamily } from './base';
 import { wikiLinksFamily } from './inline/wiki-links';
 import { headingsFamily } from './inline/headings';
@@ -49,5 +49,5 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
 }
 
 export function livePreviewExtension(opts: V1Options): Extension {
-  return liveDecorationPlugin(composeV1Families(opts));
+  return liveDecorationExtension(composeV1Families(opts));
 }

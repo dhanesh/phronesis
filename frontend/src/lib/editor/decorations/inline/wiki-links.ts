@@ -60,6 +60,7 @@ export function wikiLinksFamily(opts: {
 }): DecorationFamily {
   return {
     name: 'wiki-links',
+    kind: 'inline',
     scan({ state, visibleRange, isCursorInRange }) {
       const out: Array<Range<Decoration>> = [];
       // Wiki-links are not standard markdown grammar — Lezer markdown sees

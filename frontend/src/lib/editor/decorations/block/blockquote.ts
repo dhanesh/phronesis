@@ -33,6 +33,7 @@ const NODE_TYPES = ['Blockquote'] as const;
 export function blockquoteFamily(): DecorationFamily {
   return treeFamily({
     name: 'blockquote',
+    kind: 'block',
     nodeTypes: NODE_TYPES,
     build({ node, state }) {
       const out: Array<Range<Decoration>> = [];

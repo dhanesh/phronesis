@@ -23,6 +23,7 @@ const EMPHASIS_NODES = ['Emphasis', 'StrongEmphasis'] as const;
 export function emphasisFamily(): DecorationFamily {
   return treeFamily({
     name: 'emphasis',
+    kind: 'inline',
     nodeTypes: EMPHASIS_NODES,
     build({ node, isCursorInRange }): Array<Range<Decoration>> | null {
       const className = node.name === 'StrongEmphasis' ? 'cm-md-strong' : 'cm-md-emphasis';

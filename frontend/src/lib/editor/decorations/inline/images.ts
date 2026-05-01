@@ -109,6 +109,7 @@ function extractImage(
 export function imagesFamily(): DecorationFamily {
   return treeFamily({
     name: 'images',
+    kind: 'inline',
     nodeTypes: ['Image'] as const,
     build({ node, state, isCursorInRange }): Array<Range<Decoration>> | null {
       if (isCursorInRange) return null;

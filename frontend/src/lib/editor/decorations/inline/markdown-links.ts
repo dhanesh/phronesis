@@ -94,6 +94,7 @@ export function markdownLinksFamily(opts: {
 }): DecorationFamily {
   return treeFamily({
     name: 'markdown-links',
+    kind: 'inline',
     nodeTypes: ['Link'] as const,
     build({ node, state, isCursorInRange }): Array<Range<Decoration>> | null {
       // Cursor inside: leave the source visible — no decoration at all

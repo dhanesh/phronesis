@@ -20,6 +20,7 @@ import { pairedMarkerDecorations } from './_helpers';
 export function inlineCodeFamily(): DecorationFamily {
   return treeFamily({
     name: 'inline-code',
+    kind: 'inline',
     nodeTypes: ['InlineCode'] as const,
     build({ node, isCursorInRange }): Array<Range<Decoration>> | null {
       return pairedMarkerDecorations({

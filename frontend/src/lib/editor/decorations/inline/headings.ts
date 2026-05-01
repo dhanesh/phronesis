@@ -13,6 +13,7 @@
 import type { Range } from '@codemirror/state';
 import { Decoration, treeFamily } from '../base';
 import type { DecorationFamily } from '../base';
+import { hideMarker } from './_helpers';
 
 const HEADING_NODES = [
   'ATXHeading1',
@@ -35,6 +36,7 @@ const LEVEL_BY_NAME: Record<string, number> = {
 export function headingsFamily(): DecorationFamily {
   return treeFamily({
     name: 'headings',
+    kind: 'inline',
     nodeTypes: HEADING_NODES,
     build({ node, isCursorInRange }): Array<Range<Decoration>> | null {
       const level = LEVEL_BY_NAME[node.name];
@@ -42,24 +44,35 @@ export function headingsFamily(): DecorationFamily {
       if (node.to <= node.from) return null;
 
       const out: Array<Range<Decoration>> = [];
-      // Whole-heading style mark — covers the entire node so the level
-      // class applies even when the source is revealed for editing.
-      out.push(
-        Decoration.mark({
-          class: `cm-md-heading cm-md-heading-${level}`,
-        }).range(node.from, node.to),
-      );
 
-      // Hide the `#` marker(s) only when the cursor is elsewhere.
-      if (!isCursorInRange) {
-        const cursor = node.node.cursor();
-        if (cursor.firstChild()) {
-          do {
-            if (cursor.name === 'HeaderMark' && cursor.to > cursor.from) {
-              out.push(Decoration.replace({}).range(cursor.from, cursor.to));
-            }
-          } while (cursor.nextSibling());
-        }
+      // Find the leading HeaderMark range so the style mark can start
+      // *after* it. CM6 silently drops a Decoration.replace nested
+      // inside an overlapping Decoration.mark of the same plugin, so
+      // we never let the style mark cover the marker source — instead
+      // it covers from marker-end to node-end. When the cursor is
+      // outside, the marker is replaced with a zero-width widget.
+      let markerFrom = -1;
+      let markerTo = -1;
+      const cursor = node.node.cursor();
+      if (cursor.firstChild()) {
+        do {
+          if (cursor.name === 'HeaderMark' && cursor.to > cursor.from) {
+            markerFrom = cursor.from;
+            markerTo = cursor.to;
+            break;
+          }
+        } while (cursor.nextSibling());
+      }
+      const styleFrom = markerTo > 0 ? markerTo : node.from;
+      if (styleFrom < node.to) {
+        out.push(
+          Decoration.mark({
+            class: `cm-md-heading cm-md-heading-${level}`,
+          }).range(styleFrom, node.to),
+        );
+      }
+      if (!isCursorInRange && markerFrom >= 0) {
+        out.push(hideMarker(markerFrom, markerTo));
       }
       return out;
     },
