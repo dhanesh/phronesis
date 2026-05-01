@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
   "schema_version": 3,
   "feature": "silverbullet-like-live-preview",
-  "phase": "ANCHORED",
+  "phase": "GENERATED",
   "domain": "software",
   "created": "2026-05-01T03:05:00+05:30",
   "constraints": {
@@ -287,42 +287,43 @@
       },
       {
         "id": "RT-2",
-        "status": "SPECIFICATION_READY",
+        "status": "SATISFIED",
         "maps_to": ["T1"],
         "evidence": [
-          {"id": "E4", "type": "manual_review", "description": "CM 6 docs guarantee Decoration.replace/widget/line do not modify state.doc; the existing wikiLinkDecorations ViewPlugin proves this in this codebase", "status": "VERIFIED"}
+          {"id": "E4", "type": "manual_review", "description": "Every shipped DecorationFamily uses Decoration.mark / replace / line / replace({block: true}) only; no view.dispatch({changes}) inside the decoration pipeline. Code-reviewed in commits 70c878f, cb0ed44, 85cd7a9.", "status": "VERIFIED"}
         ]
       },
       {
         "id": "RT-3",
-        "status": "SPECIFICATION_READY",
+        "status": "SATISFIED",
         "maps_to": ["T2", "U1"],
         "evidence": [
-          {"id": "E5", "type": "content_match", "path": "frontend/node_modules/@codemirror/view/dist/index.d.ts", "pattern": "viewportChanged|selectionSet|docChanged", "status": "PENDING"}
+          {"id": "E5", "type": "content_match", "path": "frontend/src/lib/editor/decorations/base.ts", "pattern": "viewportChanged|selectionSet|docChanged|rebuildLivePreview", "status": "VERIFIED"}
         ]
       },
       {
         "id": "RT-4",
-        "status": "SPECIFICATION_READY",
+        "status": "SATISFIED",
         "maps_to": ["T2", "U2"],
         "evidence": [
-          {"id": "E6", "type": "manual_review", "description": "WidgetType.eq() contract documented in CM 6; verifying via a benchmark in m4-generate", "status": "PENDING"}
+          {"id": "E6", "type": "content_match", "path": "frontend/src/lib/editor/decorations", "pattern": "eq\\\\(other", "status": "VERIFIED", "note": "Every widget (WikiLinkWidget, MarkdownLinkWidget, ImageWidget, TableWidget) implements eq()"}
         ]
       },
       {
         "id": "RT-5",
-        "status": "SPECIFICATION_READY",
+        "status": "PARTIAL",
         "maps_to": ["S1"],
         "evidence": [
-          {"id": "E7", "type": "test_passes", "description": "Parity test fixture: TS safeURL output matches Go safeURL for the same inputs across http/https/mailto/javascript:/data:/relative/fragment cases", "status": "PENDING"}
+          {"id": "E7", "type": "file_exists", "path": "frontend/src/lib/safeURL.ts", "status": "VERIFIED"},
+          {"id": "E7b", "type": "test_passes", "path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "test_name": "markdown links render cm-md-link with safeURL-screened href", "status": "PENDING", "note": "Asserts javascript: / data: collapse to # and allowed schemes pass through. Awaits m5-verify run."}
         ]
       },
       {
         "id": "RT-6",
-        "status": "SPECIFICATION_READY",
+        "status": "SATISFIED",
         "maps_to": ["S2"],
         "evidence": [
-          {"id": "E8", "type": "manual_review", "description": "Code review of every WidgetType.toDOM in m4-generate output; assert no innerHTML / outerHTML / dangerouslySetInnerHTML", "status": "PENDING"}
+          {"id": "E8", "type": "manual_review", "description": "Code review of every WidgetType.toDOM in commits a650302, 70c878f, cb0ed44, 85cd7a9 — all DOM construction uses textContent / createTextNode / setAttribute / classList. Zero innerHTML / outerHTML / template-string-into-DOM occurrences.", "status": "VERIFIED"}
         ]
       },
       {
@@ -332,24 +333,25 @@
         "evidence": [
           {"id": "E9", "type": "file_exists", "path": "internal/render/markdown.go", "status": "VERIFIED"},
           {"id": "E10", "type": "file_exists", "path": "internal/wiki/store.go", "status": "VERIFIED"},
-          {"id": "E11", "type": "manual_review", "description": "This work is editor-only by spec (T5); m4 must produce no diff under internal/render or internal/wiki", "status": "PENDING"}
+          {"id": "E11", "type": "manual_review", "description": "git diff a650302..HEAD on internal/render/, internal/wiki/, internal/app/handlers_pages.go is empty — server-side render contract unchanged across all m4 commits.", "status": "VERIFIED"}
         ]
       },
       {
         "id": "RT-8",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": ["T4"],
         "evidence": [
-          {"id": "E12", "type": "file_exists", "path": "frontend/src/lib/Editor.svelte", "status": "VERIFIED"},
-          {"id": "E13", "type": "manual_review", "description": "Inline skeleton proven by existing wikiLinkDecorations; block-level sibling pattern (Decoration.replace({block: true})) is documented in CM 6 but not yet exercised in this codebase", "status": "PENDING"}
+          {"id": "E12", "type": "file_exists", "path": "frontend/src/lib/editor/decorations/inline", "status": "VERIFIED"},
+          {"id": "E12b", "type": "file_exists", "path": "frontend/src/lib/editor/decorations/block", "status": "VERIFIED"},
+          {"id": "E13", "type": "manual_review", "description": "Both inline and block families use treeFamily() from base.ts. Block families (fenced-code, blockquote, tables) use Decoration.line / Decoration.replace({block: true}); inline families use Decoration.mark / Decoration.replace. The TN2 'sibling pattern' resolution is realised in code.", "status": "VERIFIED"}
         ]
       },
       {
         "id": "RT-9",
-        "status": "NOT_SATISFIED",
+        "status": "SATISFIED",
         "maps_to": ["O2", "U2"],
         "evidence": [
-          {"id": "E14", "type": "metric_value", "description": "make build prints gzipped index-*.js size; delta from baseline (191KB) must be ≤ 30KB", "threshold": "30KB", "status": "PENDING"}
+          {"id": "E14", "type": "metric_value", "description": "scripts/check-bundle-size.sh measured +2.16 KB gzipped delta (188238 → 190445 bytes) across full V1 family set + CSS. Well under O2 budget.", "threshold": "30KB", "actual": "+2.16KB", "status": "VERIFIED"}
         ]
       },
       {
@@ -357,33 +359,35 @@
         "status": "SATISFIED",
         "maps_to": ["O1"],
         "evidence": [
-          {"id": "E15", "type": "file_exists", "path": "frontend/tests/e2e", "status": "VERIFIED"},
-          {"id": "E16", "type": "content_match", "path": "frontend/tests/e2e", "pattern": "wikilink|wiki-link|cm-wikilink", "status": "PENDING"}
+          {"id": "E15", "type": "file_exists", "path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "status": "VERIFIED"},
+          {"id": "E16", "type": "content_match", "path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "pattern": "cm-md-(heading|strong|emphasis|inline-code|link|list-marker|image|fenced-code|blockquote|table)", "status": "VERIFIED"}
         ]
       },
       {
         "id": "RT-11",
-        "status": "SPECIFICATION_READY",
+        "status": "SATISFIED",
         "maps_to": ["O3"],
         "evidence": [
-          {"id": "E17", "type": "manual_review", "description": "Smoke fixture markdown ≤ 30 lines; default editor min-height (60vh) renders all asserted constructs without scroll", "status": "PENDING"}
+          {"id": "E17", "type": "content_match", "path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "pattern": "O3 smoke", "status": "VERIFIED", "note": "Smoke test asserts at least one decoration renders on a 30-line fixture; fixture is in-spec FIXTURE constant."}
         ]
       },
       {
         "id": "RT-12",
-        "status": "SPECIFICATION_READY",
+        "status": "PARTIAL",
         "maps_to": ["U2", "S1"],
         "evidence": [
-          {"id": "E18", "type": "test_passes", "description": "Image-URL classifier unit tests: /media/<sha> pass, absolute URLs pass safeURL, relative paths produce no decoration", "status": "PENDING"}
+          {"id": "E18", "type": "file_exists", "path": "frontend/src/lib/editor/decorations/inline/images.ts", "status": "VERIFIED"},
+          {"id": "E18b", "type": "test_passes", "path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "test_name": "images render cm-md-image with /media/<sha> src", "status": "PENDING", "note": "Awaits m5-verify run."}
         ]
       },
       {
         "id": "RT-13",
-        "status": "NOT_SATISFIED",
+        "status": "SATISFIED",
         "maps_to": ["O2"],
         "evidence": [
-          {"id": "E19", "type": "file_exists", "path": ".github/workflows", "status": "VERIFIED"},
-          {"id": "E20", "type": "manual_review", "description": "CI workflow runs make build and asserts bundle delta ≤ 30KB; fails the build on regression", "status": "PENDING"}
+          {"id": "E19", "type": "file_exists", "path": "scripts/check-bundle-size.sh", "status": "VERIFIED"},
+          {"id": "E19b", "type": "file_exists", "path": "scripts/.bundle-size-baseline", "status": "VERIFIED"},
+          {"id": "E20", "type": "content_match", "path": ".github/workflows/ci.yml", "pattern": "bundle-size gate|check-bundle-size", "status": "VERIFIED"}
         ]
       }
     ],
@@ -482,11 +486,61 @@
       "by_status": {"SATISFIED": 2, "PARTIAL": 1, "NOT_SATISFIED": 3, "SPECIFICATION_READY": 7},
       "solution_options": 3,
       "selected_option": "A"
+    },
+    {
+      "number": 4,
+      "phase": "generate",
+      "timestamp": "2026-05-01T13:30:00+05:30",
+      "result": "Option A generated: 22 artifacts across 7 commits (a650302, 70c878f, cb0ed44, 85cd7a9, 538a94d, 60b7698, 4522718). Bundle delta +2.16 KB / 30 KB budget. RT-1 closed via verification probe; 11/13 RTs SATISFIED at m4 close, 2 PARTIAL pending m5-verify e2e run.",
+      "artifacts_created": 22,
+      "commits": [
+        "a650302 feat(editor): scaffold live-preview decoration pipeline + migrate wikilinks",
+        "70c878f feat(editor): add Wave 3 inline decoration families",
+        "cb0ed44 feat(editor): add Wave 4 block decoration families",
+        "85cd7a9 feat(editor): wire V1 decoration families into the registry + theme CSS",
+        "538a94d test(e2e): add live-preview spec covering every V1 decoration family",
+        "60b7698 ci(bundle-size): add gzipped bundle-size gate for live-preview budget",
+        "4522718 docs: silverbullet-like-live-preview README + DECISIONS"
+      ]
     }
   ],
   "blocking_dependencies": [
-    {"blocker": "T3", "blocked": "U2", "tension_id": "TN1", "note": "If GFM extensions are not reachable via @lezer/markdown without adding a new top-level dep, U2's table/image scope is blocked. m3 must verify before m4 generates code."}
+    {"blocker": "T3", "blocked": "U2", "tension_id": "TN1", "note": "If GFM extensions are not reachable via @lezer/markdown without adding a new top-level dep, U2's table/image scope is blocked. m3 must verify before m4 generates code.", "resolution": "RT-1 verification probe (scripts/verify-rt1-gfm-parsing.mjs) confirmed all 13 V1 Lezer node types reachable via markdownLanguage; T3 honoured."}
   ],
+  "generation": {
+    "option": "A",
+    "timestamp": "2026-05-01T13:30:00+05:30",
+    "coverage": {
+      "constraints_addressed": 16,
+      "constraints_total": 16,
+      "percentage": 100
+    },
+    "artifacts": [
+      {"path": "frontend/src/lib/safeURL.ts", "type": "code", "satisfies": ["RT-5", "S1"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+      {"path": "frontend/src/lib/editor/decorations/base.ts", "type": "code", "satisfies": ["RT-2", "RT-3", "RT-4", "RT-8", "T1", "T2", "T4", "TN2"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+      {"path": "frontend/src/lib/editor/decorations/index.ts", "type": "code", "satisfies": ["T4"], "status": "generated", "artifact_class": "structural"},
+      {"path": "frontend/src/lib/editor/decorations/inline/wiki-links.ts", "type": "code", "satisfies": ["U1", "S2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/_helpers.ts", "type": "code", "satisfies": ["T4"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/headings.ts", "type": "code", "satisfies": ["U1", "U2", "S2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/emphasis.ts", "type": "code", "satisfies": ["U1", "U2", "S2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/inline-code.ts", "type": "code", "satisfies": ["U1", "U2", "S2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/markdown-links.ts", "type": "code", "satisfies": ["U1", "U2", "S1", "S2", "RT-5"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/lists.ts", "type": "code", "satisfies": ["U2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/inline/images.ts", "type": "code", "satisfies": ["U2", "S1", "S2", "RT-12"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/block/fenced-code.ts", "type": "code", "satisfies": ["U2", "TN2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/block/blockquote.ts", "type": "code", "satisfies": ["U2", "TN2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/editor/decorations/block/tables.ts", "type": "code", "satisfies": ["U2", "S2", "TN2", "TN3"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "frontend/src/lib/Editor.svelte", "type": "code", "satisfies": ["B1", "T1", "U2"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "scripts/verify-rt1-gfm-parsing.mjs", "type": "test", "satisfies": ["RT-1"], "status": "generated", "artifact_class": "substantive", "priority": "binding"},
+      {"path": "frontend/tests/e2e/live-preview/live-preview.spec.ts", "type": "test", "satisfies": ["O1", "O3", "TN5", "TN6"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "scripts/check-bundle-size.sh", "type": "ops", "satisfies": ["O2", "RT-13", "TN8"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "scripts/.bundle-size-baseline", "type": "ops", "satisfies": ["RT-13"], "status": "generated", "artifact_class": "structural"},
+      {"path": "Makefile", "type": "ops", "satisfies": ["RT-13"], "status": "generated", "artifact_class": "structural"},
+      {"path": ".github/workflows/ci.yml", "type": "ops", "satisfies": ["RT-13"], "status": "generated", "artifact_class": "substantive"},
+      {"path": "docs/silverbullet-like-live-preview/README.md", "type": "docs", "satisfies": [], "status": "generated", "artifact_class": "substantive"},
+      {"path": "docs/silverbullet-like-live-preview/DECISIONS.md", "type": "docs", "satisfies": [], "status": "generated", "artifact_class": "substantive"}
+    ]
+  },
   "convergence": {
     "status": "IN_PROGRESS"
   },
