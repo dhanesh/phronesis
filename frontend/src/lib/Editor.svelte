@@ -93,6 +93,82 @@
           },
           '.cm-wikilink.current': {
             background: 'rgba(31, 92, 70, 0.22)'
+          },
+          // Live-preview decoration styles. Class contract documented in
+          // docs/silverbullet-like-live-preview/README.md and asserted by
+          // frontend/tests/e2e/live-preview/.
+          '.cm-md-heading': {
+            fontWeight: '600',
+            color: '#1f241c'
+          },
+          '.cm-md-heading-1': { fontSize: '1.85em', lineHeight: '1.25' },
+          '.cm-md-heading-2': { fontSize: '1.5em',  lineHeight: '1.3'  },
+          '.cm-md-heading-3': { fontSize: '1.25em', lineHeight: '1.35' },
+          '.cm-md-heading-4': { fontSize: '1.1em' },
+          '.cm-md-heading-5': { fontSize: '1.0em', textTransform: 'uppercase', letterSpacing: '0.06em' },
+          '.cm-md-heading-6': { fontSize: '0.95em', color: '#5d5847' },
+          '.cm-md-strong':   { fontWeight: '700' },
+          '.cm-md-emphasis': { fontStyle: 'italic' },
+          '.cm-md-inline-code': {
+            fontFamily: 'inherit',
+            background: 'rgba(110, 97, 69, 0.12)',
+            padding: '0.05rem 0.35rem',
+            borderRadius: '6px',
+            fontSize: '0.95em'
+          },
+          '.cm-md-link': {
+            color: '#1f5c46',
+            textDecoration: 'underline',
+            textUnderlineOffset: '3px'
+          },
+          '.cm-md-list-marker': {
+            color: '#854f1c',
+            fontWeight: '600'
+          },
+          '.cm-md-image': {
+            display: 'inline-block',
+            maxWidth: '100%',
+            maxHeight: '24rem',
+            borderRadius: '8px',
+            verticalAlign: 'middle'
+          },
+          '.cm-md-fenced-code-line': {
+            fontFamily: 'inherit',
+            background: 'rgba(110, 97, 69, 0.08)'
+          },
+          '.cm-md-fenced-code-fence': {
+            color: '#928b6f'
+          },
+          '.cm-md-fenced-code-language::before': {
+            content: 'attr(data-lang)',
+            float: 'right',
+            color: '#928b6f',
+            fontSize: '0.78em',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em'
+          },
+          '.cm-md-blockquote': {
+            background: 'rgba(133, 79, 28, 0.05)',
+            borderLeft: '3px solid rgba(133, 79, 28, 0.45)',
+            paddingLeft: '0.75rem',
+            color: '#5d5847'
+          },
+          '.cm-md-blockquote-marker': {
+            color: 'rgba(133, 79, 28, 0.55)'
+          },
+          '.cm-md-table': {
+            borderCollapse: 'collapse',
+            margin: '0.4rem 0',
+            fontSize: '0.95em'
+          },
+          '.cm-md-table-header, .cm-md-table-cell': {
+            border: '1px solid rgba(110, 97, 69, 0.25)',
+            padding: '0.35rem 0.6rem',
+            textAlign: 'left'
+          },
+          '.cm-md-table-header': {
+            background: 'rgba(110, 97, 69, 0.08)',
+            fontWeight: '600'
           }
         })
       ]
