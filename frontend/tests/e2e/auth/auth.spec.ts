@@ -21,18 +21,28 @@ test.describe('password authentication', () => {
     await ctx.close();
   });
 
-  test('user can log out and subsequent requests are rejected', async ({ page }) => {
-    // Confirm we are logged in.
-    let session = await page.request.get('/api/session');
+  test('user can log out and subsequent requests are rejected', async ({ browser, workerBaseURL }) => {
+    // Use an isolated context for this test so the logout doesn't
+    // invalidate the worker-shared session token. Without this,
+    // subsequent tests in the describe block fail with 401 because
+    // their cookies (loaded from worker storageState) point at a
+    // server-side session that this test logged out.
+    const ctx = await browser.newContext({ baseURL: workerBaseURL });
+    const login = await ctx.request.post('/api/login', {
+      data: { username: 'admin', password: 'admin123' },
+    });
+    expect(login.ok()).toBeTruthy();
+
+    let session = await ctx.request.get('/api/session');
     expect((await session.json()).authenticated).toBe(true);
 
-    // Log out.
-    const logout = await page.request.post('/api/logout');
+    const logout = await ctx.request.post('/api/logout');
     expect(logout.ok()).toBeTruthy();
 
-    // After logout, protected API returns 401.
-    const after = await page.request.get('/api/pages');
+    const after = await ctx.request.get('/api/pages');
     expect(after.status()).toBe(401);
+
+    await ctx.close();
   });
 
   test('login with wrong password is rejected', async ({ browser, workerBaseURL }) => {
