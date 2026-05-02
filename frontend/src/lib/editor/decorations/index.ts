@@ -16,10 +16,12 @@ import { listsFamily } from './inline/lists';
 import { imagesFamily } from './inline/images';
 import { hashtagFamily } from './inline/hashtag';
 import { tasksFamily } from './inline/tasks';
+import { attributeFamily } from './inline/attribute';
 import { fencedCodeFamily } from './block/fenced-code';
 import { blockquoteFamily } from './block/blockquote';
 import { tablesFamily } from './block/tables';
 import { admonitionFamily } from './block/admonition';
+import { frontmatterFamily } from './block/frontmatter';
 import type { Extension } from '@codemirror/state';
 
 export type { DecorationFamily } from './base';
@@ -38,6 +40,7 @@ export interface V1Options {
 export function composeV1Families(opts: V1Options): readonly DecorationFamily[] {
   return [
     // Block (Wave 4)
+    frontmatterFamily(),
     fencedCodeFamily(),
     blockquoteFamily(),
     admonitionFamily(),
@@ -53,6 +56,7 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
     tasksFamily({
       onToggle: opts.onTaskToggle ?? (() => {}),
     }),
+    attributeFamily(),
     // Wiki-links (foundation)
     wikiLinksFamily({ currentPage: opts.currentPage, onnavigate: opts.onnavigate }),
   ];

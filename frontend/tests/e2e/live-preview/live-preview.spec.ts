@@ -150,6 +150,39 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     await expect(page.locator('.cm-md-blockquote').first()).toBeVisible();
   });
 
+  test('frontmatter renders as a metadata pill bar when cursor outside', async ({ page }) => {
+    const name = `lp-fm-${Date.now()}`;
+    const fmContent = `---\ntitle: Project Spec\nstatus: review\nowner: dhanesh\n---\n\n# Body Heading\n\nBody paragraph.\n`;
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content: fmContent, baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+    await page.goto(`/w/${name}`);
+    // Park cursor on the body paragraph so it is outside the frontmatter.
+    const body = page.locator('.cm-line', { hasText: 'Body paragraph' });
+    await expect(body).toBeVisible();
+    await body.click({ position: { x: 1, y: 4 } });
+
+    await expect(page.locator('.cm-md-frontmatter').first()).toBeVisible();
+    await expect(page.locator('.cm-md-frontmatter-chip')).toHaveCount(3);
+    const firstKey = await page.locator('.cm-md-frontmatter-key').first().textContent();
+    expect(firstKey).toBe('title');
+  });
+
+  test('attribute syntax [k:: v] renders as a key:value pill', async ({ page }) => {
+    const name = `lp-attr-${Date.now()}`;
+    const content = `# Project\n\n[priority:: high] and [owner:: dhanesh] inline.\n`;
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content, baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-attribute').first()).toBeVisible();
+    await expect(page.locator('.cm-md-attribute')).toHaveCount(2);
+    const keys = await page.locator('.cm-md-attribute-key').allTextContents();
+    expect(keys).toEqual(['priority', 'owner']);
+  });
+
   test('admonition blockquote renders with type-specific class', async ({ page }) => {
     const name = `lp-admon-${Date.now()}`;
     await seedPage(page, name);

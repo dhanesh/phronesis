@@ -214,6 +214,51 @@
           '.cm-md-admonition-caution':   { borderLeftColor: '#a06a13', background: 'rgba(160, 106, 19, 0.08)' },
           '.cm-md-admonition-important': { borderLeftColor: '#7d3c8a', background: 'rgba(125, 60, 138, 0.07)' },
           '.cm-md-admonition-danger':    { borderLeftColor: '#a13a3a', background: 'rgba(161, 58, 58, 0.07)' },
+          '.cm-md-frontmatter': {
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.4rem',
+            margin: '0.4rem 0 0.8rem',
+            padding: '0.5rem 0.6rem',
+            background: 'rgba(110, 97, 69, 0.06)',
+            border: '1px solid rgba(110, 97, 69, 0.18)',
+            borderRadius: '8px',
+            fontSize: '0.88em'
+          },
+          '.cm-md-frontmatter-chip': {
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            padding: '0.1rem 0.55rem',
+            background: 'rgba(255, 252, 244, 0.85)',
+            border: '1px solid rgba(110, 97, 69, 0.18)',
+            borderRadius: '999px'
+          },
+          '.cm-md-frontmatter-key': {
+            color: '#5d5847',
+            fontWeight: '600'
+          },
+          '.cm-md-frontmatter-value': {
+            color: '#1f241c'
+          },
+          '.cm-md-attribute': {
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            padding: '0.05rem 0.45rem',
+            background: 'rgba(31, 92, 70, 0.1)',
+            color: '#1f5c46',
+            borderRadius: '6px',
+            fontSize: '0.92em',
+            verticalAlign: 'baseline'
+          },
+          '.cm-md-attribute-key': {
+            fontWeight: '600'
+          },
+          '.cm-md-attribute-key::after': {
+            content: '":"',
+            margin: '0 0.15rem 0 0'
+          },
           '.cm-md-table': {
             borderCollapse: 'collapse',
             margin: '0.4rem 0',
