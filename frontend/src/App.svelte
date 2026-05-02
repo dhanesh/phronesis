@@ -235,7 +235,13 @@
   <main class="center">Checking session…</main>
 {:else if !authenticated}
   <main class="login-shell">
-    <section class="login-card">
+    <form
+      class="login-card"
+      onsubmit={(e) => {
+        e.preventDefault();
+        login();
+      }}
+    >
       <p class="eyebrow">phronesis</p>
       <h1>Project knowledge without the ticket sprawl</h1>
       <p class="lede">Sign in to browse and edit Markdown pages with autosave and a single document surface.</p>
@@ -248,9 +254,9 @@
         Password
         <input bind:value={password} type="password" autocomplete="current-password" />
       </label>
-      <button onclick={login}>Sign in</button>
+      <button type="submit">Sign in</button>
       {#if loginError}<p class="error">{loginError}</p>{/if}
-    </section>
+    </form>
   </main>
 {:else}
   <main class="app-shell">
