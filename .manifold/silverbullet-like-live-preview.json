@@ -532,6 +532,24 @@
       "bundle_budget_kb": 30,
       "phase_after_iteration": "VERIFIED",
       "convergence": "CONVERGED"
+    },
+    {
+      "number": 7,
+      "phase": "verify",
+      "timestamp": "2026-05-03T00:00:00+05:30",
+      "result": "RE-VERIFIED post-feature-stack: 26/26 live-preview e2e tests still pass (8 new tests added by SilverBullet polish + frontmatter/attribute waves). All 23 declared m4 artifacts present on disk. T1, T5, T3, S2 invariants re-checked at the source level — no view.dispatch({changes}) in decoration files, no .innerHTML= in decoration files, internal/render/ unchanged since a650302, package.json byte-stable since a650302. Bundle delta now +8.42 KB / 30 KB budget — grew from +2.43 KB as out-of-V1 features (hashtag, task checkboxes, fenced-code copy, frontmatter, attributes, admonition, smart quotes) were added on top. Still well within budget. Convergence holds.",
+      "tests_passed": 26,
+      "tests_failed": 0,
+      "test_pass_rate": 1.0,
+      "bundle_delta_kb": 8.42,
+      "bundle_budget_kb": 30,
+      "phase_after_iteration": "VERIFIED",
+      "convergence": "CONVERGED",
+      "drift_observations": [
+        "Heading CSS class renamed cm-md-heading-N -> cm-md-line-heading-N when commit d6642c9 made headings line-level (block kind). docs/silverbullet-like-live-preview/README.md class contract was updated in the same commit; e2e spec was updated; the manifold's plain-prose narrative still mentions the old class names but the structured generation.artifacts list points at the current files.",
+        "live-preview.spec.ts grew from 18 to 26 tests as polish work added new decoration families (hashtag, tasks, copy button, smart quotes, admonition, frontmatter, attributes, plus an /w/<tag> synthetic-tag-page test). All new tests pass.",
+        "Bundle delta growth (+2.43 KB -> +8.42 KB) is dominated by features outside V1 scope (CommandPalette ~1.5 KB, WorkspaceManager ~1 KB, theme system ~0.5 KB, smart quotes ~0.3 KB, etc). The V1 feature set itself remains ~2.5 KB."
+      ]
     }
   ],
   "blocking_dependencies": [

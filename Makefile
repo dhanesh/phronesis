@@ -41,7 +41,7 @@ CHANNEL ?=
 WEBFS_DIST := internal/webfs/dist
 FRONTEND_DIST := frontend/dist
 
-.PHONY: help build test lint release docker clean test-flake-monitor bundle-size
+.PHONY: help build test lint release docker clean test-flake-monitor bundle-size bench-decorations
 
 help: ## Show this help (auto-extracted from target docstrings)
 	@awk 'BEGIN {FS = ":.*?## "; printf "Usage: make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -67,6 +67,9 @@ test-flake-monitor: ## Unit-test the flake-rate computation script (scripts/comp
 
 bundle-size: ## Check frontend bundle gzipped size against scripts/.bundle-size-baseline (default budget +30 KB)
 	bash scripts/check-bundle-size.sh
+
+bench-decorations: ## Benchmark live-preview decoration tree-walk vs T2's p95 < 16ms budget
+	node scripts/bench-decorations.mjs
 
 lint: ## Run gofmt + go vet + staticcheck (all three gate CI)
 	@UNFMT="$$(gofmt -l . 2>/dev/null | grep -v '^frontend/' || true)"; \

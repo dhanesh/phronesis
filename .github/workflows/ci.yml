@@ -94,6 +94,10 @@ jobs:
         # O2 / RT-13 / TN8 — fail loud on >30 KB gzipped delta over baseline.
         # Update baseline intentionally with: UPDATE_BASELINE=1 scripts/check-bundle-size.sh
         run: bash scripts/check-bundle-size.sh
+      - name: decoration-rebuild perf bench
+        # T2 statistical budget: p95 < 16ms tree-walk for a 5KB fixture.
+        # Closes m5-verify gap G3.
+        run: node scripts/bench-decorations.mjs
       - name: stage webfs/dist
         run: |
           rm -rf internal/webfs/dist

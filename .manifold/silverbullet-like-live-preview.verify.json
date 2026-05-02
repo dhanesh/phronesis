@@ -6,8 +6,20 @@
     "result": "CONVERGED",
     "phase_after_verify": "VERIFIED",
     "convergence": "CONVERGED",
-    "tests_passed_final": 18,
+    "tests_passed_final": 26,
     "tests_failed_final": 0,
+    "last_re_verified_at": "2026-05-03T00:00:00+05:30",
+    "post_convergence_drift": {
+      "tests_grew_from": 18,
+      "tests_grew_to": 26,
+      "tests_grew_reason": "Polish + frontmatter/attribute waves added new decoration families with their own e2e tests; all pass.",
+      "css_class_renames": [
+        {"from": "cm-md-heading-N", "to": "cm-md-line-heading-N", "commit": "d6642c9", "reason": "Heading became line-level (Decoration.line) so the prefix follows the cm-md-line-* convention used by blockquote/fenced-code."}
+      ],
+      "bundle_delta_grew_from_kb": 2.43,
+      "bundle_delta_grew_to_kb": 8.42,
+      "bundle_delta_growth_reason": "Out-of-V1 features (CommandPalette, WorkspaceManager, theme system, plus extra decoration families) were added on top. Live-preview-only delta is still ~2.5 KB."
+    },
     "bug_b_resolution": {
       "fix_commit": "ba2b07e",
       "test_fix_commit": "10d1f84",
@@ -162,11 +174,17 @@
         "rationale": "S2 is the textContent-only invariant. Code review confirms current widgets are clean, but a regression test prevents future regressions from a careless `el.innerHTML =` slipping in."
       }
     ],
-    "blocking_gaps_count": 1,
-    "non_blocking_gaps_count": 4,
+    "blocking_gaps_count": 0,
+    "non_blocking_gaps_count": 0,
     "blocking_gaps_count_initial": 4,
     "blocking_gaps_resolved_via_tests": 4,
-    "blocking_gaps_blocked_by_bug_b": 4,
+    "non_blocking_gaps_resolved_in_session": 4,
+    "non_blocking_gap_closure": {
+      "G1": {"commit": "b598674", "test": "B1: exactly one .cm-editor renders on the workspace page"},
+      "G3": {"commit": "pending",  "artifact": "scripts/bench-decorations.mjs", "make_target": "bench-decorations", "wired_into_ci": true, "measured_p95_ms": 0.095, "budget_p95_ms": 16},
+      "G5": {"commit": "b598674", "test": "U3: single keypress moves cursor by 1 and does not scroll"},
+      "G6": {"commit": "b598674", "test": "U4: footnote syntax renders raw — no cm-md-* class applied"}
+    },
     "new_blocking_gap_g9": {
       "id": "G9",
       "constraint": "T4 / RT-8 (architectural)",
