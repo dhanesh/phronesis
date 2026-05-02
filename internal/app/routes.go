@@ -35,6 +35,12 @@ func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 	mux.HandleFunc("/api/session", s.handleSession)
 	mux.HandleFunc("/api/pages", s.withAuth(s.handlePages))
 	mux.HandleFunc("/api/pages/", s.withAuth(s.handlePageRoutes))
+	// Multi-workspace: list metadata for any authed user; CRUD requires
+	// admin role (gated via withAdmin).
+	mux.HandleFunc("/api/workspaces", s.withAuth(s.handleWorkspacesList))
+	mux.HandleFunc("/api/workspaces/", s.withAuth(s.handleWorkspaceRoutes))
+	mux.HandleFunc("/api/admin/workspaces", s.withAuth(s.withAdmin(s.handleAdminWorkspaces)))
+	mux.HandleFunc("/api/admin/workspaces/", s.withAuth(s.withAdmin(s.handleAdminWorkspaces)))
 	mux.HandleFunc("/w/", s.withAuth(s.handleWikiPage))
 
 	// INT-3: mount /media routes BEFORE the catch-all so the ServeMux's

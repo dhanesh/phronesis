@@ -43,6 +43,23 @@ func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// withAdmin wraps a handler that requires the admin role. Returns 401
+// for unauthenticated requests and 403 for authenticated non-admins.
+func (s *Server) withAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		p, err := principal.FromContext(r.Context())
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "authentication required")
+			return
+		}
+		if p.Role != principal.RoleAdmin {
+			writeError(w, http.StatusForbidden, "admin role required")
+			return
+		}
+		next(w, r)
+	}
+}
+
 // statusRecorder wraps http.ResponseWriter so loggingMiddleware can capture
 // the response status code and byte count without parsing the response body.
 // Implements http.Flusher so SSE handlers in handlers_pages.go still see a
