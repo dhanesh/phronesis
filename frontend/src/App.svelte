@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import Editor from './lib/Editor.svelte';
-  import ThemeSwitcher from './lib/ThemeSwitcher.svelte';
   import CommandPalette from './lib/CommandPalette.svelte';
+  import TopBar from './lib/TopBar.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -254,54 +254,40 @@
   </main>
 {:else}
   <main class="app-shell">
-    <aside class:closed={!sidebarOpen}>
-      <div class="sidebar-head">
-        <div>
-          <p class="eyebrow">Workspace</p>
-          <h2>Pages</h2>
-        </div>
-        <button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)}>{sidebarOpen ? 'Hide' : 'Show'}</button>
-      </div>
-      <button class="cmdk-launcher" onclick={() => (paletteOpen = true)} title="Open command palette (⌘K)">
-        <span class="cmdk-icon" aria-hidden="true">⌘K</span>
-        <span>Quick open…</span>
-      </button>
-      <nav>
-        {#each pages as entry (entry.name)}
-          <button class:selected={entry.name === page.name} class="nav-link" onclick={() => loadPage(entry.name)}>
-            <span>{entry.name}</span>
-          </button>
-        {/each}
-      </nav>
-      <div class="sidebar-foot">
-        <ThemeSwitcher />
-        <button class="logout" onclick={logout}>Sign out</button>
-      </div>
-    </aside>
+    <TopBar
+      pageName={page.name}
+      {status}
+      {mergedNotice}
+      onOpenPalette={() => (paletteOpen = true)}
+      onLogout={logout}
+    />
 
-    <section class="workspace">
-      <header class="workspace-head">
-        <div>
-          <p class="eyebrow">/{page.name}</p>
-          <h1>{page.name}</h1>
-          <p class="lede small">Single-surface editor. Click into the page to edit; click wiki links to navigate.</p>
+    <div class="app-body">
+      <aside class:closed={!sidebarOpen}>
+        <div class="sidebar-head">
+          <p class="eyebrow">Pages</p>
+          <button
+            class="ghost"
+            type="button"
+            aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            onclick={() => (sidebarOpen = !sidebarOpen)}
+          >{sidebarOpen ? '◀' : '▶'}</button>
         </div>
-        <div class="status-block">
-          <span>{status}</span>
-          {#if mergedNotice}<strong>{mergedNotice}</strong>{/if}
-        </div>
-      </header>
+        {#if sidebarOpen}
+          <nav>
+            {#each pages as entry (entry.name)}
+              <button class:selected={entry.name === page.name} class="nav-link" onclick={() => loadPage(entry.name)}>
+                <span>{entry.name}</span>
+              </button>
+            {/each}
+          </nav>
+        {/if}
+      </aside>
 
-      <div class="workspace-body">
-        <section class="editor-card">
-          <div class="editor-head">
-            <div>
-              <p class="eyebrow">Document</p>
-              <h2>Markdown Live Surface</h2>
-            </div>
-            <p class="editor-hint">Wiki links render inline until the cursor moves inside them.</p>
-          </div>
-          <div class="editor-frame">
+      <section class="workspace">
+        <div class="workspace-body">
+          <section class="editor-card">
+            <div class="editor-frame">
             <Editor
               bind:this={editor}
               value={draft}
@@ -394,6 +380,7 @@
         </aside>
       </div>
     </section>
+    </div>
   </main>
 {/if}
 
@@ -497,34 +484,42 @@
   .app-shell {
     display: grid;
     min-height: 100vh;
-    grid-template-columns: 18rem minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .app-body {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+    min-height: 0;
   }
 
   aside {
-    padding: 1rem 1rem 1.2rem;
+    padding: 0.85rem 0.65rem;
     background: var(--bg-elevated);
     border-right: 1px solid var(--border-subtle);
     color: var(--text-primary);
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
-    gap: 0.85rem;
+    grid-template-rows: auto 1fr;
+    gap: 0.5rem;
+    overflow: hidden;
   }
 
   aside.closed {
+    grid-template-columns: auto;
     grid-template-rows: auto;
   }
 
-  .sidebar-head,
-  .page-jump,
-  .workspace-head {
+  .sidebar-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    padding: 0 0.4rem;
   }
-
-  .page-jump input {
-    flex: 1;
+  .sidebar-head .eyebrow {
+    margin: 0;
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
   }
 
   nav {
@@ -535,21 +530,26 @@
   }
 
   .nav-link,
-  .ghost,
-  .logout {
+  .ghost {
     justify-content: flex-start;
     background: transparent;
     color: var(--text-primary);
     border: 0;
     border-radius: var(--radius-md);
-    padding: 0.5rem 0.7rem;
+    padding: 0.4rem 0.6rem;
     text-align: left;
     font-weight: 400;
+    font-size: 0.92rem;
+    cursor: pointer;
   }
   .nav-link:hover,
-  .ghost:hover,
-  .logout:hover {
+  .ghost:hover {
     background: var(--bg-hover);
+  }
+  .ghost {
+    padding: 0.25rem 0.45rem;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
   }
 
   .nav-link.selected {
@@ -558,73 +558,16 @@
     font-weight: 500;
   }
 
-  .top-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .sidebar-foot {
-    display: grid;
-    gap: 0.5rem;
-  }
-
-  .cmdk-launcher {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    width: 100%;
-    padding: 0.55rem 0.75rem;
-    background: var(--bg-control);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    font-size: 0.92rem;
-    cursor: pointer;
-    text-align: left;
-  }
-  .cmdk-launcher:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .cmdk-icon {
-    font-size: 0.78rem;
-    background: var(--bg-elevated);
-    color: var(--text-secondary);
-    padding: 0.05rem 0.35rem;
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    flex-shrink: 0;
-  }
-
   .workspace {
-    padding: 1.5rem;
+    padding: 1rem 1.25rem 1.25rem;
     display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 1rem;
-  }
-
-  .workspace-head h1 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .status-block {
-    text-align: right;
-    color: var(--text-secondary);
-    font-size: 0.88rem;
-  }
-
-  .status-block strong {
-    display: block;
-    color: var(--warning);
-    font-weight: 500;
+    grid-template-rows: 1fr;
+    min-height: 0;
   }
 
   .workspace-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 20rem;
+    grid-template-columns: minmax(0, 1fr) 18rem;
     gap: 1rem;
     min-height: 0;
   }
@@ -639,34 +582,17 @@
 
   .editor-card {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
     min-height: 0;
   }
 
-  .editor-head,
   .rail-card {
     padding: 0.9rem 1.1rem;
   }
 
-  .editor-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 1rem;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-
-  .editor-hint {
-    margin-bottom: 0;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    text-align: right;
-    max-width: 18rem;
-  }
-
   .editor-frame {
     min-height: 68vh;
-    padding: 0 1rem 0 1.2rem;
+    padding: 0.5rem 1rem 0.25rem 1.2rem;
   }
 
   .context-rail {
@@ -756,19 +682,13 @@
   }
 
   @media (max-width: 900px) {
-    .app-shell {
+    .app-body {
       grid-template-columns: 1fr;
     }
-
     aside {
       order: 2;
       border-right: 0;
       border-top: 1px solid var(--border-subtle);
-    }
-
-    .workspace-head {
-      align-items: start;
-      flex-direction: column;
     }
   }
 </style>
