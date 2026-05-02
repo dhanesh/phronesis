@@ -42,6 +42,9 @@ const fenced = "code";
 > blockquote line one
 > blockquote line two
 
+> [!warning]
+> watch out
+
 | col a | col b |
 | ----- | ----- |
 | cell  | cell  |
@@ -145,6 +148,15 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     await seedPage(page, name);
     await page.goto(`/w/${name}`);
     await expect(page.locator('.cm-md-blockquote').first()).toBeVisible();
+  });
+
+  test('admonition blockquote renders with type-specific class', async ({ page }) => {
+    const name = `lp-admon-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-admonition-warning').first()).toBeVisible();
+    const dataAttr = await page.locator('.cm-md-admonition-warning').first().getAttribute('data-admonition');
+    expect(dataAttr).toBe('warning');
   });
 
   test('tables render as cm-md-table widget', async ({ page }) => {

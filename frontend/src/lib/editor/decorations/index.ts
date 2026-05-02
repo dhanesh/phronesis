@@ -19,6 +19,7 @@ import { tasksFamily } from './inline/tasks';
 import { fencedCodeFamily } from './block/fenced-code';
 import { blockquoteFamily } from './block/blockquote';
 import { tablesFamily } from './block/tables';
+import { admonitionFamily } from './block/admonition';
 import type { Extension } from '@codemirror/state';
 
 export type { DecorationFamily } from './base';
@@ -39,6 +40,7 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
     // Block (Wave 4)
     fencedCodeFamily(),
     blockquoteFamily(),
+    admonitionFamily(),
     tablesFamily(),
     // Inline (Wave 3)
     headingsFamily(),

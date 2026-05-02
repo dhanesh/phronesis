@@ -203,6 +203,17 @@
           '.cm-md-blockquote-marker': {
             color: 'rgba(133, 79, 28, 0.55)'
           },
+          '.cm-md-admonition': {
+            borderLeftWidth: '4px',
+            paddingLeft: '0.85rem',
+            background: 'rgba(31, 92, 70, 0.06)'
+          },
+          '.cm-md-admonition-note':      { borderLeftColor: '#1f5c46', background: 'rgba(31, 92, 70, 0.06)' },
+          '.cm-md-admonition-tip':       { borderLeftColor: '#256d3d', background: 'rgba(37, 109, 61, 0.06)' },
+          '.cm-md-admonition-warning':   { borderLeftColor: '#a06a13', background: 'rgba(160, 106, 19, 0.08)' },
+          '.cm-md-admonition-caution':   { borderLeftColor: '#a06a13', background: 'rgba(160, 106, 19, 0.08)' },
+          '.cm-md-admonition-important': { borderLeftColor: '#7d3c8a', background: 'rgba(125, 60, 138, 0.07)' },
+          '.cm-md-admonition-danger':    { borderLeftColor: '#a13a3a', background: 'rgba(161, 58, 58, 0.07)' },
           '.cm-md-table': {
             borderCollapse: 'collapse',
             margin: '0.4rem 0',
