@@ -32,6 +32,9 @@ Paragraph with **bold**, *italic*, and \`inline code\`.
 1. ordered one
 2. ordered two
 
+- [ ] todo task one
+- [x] done task two
+
 \`\`\`javascript
 const fenced = "code";
 \`\`\`
@@ -133,6 +136,28 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     await expect(page.locator('table.cm-md-table')).toBeVisible();
     await expect(page.locator('.cm-md-table-header').first()).toBeVisible();
     await expect(page.locator('.cm-md-table-row').first()).toBeVisible();
+  });
+
+  test('task list checkboxes render and toggle on click', async ({ page }) => {
+    const name = `lp-tasks-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    // Two checkboxes, one unchecked + one checked.
+    const checkboxes = page.locator('input.cm-md-task-checkbox');
+    await expect(checkboxes).toHaveCount(2);
+    await expect(checkboxes.nth(0)).not.toBeChecked();
+    await expect(checkboxes.nth(1)).toBeChecked();
+
+    // Click the unchecked box → should toggle and persist via autosave.
+    await checkboxes.nth(0).click();
+    await page.waitForTimeout(900); // autosave debounce
+
+    // Re-fetch the page content via API; first marker should now be `[x]`.
+    const res = await page.request.get(`/api/pages/${name}`);
+    const body = await res.json();
+    expect(body.page.content).toContain('- [x] todo task one');
+    expect(body.page.content).toContain('- [x] done task two');
   });
 
   test('hashtags render as cm-md-hashtag anchors with /w/<tag> href', async ({ page }) => {

@@ -14,6 +14,7 @@ import { markdownLinksFamily } from './inline/markdown-links';
 import { listsFamily } from './inline/lists';
 import { imagesFamily } from './inline/images';
 import { hashtagFamily } from './inline/hashtag';
+import { tasksFamily } from './inline/tasks';
 import { fencedCodeFamily } from './block/fenced-code';
 import { blockquoteFamily } from './block/blockquote';
 import { tablesFamily } from './block/tables';
@@ -25,6 +26,7 @@ export { selectionTouches, treeFamily, rebuildLivePreview } from './base';
 export interface V1Options {
   currentPage: () => string;
   onnavigate?: (target: string) => void;
+  onTaskToggle?: (from: number, to: number, currentlyChecked: boolean) => void;
 }
 
 // Registry of V1 decoration families. Order matters only when ranges
@@ -45,6 +47,9 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
     listsFamily(),
     imagesFamily(),
     hashtagFamily({ onnavigate: opts.onnavigate }),
+    tasksFamily({
+      onToggle: opts.onTaskToggle ?? (() => {}),
+    }),
     // Wiki-links (foundation)
     wikiLinksFamily({ currentPage: opts.currentPage, onnavigate: opts.onnavigate }),
   ];

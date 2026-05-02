@@ -51,6 +51,12 @@
         livePreviewExtension({
           currentPage: () => currentPageName,
           onnavigate: (target) => onnavigate?.({ page: target, source: 'wikilink' }),
+          onTaskToggle: (from, to, checked) => {
+            if (!view) return;
+            view.dispatch({
+              changes: { from, to, insert: checked ? '[ ]' : '[x]' }
+            });
+          },
         }),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged || suppressChange) {
@@ -136,6 +142,16 @@
           },
           '.cm-md-hashtag:hover': {
             background: 'rgba(133, 79, 28, 0.22)'
+          },
+          '.cm-md-task': {
+            display: 'inline-flex',
+            verticalAlign: 'middle',
+            marginRight: '0.3rem'
+          },
+          '.cm-md-task-checkbox': {
+            cursor: 'pointer',
+            margin: '0',
+            accentColor: '#1f5c46'
           },
           '.cm-md-image': {
             display: 'inline-block',
