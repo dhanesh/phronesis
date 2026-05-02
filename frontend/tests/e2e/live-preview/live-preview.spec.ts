@@ -169,6 +169,24 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     expect(firstKey).toBe('title');
   });
 
+  test('navigating to /w/<tag> lists pages tagged with that tag', async ({ page }) => {
+    const tag = `lp-tagindex-${Date.now()}`;
+    // Seed two pages that both contain the same hashtag.
+    const aRes = await page.request.post(`/api/pages/lp-a-${Date.now()}`, {
+      data: { content: `tagged with #${tag}\n`, baseVersion: 0 },
+    });
+    expect(aRes.ok()).toBeTruthy();
+    const bRes = await page.request.post(`/api/pages/lp-b-${Date.now()}`, {
+      data: { content: `also #${tag} here\n`, baseVersion: 0 },
+    });
+    expect(bRes.ok()).toBeTruthy();
+
+    // Navigate to the tag page (which has no content of its own).
+    await page.goto(`/w/${tag}`);
+    // Right rail should show "Pages tagged #<tag>" with both seeded pages.
+    await expect(page.getByText(`Pages tagged #${tag}`)).toBeVisible();
+  });
+
   test('attribute syntax [k:: v] renders as a key:value pill', async ({ page }) => {
     const name = `lp-attr-${Date.now()}`;
     const content = `# Project\n\n[priority:: high] and [owner:: dhanesh] inline.\n`;

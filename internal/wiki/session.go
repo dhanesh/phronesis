@@ -49,6 +49,7 @@ func (h *Hub) Snapshot(name string) (Page, error) {
 		Version:   session.version,
 		UpdatedAt: page.UpdatedAt,
 		Render:    page.Render,
+		Tagged:    page.Tagged,
 	}, nil
 }
 

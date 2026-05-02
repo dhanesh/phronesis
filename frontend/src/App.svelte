@@ -50,7 +50,8 @@
         tags: [],
         links: [],
         backlinks: []
-      }
+      },
+      tagged: []
     };
   }
 
@@ -329,13 +330,25 @@
             {#if page.render.tags.length}
               <div class="pill-list">
                 {#each page.render.tags as tag (tag)}
-                  <span class="tag-chip">#{tag}</span>
+                  <button class="tag-chip" onclick={() => loadPage(tag)}>#{tag}</button>
                 {/each}
               </div>
             {:else}
               <p>No tags yet.</p>
             {/if}
           </section>
+
+          {#if (page.tagged ?? []).length}
+            <section class="rail-card">
+              <p class="eyebrow">Tagged</p>
+              <h3>Pages tagged #{page.name}</h3>
+              <div class="pill-list">
+                {#each (page.tagged ?? []) as link (link)}
+                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
+                {/each}
+              </div>
+            </section>
+          {/if}
         </aside>
       </div>
     </section>
@@ -574,6 +587,13 @@
     border-radius: 999px;
     background: rgba(71, 58, 27, 0.08);
     color: #4f4635;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.92rem;
+  }
+  .tag-chip:hover {
+    background: rgba(71, 58, 27, 0.16);
   }
 
   @media (max-width: 1100px) {

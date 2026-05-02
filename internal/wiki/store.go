@@ -24,6 +24,12 @@ type Store struct {
 	// refreshed in Put. backlinksLocked walks this map (cheap) instead of
 	// re-reading + re-rendering every .md file on disk on each Get.
 	pageLinks map[string][]string
+	// pageTags maps page name -> hashtags it contains (lowercased, no `#`
+	// prefix). Maintained alongside pageLinks. Drives PagesByTag — for a
+	// page named `urgent`, the API returns the names of pages that have
+	// `#urgent` in their content, so navigating to /w/urgent acts as a
+	// synthetic tag-index page.
+	pageTags map[string][]string
 }
 
 type Page struct {
@@ -32,6 +38,11 @@ type Page struct {
 	Version   int64         `json:"version"`
 	UpdatedAt time.Time     `json:"updatedAt"`
 	Render    render.Result `json:"render"`
+	// Tagged lists pages whose markdown content contains `#<this page's
+	// name>` as a hashtag. Lets the frontend render /w/<tag> as a
+	// synthetic index of pages tagged with that tag. Always non-nil per
+	// the JSON-array-contract memory; defaults to [].
+	Tagged []string `json:"tagged"`
 }
 
 type Summary struct {
@@ -43,7 +54,11 @@ func NewStore(root string) (*Store, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
-	s := &Store{root: root, pageLinks: make(map[string][]string)}
+	s := &Store{
+		root:      root,
+		pageLinks: make(map[string][]string),
+		pageTags:  make(map[string][]string),
+	}
 	if err := s.rebuildLinkGraph(); err != nil {
 		return nil, fmt.Errorf("build link graph: %w", err)
 	}
@@ -79,11 +94,14 @@ func (s *Store) Put(name, content string) (Page, error) {
 		return Page{}, err
 	}
 
-	// Refresh the link-graph entry for this page so subsequent Gets serve
-	// fresh backlinks. Rendering safeContent here matches what's on disk
-	// (AtomicWrite is durable), avoiding a second os.ReadFile.
+	// Refresh the link-graph and tag-graph entries for this page so
+	// subsequent Gets serve fresh backlinks and tagged-page lists.
+	// Rendering safeContent here matches what's on disk (AtomicWrite is
+	// durable), avoiding a second os.ReadFile.
 	normalized := normalizeName(name)
-	s.pageLinks[normalized] = render.RenderMarkdown(safeContent).Links
+	rendered := render.RenderMarkdown(safeContent)
+	s.pageLinks[normalized] = rendered.Links
+	s.pageTags[normalized] = rendered.Tags
 
 	return s.readPage(name)
 }
@@ -122,6 +140,14 @@ func (s *Store) Backlinks(target string) ([]string, error) {
 	return s.backlinksLocked(target), nil
 }
 
+// PagesByTag returns the names of pages whose content contains
+// `#<tag>` as a hashtag. Reads the in-memory tag graph.
+func (s *Store) PagesByTag(tag string) ([]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.pagesByTagLocked(tag), nil
+}
+
 func (s *Store) readPage(name string) (Page, error) {
 	normalized := normalizeName(name)
 	path, err := s.pagePath(normalized)
@@ -131,12 +157,15 @@ func (s *Store) readPage(name string) (Page, error) {
 	buf, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			emptyResult := render.RenderMarkdown("")
+			emptyResult.Backlinks = s.backlinksLocked(normalized)
 			return Page{
 				Name:      normalized,
 				Content:   "",
 				Version:   0,
 				UpdatedAt: time.Time{},
-				Render:    render.RenderMarkdown(""),
+				Render:    emptyResult,
+				Tagged:    s.pagesByTagLocked(normalized),
 			}, nil
 		}
 		return Page{}, err
@@ -158,6 +187,7 @@ func (s *Store) readPage(name string) (Page, error) {
 		Version:   info.ModTime().UnixMilli(),
 		UpdatedAt: info.ModTime().UTC(),
 		Render:    result,
+		Tagged:    s.pagesByTagLocked(normalized),
 	}, nil
 }
 
@@ -178,13 +208,36 @@ func (s *Store) backlinksLocked(target string) []string {
 	return out
 }
 
+// pagesByTagLocked walks the in-memory tag graph for pages whose
+// content contains `#<tag>`. Caller MUST hold s.mu (read or write).
+// The tag is normalised the same way render.RenderMarkdown extracts
+// tags (lowercased, stripped of the leading `#`).
+func (s *Store) pagesByTagLocked(tag string) []string {
+	tag = strings.ToLower(strings.TrimPrefix(tag, "#"))
+	tag = normalizeName(tag)
+	out := []string{}
+	for page, tags := range s.pageTags {
+		if page == tag {
+			// A page named `urgent` would otherwise list itself if it
+			// also mentions `#urgent` — skip self.
+			continue
+		}
+		if slices.Contains(tags, tag) {
+			out = append(out, page)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
 // rebuildLinkGraph walks the page tree once and caches each page's outgoing
-// links. Called from NewStore so the very first Get already serves backlinks
-// from memory. Takes s.mu for writes.
+// links + hashtags. Called from NewStore so the very first Get already
+// serves backlinks and tagged-page lists from memory. Takes s.mu for writes.
 func (s *Store) rebuildLinkGraph() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pageLinks = make(map[string][]string)
+	s.pageTags = make(map[string][]string)
 	return filepath.WalkDir(s.root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -200,7 +253,9 @@ func (s *Store) rebuildLinkGraph() error {
 		if err != nil {
 			return err
 		}
-		s.pageLinks[name] = render.RenderMarkdown(string(buf)).Links
+		rendered := render.RenderMarkdown(string(buf))
+		s.pageLinks[name] = rendered.Links
+		s.pageTags[name] = rendered.Tags
 		return nil
 	})
 }
