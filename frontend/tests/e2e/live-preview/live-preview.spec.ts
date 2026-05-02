@@ -122,6 +122,24 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     await expect(page.locator('.cm-md-fenced-code-line').first()).toBeVisible();
   });
 
+  test('fenced code copy button copies the body to clipboard', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const name = `lp-fenced-copy-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+
+    const copyButton = page.locator('button.cm-md-fenced-code-copy').first();
+    await expect(copyButton).toBeVisible();
+    await copyButton.click();
+    // Button label flips to "Copied" briefly.
+    await expect(copyButton).toHaveText('Copied');
+
+    // Clipboard should hold the inner code body, no fence markers.
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clip).toContain('const fenced = "code"');
+    expect(clip).not.toContain('```');
+  });
+
   test('blockquotes render cm-md-blockquote', async ({ page }) => {
     const name = `lp-blockquote-${Date.now()}`;
     await seedPage(page, name);

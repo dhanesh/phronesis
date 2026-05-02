@@ -27,11 +27,50 @@
 //   .cm-md-fenced-code-language   on the first line, when CodeInfo present
 //                                 (carries data-lang="<language>")
 
+import { WidgetType } from '@codemirror/view';
 import type { Range } from '@codemirror/state';
 import { Decoration, treeFamily } from '../base';
 import type { DecorationFamily } from '../base';
 
 const NODE_TYPES = ['FencedCode'] as const;
+
+// Widget rendering a "Copy" button that places the fenced code body
+// on the system clipboard. Source range is captured at decoration-build
+// time so the click handler does not need EditorView access.
+class CopyCodeWidget extends WidgetType {
+  constructor(private readonly codeText: string) {
+    super();
+  }
+  eq(other: CopyCodeWidget): boolean {
+    return other.codeText === this.codeText;
+  }
+  toDOM(): HTMLElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cm-md-fenced-code-copy';
+    button.textContent = 'Copy';
+    button.title = 'Copy code';
+    button.addEventListener('mousedown', (e) => e.stopPropagation());
+    button.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(this.codeText);
+        const previous = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(() => {
+          if (button.isConnected) button.textContent = previous;
+        }, 1200);
+      } catch {
+        button.textContent = 'Failed';
+      }
+    });
+    return button;
+  }
+  ignoreEvent(): boolean {
+    return false;
+  }
+}
 
 export function fencedCodeFamily(): DecorationFamily {
   return treeFamily({
@@ -44,22 +83,24 @@ export function fencedCodeFamily(): DecorationFamily {
       const fromLine = state.doc.lineAt(node.from).number;
       const toLine = state.doc.lineAt(node.to).number;
 
-      // Collect fence-marker line numbers and the language tag (if any) by
-      // walking the children of the matched FencedCode node. Using the
-      // parsed tree avoids re-tokenizing the source and keeps S2 honest —
-      // the language string is set via `dataset`, not interpolated HTML.
+      // Collect fence-marker line numbers, language tag, and the inner
+      // code body text by walking the children of the matched FencedCode
+      // node. Using the parsed tree avoids re-tokenizing the source and
+      // keeps S2 honest — every text payload is set via dataset /
+      // textContent, never via innerHTML.
       const fenceLines = new Set<number>();
       let language: string | null = null;
+      const codeTextParts: string[] = [];
 
       const stable = node.node;
       let child = stable.firstChild;
       while (child) {
         if (child.name === 'CodeMark') {
-          // CodeMark spans the ``` characters only, but those characters
-          // always sit on their own line, so the line number is unique.
           fenceLines.add(state.doc.lineAt(child.from).number);
         } else if (child.name === 'CodeInfo' && language === null) {
           language = state.sliceDoc(child.from, child.to).trim();
+        } else if (child.name === 'CodeText') {
+          codeTextParts.push(state.sliceDoc(child.from, child.to));
         }
         child = child.nextSibling;
       }
@@ -83,6 +124,20 @@ export function fencedCodeFamily(): DecorationFamily {
           );
         }
       }
+
+      // Copy button anchored at the start of the FencedCode node. The
+      // CSS class positions it absolutely top-right inside the styled
+      // block.
+      const codeText = codeTextParts.join('\n');
+      if (codeText.length > 0) {
+        out.push(
+          Decoration.widget({
+            widget: new CopyCodeWidget(codeText),
+            side: -1,
+          }).range(node.from),
+        );
+      }
+
       return out;
     },
   });

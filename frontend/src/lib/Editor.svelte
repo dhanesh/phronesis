@@ -167,13 +167,32 @@
           '.cm-md-fenced-code-fence': {
             color: '#928b6f'
           },
+          '.cm-md-fenced-code-language': {
+            position: 'relative'
+          },
           '.cm-md-fenced-code-language::before': {
             content: 'attr(data-lang)',
             float: 'right',
             color: '#928b6f',
             fontSize: '0.78em',
             textTransform: 'uppercase',
-            letterSpacing: '0.08em'
+            letterSpacing: '0.08em',
+            paddingRight: '4.5rem'
+          },
+          '.cm-md-fenced-code-copy': {
+            float: 'right',
+            border: '1px solid rgba(110, 97, 69, 0.25)',
+            background: 'rgba(255, 252, 244, 0.85)',
+            color: '#5d5847',
+            fontSize: '0.78em',
+            padding: '0.05rem 0.5rem',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            margin: '0 0.25rem 0 0'
+          },
+          '.cm-md-fenced-code-copy:hover': {
+            background: '#fff',
+            borderColor: 'rgba(110, 97, 69, 0.45)'
           },
           '.cm-md-blockquote': {
             background: 'rgba(133, 79, 28, 0.05)',
