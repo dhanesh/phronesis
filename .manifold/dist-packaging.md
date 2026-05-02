@@ -96,12 +96,13 @@ Any target that embeds frontend assets MUST declare `frontend/dist/index.html` (
 
 ### User Experience
 
-#### U1: Seven core make targets — build, test, lint, fmt, clean, release, help
+#### U1: At most ten core make targets — surface stays memorizable
 
-The Makefile exposes exactly these 7 first-class targets. Platform-specific build targets (`build-darwin-arm64` etc.) may exist as internal dependencies of `release` but are not listed in `make help`. `release` composes lint + test + cross-compile + packaging + channel publish (or a subset if partial-release mode).
+The Makefile exposes at most 10 first-class targets in `make help`. The original v1 surface was 7 (build, test, lint, clean, release, docker, help); sibling features added test-flake-monitor (e2e-testing manifold) plus bundle-size and bench-decorations (silverbullet-like-live-preview manifold), and the budget was widened from ≤7 to ≤10 on 2026-05-03 to accept the actual surface rather than push the additions off-help. Platform-specific build targets (`build-darwin-arm64` etc.) may exist as internal dependencies of `release` but are not listed in `make help`. Any further growth must either fold into existing targets, become a hidden helper (no `## ` docstring, like `_check-clean`), or earn an explicit budget bump.
 
-> **Rationale:** Target surface stays memorizable. New developers discover what's available via `make help` and don't face a 30-target wall.
-> **Quality:** 3 / 3 / 2 — "first-class" is measurable via help output but "memorizable" is subjective.
+> **Rationale:** Target surface stays memorizable. The point is not exactly-seven; the point is that `make help` fits on one screen and a new developer can scan it without scrolling. 10 is still well under the 30-target wall this constraint was originally written against. Any 11th target should trigger a question — does it belong in the visible surface, or as a hidden helper?
+> **History:** Original budget was ≤7. Widened to ≤10 on 2026-05-03 after iteration #10's drift-verify surfaced G7 and the user chose Option (b) (relax the budget) over Option (a) (demote the new targets off-help).
+> **Quality:** 3 / 3 / 2 — count is measurable via help output but "memorizable" is subjective.
 
 #### U2: `make help` auto-generates from target docstrings
 

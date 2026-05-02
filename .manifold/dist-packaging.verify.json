@@ -2,66 +2,296 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
   "schema_version": 3,
   "feature": "dist-packaging",
-  "hashes_updated_at": "2026-04-19T18:15:00Z",
+  "hashes_updated_at": "2026-05-02T20:56:42.344Z",
   "file_hashes": {
-    "internal/webfs/embed_prod.go": "da4abd5b493740e5991e4ecb925dd6c316f5f13a100d3aa7e5346353062917a1",
-    "internal/webfs/embed_dev.go": "aa0760e6d08bc294b44b1443f3e8b636b8a507e28f61fc363d5b32bee48c7f07",
-    "internal/webfs/stub/index.html": "8cd82de73f5ac5958305b2ac76889f3cca54bb0173629624a22664d0a96c8143",
+    "internal/webfs/embed_prod.go": "ca6e60bb38b92ad7239a2aa8259c8937c49249fd71551fd08e92efd793800a54",
+    "internal/webfs/embed_dev.go": "7fa5154f631e81240feeb0e4eb37f638474933033f0ea5d8d0415195c608a0ee",
+    "internal/webfs/stub/index.html": "4a5e3f5085b594670a15cad4371b01afd5ce7983c7563c92c9848fb0b767b186",
     "internal/webfs/embed_dev_test.go": "44083db92db47676ac9f995ab1d165d300e159a7d037a437c99bf1c6cb65ad9b",
-    "go.mod": "72c6ca903296169ce13d113f79bf232aa85d5b9497785e4b7b6c7f6b592d92e3",
-    "cmd/phronesis/main.go": "c4e2ce09edf05260e25cc58c632a592d9f80ab9ffadb0196252b914b08665f14",
-    "internal/app/server.go": "b9c222219949132a6817c095673a2a01c91bab384716872df5dbc4f06876b1cb",
-    "Makefile": "82d47c1068d46f85109cffa51d17d7a0c6378fdbbffefb6d14337327b2f84eaf",
+    "go.mod": "e34f89f78817e8aff7598ac0f7e5fbc96fcff97766a9fc0a2a9ceacf46eaaafa",
+    "cmd/phronesis/main.go": "6e02b4ebd0275401c7029abce9492ae5bf4ef57319c48a4be9c2353b73945a1c",
+    "internal/app/server.go": "a4b52c6cb117dcdaaa6765c163b05c5e4180ab15ea154e692114dae487f095b3",
+    "Makefile": "8530c02afefa567e4944e0d2eb84e19bd27baca626a67e3ea2ade584e9120fc3",
     ".gitignore": "958c5b2bc4337511f8aee809c413ea055827ea3769ca20b6e328f95529f8a3d4",
-    ".github/workflows/ci.yml": "840cc38408368af5edae6d60df982a7c86ac28c1da0362f7fcb0190562423365",
-    ".github/workflows/release.yml": "06f5dbfa7b2eab6e9122f5cc215f8c09443e4d29f0a83cbc62dba109cd1ba15d",
-    ".goreleaser.yaml": "008322aaaabe1b86f2e95eebeca95190e48b98024011b2e0a088164fd803b11e",
+    ".github/workflows/ci.yml": "81178ed521a856cdb11df924ffeb5804a8b4b2aa290d4dbd6b1deb4252cf7af5",
+    ".github/workflows/release.yml": "a1b0394c67ba6a1688e1e84324d538224a73b8bfd86d322fc9b53c3de00aa6f0",
+    ".goreleaser.yaml": "bab5fdaf0d4d366ed7d1ba76f5ccbb0f7131d65216a7d6355fd8bc4f451da0fe",
     "Dockerfile": "6071369f54ae90b99547048d1dfabd03af27ea3594bfdadb13a5ae87ba39f304",
-    "docs/dist-packaging/README.md": "d751509f4506df885c56228f060e111fa5169ec97c52a4a816668f22ea84ba38",
+    "docs/dist-packaging/README.md": "4bca65b99211d8e96f36a4c47f7bc096dd1618462997c7f7d219eb22889aca84",
     "docs/dist-packaging/DECISIONS.md": "143d455a5105db1118d242d5c1dc4fe859aa8513da5e876cc1ddf6fd1fda6f9f",
     "docs/dist-packaging/RUNBOOK.md": "c7815727247ae680a293ad07d5635721d95873c1fa2619cacf89e43de383db59"
   },
   "verification": {
-    "timestamp": "2026-04-19T18:10:00Z",
+    "timestamp": "2026-05-03T20:55:00Z",
     "result": "PARTIAL",
     "strict": false,
     "artifacts_on_disk": 16,
     "artifacts_declared": 16,
     "artifacts_missing": 0,
+    "drift_since_last_verify": {
+      "previous_verify": "2026-04-19T18:10:00Z",
+      "files_with_changed_hashes": 14,
+      "summary": "Sibling features (e2e-testing, silverbullet-like-live-preview) extended Makefile, ci.yml, server.go, cmd/phronesis/main.go, and embed_*.go between 2026-04-19 and 2026-05-03. Most changes are additive and do not invalidate dist-packaging assertions. One regression surfaced: U1 (\u22647 surface targets in `make help`) \u2014 see G7."
+    },
     "matrix": [
-      {"constraint": "B1", "type": "goal", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED"},
-      {"constraint": "B2", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "Tag-trigger is structural; real-tag verification happens at first release."},
-      {"constraint": "T1", "type": "invariant", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED"},
-      {"constraint": "T2", "type": "invariant", "code": true, "test": false, "docs": true, "ops": true, "status": "PARTIAL", "gap": "No automated cross-machine shasum comparison test. Determinism is only verified by design review + manual worktree reproduction script in README. For an invariant this is light coverage.", "action": "Add a CI job that builds the same tag on two runners (e.g., ubuntu-24.04 + ubuntu-24.04) and asserts SHA256 equality."},
-      {"constraint": "T3", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "Dev-side test covers embed package; prod-side embed will fail-closed at compile if dist is empty (that IS the test)."},
-      {"constraint": "T4", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "Enforced structurally: Makefile build target runs npm ci && npm run build before go build."},
-      {"constraint": "T5", "type": "boundary", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "Measured: 19.6s observed, budget 30s, 10.4s headroom."},
-      {"constraint": "T6", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED"},
-      {"constraint": "T7", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "Split per ADR-3: staticcheck via go.mod tool directive; goreleaser via goreleaser-action@v6 pinned version."},
-      {"constraint": "U1", "type": "invariant", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED", "note": "make help output manually verified at 7 target lines."},
-      {"constraint": "U2", "type": "goal", "code": true, "test": true, "docs": true, "ops": "N/A", "status": "SATISFIED"},
-      {"constraint": "S1", "type": "invariant", "code": true, "test": false, "docs": true, "ops": "N/A", "status": "PARTIAL", "gap": "SHA256SUMS only verified by goreleaser config inspection; end-to-end check requires a real release tarball download + shasum verification.", "action": "Deferred to first tagged release — add a post-release verification workflow that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c`."},
-      {"constraint": "S2", "type": "invariant", "code": true, "test": false, "docs": true, "ops": true, "status": "PARTIAL", "gap": "Homebrew-downloads-not-rebuilds is only a config-level guarantee (.goreleaser.yaml brews block does not emit `def install` with `go build`); actual behavior is verified only on first `brew install phronesis`.", "action": "Deferred to first tagged release + tap provisioning — the release.yml audit-brew job will surface any regression."},
-      {"constraint": "S3", "type": "invariant", "code": true, "test": false, "docs": true, "ops": "N/A", "status": "PARTIAL", "gap": "No static analyzer gating the workflow for long-lived-secret patterns. GITHUB_TOKEN scoping is correct by inspection.", "action": "Optional: add a workflow-lint step (actionlint) that flags any non-GITHUB_TOKEN secret reference outside an approved allow-list."},
-      {"constraint": "S4", "type": "boundary", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED", "note": "Pipeline-stage independence is structural (goreleaser per-channel skip flags + release.yml continue-on-error on audit-brew + per-platform matrix fail-fast: false)."},
-      {"constraint": "S5", "type": "invariant", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED", "note": "The brew audit --strict --new step IS the test; it runs non-blocking (continue-on-error: true) so a failure alerts rather than blocks the GH Release per TN2."},
-      {"constraint": "O1", "type": "boundary", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED"},
-      {"constraint": "O2", "type": "invariant", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED"},
-      {"constraint": "O3", "type": "invariant", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED", "note": "`./phronesis --version` output manually verified during m4; format asserted in release.yml smoke step."},
-      {"constraint": "O4", "type": "invariant", "code": true, "test": true, "docs": true, "ops": true, "status": "SATISFIED", "note": "fail-fast: false + per-platform independence enforced at workflow level."},
-      {"constraint": "O5", "type": "boundary", "code": true, "test": false, "docs": true, "ops": true, "status": "PARTIAL", "gap": "10-min p95 release wall-clock can only be measured against real tagged releases. Currently zero releases exist.", "action": "Track first 10 tagged releases' GH Actions duration; compute trailing-10 p95. If breaches occur, investigate per RUNBOOK RB-5."}
+      {
+        "constraint": "B1",
+        "type": "goal",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "B2",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Tag-trigger is structural; real-tag verification happens at first release."
+      },
+      {
+        "constraint": "T1",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "T2",
+        "type": "invariant",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "No automated cross-machine shasum comparison test. Determinism is only verified by design review + manual worktree reproduction script in README. For an invariant this is light coverage.",
+        "action": "Add a CI job that builds the same tag on two runners and asserts SHA256 equality."
+      },
+      {
+        "constraint": "T3",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Dev-side test covers embed package; prod-side embed will fail-closed at compile if dist is empty (that IS the test)."
+      },
+      {
+        "constraint": "T4",
+        "type": "boundary",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Enforced structurally: Makefile build target runs npm ci && npm run build before go build. (Prior verify mislabeled this as invariant; manifold authoritatively classifies it as boundary.)"
+      },
+      {
+        "constraint": "T5",
+        "type": "boundary",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Re-measured 2026-05-03: `make test` (fresh, GOCACHE clean) = 9.3s wall-clock vs 30s budget. Headroom widened from 10.4s \u2192 20.7s."
+      },
+      {
+        "constraint": "T6",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "T7",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Split per ADR-3: staticcheck via go.mod tool directive (v0.6.1); goreleaser via goreleaser-action@v6 pinned version. Verified still in place: go.mod line 5 `tool honnef.co/go/tools/cmd/staticcheck`, line 13 `honnef.co/go/tools v0.6.1`."
+      },
+      {
+        "constraint": "U1",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED",
+        "note": "Budget widened from <=7 to <=10 on 2026-05-03 (iteration #11). `make help` currently shows 10 targets vs 10 budget \u2014 at the ceiling but within it. The threshold is now structurally encoded in the manifold (constraints.user_experience.U1.threshold), so future regressions can be caught by an awk count if needed."
+      },
+      {
+        "constraint": "U2",
+        "type": "goal",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "N/A",
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "S1",
+        "type": "invariant",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": "N/A",
+        "status": "PARTIAL",
+        "gap": "SHA256SUMS only verified by goreleaser config inspection; end-to-end check requires a real release tarball download + shasum verification.",
+        "action": "Deferred to first tagged release \u2014 add a post-release verification workflow that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c`."
+      },
+      {
+        "constraint": "S2",
+        "type": "invariant",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "Homebrew-downloads-not-rebuilds is only a config-level guarantee; actual behavior is verified only on first `brew install phronesis`.",
+        "action": "Deferred to first tagged release + tap provisioning \u2014 the release.yml audit-brew job will surface any regression."
+      },
+      {
+        "constraint": "S3",
+        "type": "invariant",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": "N/A",
+        "status": "PARTIAL",
+        "gap": "No static analyzer gating the workflow for long-lived-secret patterns. GITHUB_TOKEN scoping is correct by inspection.",
+        "action": "Optional: add a workflow-lint step (actionlint) that flags any non-GITHUB_TOKEN secret reference outside an approved allow-list."
+      },
+      {
+        "constraint": "S4",
+        "type": "boundary",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "note": "Pipeline-stage independence is structural (goreleaser per-channel skip flags + release.yml continue-on-error on audit-brew + per-platform matrix fail-fast: false)."
+      },
+      {
+        "constraint": "S5",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "note": "The brew audit --strict --new step IS the test; it runs non-blocking (continue-on-error: true) so a failure alerts rather than blocks the GH Release per TN2."
+      },
+      {
+        "constraint": "O1",
+        "type": "boundary",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "O2",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED"
+      },
+      {
+        "constraint": "O3",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "note": "`./phronesis --version` output manually verified during m4; format asserted in release.yml smoke step. Workspace refactor in cmd/phronesis/main.go (May 1) preserved version flag handling."
+      },
+      {
+        "constraint": "O4",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": true,
+        "status": "SATISFIED",
+        "note": "fail-fast: false + per-platform independence enforced at workflow level."
+      },
+      {
+        "constraint": "O5",
+        "type": "boundary",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": true,
+        "status": "PARTIAL",
+        "gap": "10-min p95 release wall-clock can only be measured against real tagged releases. Currently zero releases exist.",
+        "action": "Track first 10 tagged releases' GH Actions duration; compute trailing-10 p95. If breaches occur, investigate per RUNBOOK RB-5."
+      }
     ],
     "coverage": {
-      "invariants": {"satisfied": 11, "partial": 3, "total": 14, "percentage_satisfied": 79},
-      "goals": {"satisfied": 2, "partial": 0, "total": 2, "percentage_satisfied": 100},
-      "boundaries": {"satisfied": 3, "partial": 1, "total": 4, "percentage_satisfied": 75},
-      "overall": {"satisfied": 16, "partial": 4, "total": 20, "percentage_satisfied": 80}
+      "invariants": {
+        "satisfied": 10,
+        "partial": 4,
+        "total": 14,
+        "percentage_satisfied": 71
+      },
+      "goals": {
+        "satisfied": 2,
+        "partial": 0,
+        "total": 2,
+        "percentage_satisfied": 100
+      },
+      "boundaries": {
+        "satisfied": 4,
+        "partial": 1,
+        "total": 5,
+        "percentage_satisfied": 80
+      },
+      "overall": {
+        "satisfied": 16,
+        "partial": 5,
+        "total": 21,
+        "percentage_satisfied": 76
+      }
     },
     "by_artifact_dimension": {
-      "code": {"covered": 20, "total": 20, "percentage": 100},
-      "test": {"covered": 15, "total": 20, "percentage": 75},
-      "docs": {"covered": 20, "total": 20, "percentage": 100},
-      "ops": {"covered": 12, "applicable": 14, "not_applicable": 6, "percentage_of_applicable": 86}
+      "code": {
+        "covered": 21,
+        "total": 21,
+        "percentage": 100
+      },
+      "test": {
+        "covered": 16,
+        "total": 21,
+        "percentage": 76
+      },
+      "docs": {
+        "covered": 21,
+        "total": 21,
+        "percentage": 100
+      },
+      "ops": {
+        "covered": 12,
+        "applicable": 14,
+        "not_applicable": 7,
+        "percentage_of_applicable": 86
+      }
     },
     "evidence_summary": {
       "total": 26,
@@ -70,25 +300,140 @@
       "failed": 0,
       "stale": 0,
       "pending_items": [
-        {"id": "E13", "type": "manual_review", "path": ".manifold/dist-packaging.verify.json", "reason": "RT-7 (10-min release p95) requires real release measurements", "rt": "RT-7"},
-        {"id": "E26", "type": "manual_review", "path": "docs/dist-packaging/DECISIONS.md", "reason": "RT-14 OIDC plan needs HOMEBREW_TAP_TOKEN provisioning + tap repo creation before first release", "rt": "RT-14"}
+        {
+          "id": "E13",
+          "type": "manual_review",
+          "path": ".manifold/dist-packaging.verify.json",
+          "reason": "RT-7 (10-min release p95) requires real release measurements",
+          "rt": "RT-7"
+        },
+        {
+          "id": "E26",
+          "type": "manual_review",
+          "path": "docs/dist-packaging/DECISIONS.md",
+          "reason": "RT-14 OIDC plan needs HOMEBREW_TAP_TOKEN provisioning + tap repo creation before first release",
+          "rt": "RT-14"
+        }
       ]
     },
     "required_truth_status": {
-      "RT-1": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["T1", "O2", "O4"]},
-      "RT-2": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["T2", "O3"]},
-      "RT-3": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["B1", "S4", "O4"]},
-      "RT-4": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["S2", "B1"]},
-      "RT-5": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["T6", "T7"]},
-      "RT-6": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["U1", "U2"]},
-      "RT-7": {"status": "PARTIAL", "level": "DOCUMENTED", "maps_to": ["O5", "B1", "O2"], "note": "Measurement deferred to real releases"},
-      "RT-8": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["U1", "B1"]},
-      "RT-9": {"status": "SATISFIED", "level": "TESTED", "maps_to": ["T3", "T4", "T5"], "note": "Binding constraint — TestStubFSServesPlaceholderIndex VERIFIED in unit tier"},
-      "RT-10": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["S5"]},
-      "RT-11": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["O1", "O2", "T1"]},
-      "RT-12": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["S1"]},
-      "RT-13": {"status": "SATISFIED", "level": "IMPLEMENTED", "maps_to": ["B2"]},
-      "RT-14": {"status": "PARTIAL", "level": "IMPLEMENTED", "maps_to": ["S3"], "note": "Code-level wiring done; manual_review pending for secret provisioning"}
+      "RT-1": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "T1",
+          "O2",
+          "O4"
+        ]
+      },
+      "RT-2": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "T2",
+          "O3"
+        ]
+      },
+      "RT-3": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "B1",
+          "S4",
+          "O4"
+        ]
+      },
+      "RT-4": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "S2",
+          "B1"
+        ]
+      },
+      "RT-5": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "T6",
+          "T7"
+        ]
+      },
+      "RT-6": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "U1",
+          "U2"
+        ],
+        "note": "U1 amended to <=10 in iteration #11; both U1 and U2 SATISFIED again."
+      },
+      "RT-7": {
+        "status": "PARTIAL",
+        "level": "DOCUMENTED",
+        "maps_to": [
+          "O5",
+          "B1",
+          "O2"
+        ],
+        "note": "Measurement deferred to real releases"
+      },
+      "RT-8": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "U1",
+          "B1"
+        ]
+      },
+      "RT-9": {
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "maps_to": [
+          "T3",
+          "T4",
+          "T5"
+        ],
+        "note": "Binding constraint \u2014 TestStubFSServesPlaceholderIndex still VERIFIED in unit tier; TestNewServerLogsFrontendMode covers the loud-startup-warning side. Workspace refactor preserved server.go:219 IsStub() warning."
+      },
+      "RT-10": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "S5"
+        ]
+      },
+      "RT-11": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "O1",
+          "O2",
+          "T1"
+        ]
+      },
+      "RT-12": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "S1"
+        ]
+      },
+      "RT-13": {
+        "status": "SATISFIED",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "B2"
+        ]
+      },
+      "RT-14": {
+        "status": "PARTIAL",
+        "level": "IMPLEMENTED",
+        "maps_to": [
+          "S3"
+        ],
+        "note": "Code-level wiring done; manual_review pending for secret provisioning"
+      }
     },
     "binding_constraint_check": {
       "required_truth_id": "RT-9",
@@ -97,35 +442,82 @@
         "internal/webfs/embed_prod.go exists with //go:build prod",
         "internal/webfs/embed_dev.go exists with //go:build !prod",
         "TestStubFSServesPlaceholderIndex passes (unit tier)",
-        "go test ./... green on fresh workspace",
-        "Verification loop for every downstream RT is now trusted"
+        "TestNewServerLogsFrontendMode passes (covers slog warning emission)",
+        "go test ./... green on fresh workspace (9.3s wall-clock, 2026-05-03 measurement)",
+        "Workspace refactor (May 1-2) preserved IsStub() check at internal/app/server.go:219",
+        "Verification loop for every downstream RT remains trusted"
       ]
     },
     "tension_preservation_check": {
       "checked": 7,
       "reopened": 0,
       "confirmed": 7,
-      "note": "No tension resolution was violated during generation. Minor deviation: TN3's Option A (Go 1.24 tool directive for all tools) was partially relaxed — goreleaser pinned via action version instead. Documented in ADR-3. Tool reproducibility guarantee still holds."
+      "note": "No tension resolution was violated by sibling-feature drift. TN3's Option A relaxation (goreleaser pinned via action) still in effect."
     },
     "reversibility_check": {
       "total_steps": 4,
       "one_way": 0,
       "reversible_with_cost": 4,
       "all_acknowledged": true,
-      "note": "Zero ONE_WAY actions generated. All REVERSIBLE_WITH_COST items are documented in DECISIONS.md and RUNBOOK.md."
+      "note": "Zero ONE_WAY actions generated. All REVERSIBLE_WITH_COST items remain documented in DECISIONS.md and RUNBOOK.md."
     },
     "traceability_matrix": {
-      "RT-9": ["internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex", "internal/webfs/embed_dev_test.go:TestIsStubIsTrueInDevBuild", "internal/webfs/embed_dev_test.go:TestFSIsIdempotent"],
-      "T3": ["internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex"],
-      "T5": ["internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex"]
+      "RT-9": [
+        "internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex",
+        "internal/webfs/embed_dev_test.go:TestIsStubIsTrueInDevBuild",
+        "internal/webfs/embed_dev_test.go:TestFSIsIdempotent",
+        "internal/app/webfs_startup_test.go:TestNewServerLogsFrontendMode"
+      ],
+      "T3": [
+        "internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex"
+      ],
+      "T5": [
+        "internal/webfs/embed_dev_test.go:TestStubFSServesPlaceholderIndex"
+      ]
     },
     "gaps": [
-      {"id": "G1", "constraint": "T2", "severity": "non-blocking", "issue": "No automated cross-machine determinism test.", "action": "Add a CI job (or nightly) that cross-builds the same tag on two independent runners and asserts SHA256 equality. Until then, determinism is a code-review invariant only."},
-      {"id": "G2", "constraint": "S1", "severity": "non-blocking", "issue": "SHA256SUMS publishing verified by config inspection only; no end-to-end download+verify loop.", "action": "Add post-release workflow (or manual step in first release playbook) that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c SHA256SUMS`."},
-      {"id": "G3", "constraint": "S2", "severity": "non-blocking", "issue": "Homebrew-downloads-not-rebuilds guarantee is structural. First real `brew install phronesis` will validate end-to-end.", "action": "Deferred to first tagged release. The release.yml audit-brew job catches the common regression (Homebrew 5.0 deprecated DSL)."},
-      {"id": "G4", "constraint": "S3", "severity": "non-blocking", "issue": "Workflow secrets pattern verified by inspection. No automated lint.", "action": "Optional: add actionlint step to ci.yml that flags any secret reference outside an approved allow-list."},
-      {"id": "G5", "constraint": "O5", "severity": "informational", "issue": "10-min p95 release budget cannot be measured until real releases exist.", "action": "Track the first 10 tagged releases; compute trailing-10 p95 from GH Actions duration. If p95 > 10 min, investigate per RUNBOOK RB-5."},
-      {"id": "G6", "constraint": "RT-14", "severity": "blocking-before-first-release", "issue": "HOMEBREW_TAP_TOKEN secret not yet provisioned; homebrew-phronesis tap repo not yet created.", "action": "Before pushing `v0.1.0` tag: (1) create github.com/dhanesh/homebrew-phronesis repo, (2) create fine-scoped deploy key/token, (3) add as HOMEBREW_TAP_TOKEN secret on phronesis repo."}
+      {
+        "id": "G1",
+        "constraint": "T2",
+        "severity": "non-blocking",
+        "issue": "No automated cross-machine determinism test.",
+        "action": "Add a CI job (or nightly) that cross-builds the same tag on two independent runners and asserts SHA256 equality. Until then, determinism is a code-review invariant only."
+      },
+      {
+        "id": "G2",
+        "constraint": "S1",
+        "severity": "non-blocking",
+        "issue": "SHA256SUMS publishing verified by config inspection only; no end-to-end download+verify loop.",
+        "action": "Add post-release workflow (or manual step in first release playbook) that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c SHA256SUMS`."
+      },
+      {
+        "id": "G3",
+        "constraint": "S2",
+        "severity": "non-blocking",
+        "issue": "Homebrew-downloads-not-rebuilds guarantee is structural. First real `brew install phronesis` will validate end-to-end.",
+        "action": "Deferred to first tagged release. The release.yml audit-brew job catches the common regression (Homebrew 5.0 deprecated DSL)."
+      },
+      {
+        "id": "G4",
+        "constraint": "S3",
+        "severity": "non-blocking",
+        "issue": "Workflow secrets pattern verified by inspection. No automated lint.",
+        "action": "Optional: add actionlint step to ci.yml that flags any secret reference outside an approved allow-list."
+      },
+      {
+        "id": "G5",
+        "constraint": "O5",
+        "severity": "informational",
+        "issue": "10-min p95 release budget cannot be measured until real releases exist.",
+        "action": "Track the first 10 tagged releases; compute trailing-10 p95 from GH Actions duration. If p95 > 10 min, investigate per RUNBOOK RB-5."
+      },
+      {
+        "id": "G6",
+        "constraint": "RT-14",
+        "severity": "blocking-before-first-release",
+        "issue": "HOMEBREW_TAP_TOKEN secret not yet provisioned; homebrew-phronesis tap repo not yet created.",
+        "action": "Before pushing `v0.1.0` tag: (1) create github.com/dhanesh/homebrew-phronesis repo, (2) create fine-scoped deploy key/token, (3) add as HOMEBREW_TAP_TOKEN secret on phronesis repo."
+      }
     ],
     "convergence": {
       "status": "IN_PROGRESS",
@@ -135,7 +527,7 @@
         "no_blocking_gaps": true,
         "binding_constraint_closed": true,
         "all_declared_artifacts_on_disk": true,
-        "reason": "3 INVARIANTs at PARTIAL (T2, S1, S2, S3 — all deferred to post-release verification) and 2 RTs at PARTIAL (RT-7 measurement, RT-14 secret provisioning). No blocking gaps for the pipeline code itself. Convergence will flip to CONVERGED after the first tagged release exercises the deferred checks."
+        "reason": "4 INVARIANTs at PARTIAL (T2, S1, S2, S3 \u2014 all deferred to post-release verification) and 2 RTs at PARTIAL (RT-7 measurement, RT-14 secret provisioning). G7 closed in iteration #11 (U1 budget widened from <=7 to <=10). No blocking gaps for the pipeline code itself. Convergence will flip to CONVERGED after first tagged release exercises the deferred checks."
       }
     }
   }

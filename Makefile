@@ -1,8 +1,13 @@
 # phronesis — distribution Makefile.
 #
-# Satisfies: U1 (<=7 core targets), U2 (help output auto-extracted from
+# Satisfies: U1 (<=10 core targets), U2 (help output auto-extracted from
 # docstrings), RT-5 (tool versions in go.mod), RT-6 (help auto-extract),
 # RT-8 (CHANNEL= env parametrizes release).
+#
+# U1 budget history: original ≤7 (build, test, lint, clean, release, docker,
+# help). Widened to ≤10 on 2026-05-03 after sibling manifolds (e2e-testing,
+# silverbullet-like-live-preview) added test-flake-monitor, bundle-size, and
+# bench-decorations. See .manifold/dist-packaging.md U1 history section.
 #
 # Design rules (see .manifold/dist-packaging.md for derivation):
 #   1. Every user-facing target has a `## ` docstring on the SAME line as the
@@ -112,8 +117,9 @@ clean: ## Remove build outputs (binary, frontend/dist, webfs/dist, goreleaser di
 
 # Review response I2: internal/webfs/dist/ is populated by `make build`
 # and gitignored. It should never be present when committing. This is
-# not a user-facing target (no ## docstring) so `make help` stays at 7
-# entries. Pre-commit hook or release playbook can invoke it as:
+# not a user-facing target (no ## docstring) so it stays off the
+# `make help` surface — keeping U1's count at 10. Pre-commit hook or
+# release playbook can invoke it as:
 #   make -s _check-clean || { echo "run: make clean"; exit 1; }
 .PHONY: _check-clean
 _check-clean:
