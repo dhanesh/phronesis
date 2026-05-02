@@ -185,8 +185,11 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
       - name: merge shard reports
-        # --output anchors HTML report at repo root; --reporter json emits results.json for flake-monitor.
-        run: cd frontend && npx playwright merge-reports --reporter html,json --output ../playwright-report ../all-blob-reports
+        # Playwright 1.50's merge-reports drops --output; reporter output
+        # paths come from playwright.config.ts (html -> playwright-report/,
+        # json -> test-results/results.json). The -c flag points at that
+        # config so the merged report lands where the upload steps expect.
+        run: cd frontend && npx playwright merge-reports -c playwright.config.ts --reporter html,json ../all-blob-reports
       - name: upload merged HTML report
         uses: actions/upload-artifact@v4
         with:
