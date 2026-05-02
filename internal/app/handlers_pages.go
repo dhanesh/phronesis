@@ -7,14 +7,35 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/dhanesh/phronesis/internal/wiki"
 )
+
+// resolveWorkspace returns the per-workspace Store + Hub. Returns
+// (nil, nil, "") and writes a 404 if the slug is unknown. Empty slug
+// is normalised to the default workspace.
+func (s *Server) resolveWorkspace(w http.ResponseWriter, slug string) (*wiki.Store, *wiki.Hub, string) {
+	if slug == "" {
+		slug = wiki.DefaultWorkspaceSlug
+	}
+	store, hub, ok := s.workspaces.Get(slug)
+	if !ok {
+		writeError(w, http.StatusNotFound, "unknown workspace")
+		return nil, nil, ""
+	}
+	return store, hub, slug
+}
 
 func (s *Server) handlePages(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
 	}
-	pages, err := s.store.List()
+	store, _, slug := s.resolveWorkspace(w, "")
+	if slug == "" {
+		return
+	}
+	pages, err := store.List()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -31,16 +52,20 @@ func (s *Server) handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.HasSuffix(path, "/events") {
 		name := strings.TrimSuffix(path, "/events")
-		s.handleEvents(w, r, name)
+		s.handleEvents(w, r, "", name)
 		return
 	}
-	s.handlePage(w, r, path)
+	s.handlePage(w, r, "", path)
 }
 
-func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, name string) {
+func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlug, name string) {
+	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
+	if slug == "" {
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
-		page, err := s.hub.Snapshot(name)
+		page, err := hub.Snapshot(name)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -59,7 +84,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, name string)
 			return
 		}
 		username, _ := s.auth.Username(r)
-		page, merged, err := s.hub.Apply(name, req.BaseVersion, req.Content, username)
+		page, merged, err := hub.Apply(name, req.BaseVersion, req.Content, username)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -67,7 +92,8 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, name string)
 		// INT-5: document write event. `merged` flag indicates conflict
 		// resolution ran, which is operationally interesting.
 		s.auditEnqueue("doc.edit", r, name, map[string]string{
-			"merged": fmt.Sprintf("%t", merged),
+			"merged":    fmt.Sprintf("%t", merged),
+			"workspace": slug,
 		})
 		writeJSON(w, http.StatusOK, map[string]any{
 			"page":   page,
@@ -78,7 +104,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, name string)
 	}
 }
 
-func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, name string) {
+func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceSlug, name string) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -88,7 +114,11 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, name strin
 		writeError(w, http.StatusInternalServerError, "streaming unsupported")
 		return
 	}
-	ch, cancel, err := s.hub.Subscribe(name)
+	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
+	if slug == "" {
+		return
+	}
+	ch, cancel, err := hub.Subscribe(name)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

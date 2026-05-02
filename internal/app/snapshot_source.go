@@ -9,29 +9,37 @@ import (
 	"github.com/dhanesh/phronesis/internal/wiki"
 )
 
-// wikiSource adapts wiki.Store + blob.LocalFSStore into snapshot.Source for
-// INT-6. V1 enumerates a single "default" workspace; multi-workspace
-// enumeration is a future-wave extension.
+// wikiSource adapts wiki.Workspaces + blob.LocalFSStore into
+// snapshot.Source for INT-6. Each workspace is enumerated as a distinct
+// snapshot bucket; the existing snapshot subsystem already iterates by
+// workspaceID so multi-workspace just means more entries returned by
+// Workspaces().
 type wikiSource struct {
-	store *wiki.Store
-	blobs blob.Store
+	workspaces *wiki.Workspaces
+	blobs      blob.Store
 }
 
 func (w *wikiSource) Workspaces(_ context.Context) ([]string, error) {
-	return []string{defaultWorkspaceID}, nil
+	metas := w.workspaces.List()
+	out := make([]string, 0, len(metas))
+	for _, m := range metas {
+		out = append(out, m.Slug)
+	}
+	return out, nil
 }
 
 func (w *wikiSource) SnapshotFor(_ context.Context, workspaceID string) (snapshot.Snapshot, error) {
-	if workspaceID != defaultWorkspaceID {
+	store, _, ok := w.workspaces.Get(workspaceID)
+	if !ok {
 		return snapshot.Snapshot{}, fmt.Errorf("unknown workspace %q", workspaceID)
 	}
-	summaries, err := w.store.List()
+	summaries, err := store.List()
 	if err != nil {
 		return snapshot.Snapshot{}, err
 	}
 	md := make(map[string][]byte, len(summaries))
 	for _, sum := range summaries {
-		page, err := w.store.Get(sum.Name)
+		page, err := store.Get(sum.Name)
 		if err != nil {
 			continue
 		}

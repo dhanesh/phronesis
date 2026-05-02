@@ -84,12 +84,11 @@ type Config struct {
 }
 
 type Server struct {
-	cfg      Config
-	auth     *auth.Manager
-	store    *wiki.Store
-	hub      *wiki.Hub
-	http     *http.Server
-	staticFS http.Handler
+	cfg        Config
+	auth       *auth.Manager
+	workspaces *wiki.Workspaces
+	http       *http.Server
+	staticFS   http.Handler
 
 	// shutdownCh is closed by http.Server's RegisterOnShutdown callback.
 	// Long-lived handlers (e.g., SSE) select on it alongside r.Context().Done()
@@ -239,7 +238,8 @@ func NewServer(cfg Config) (*Server, error) {
 
 	cfg = applyConfigDefaults(cfg)
 
-	store, err := wiki.NewStore(cfg.PagesDir)
+	workspaceMetaPath := filepath.Join(filepath.Dir(cfg.PagesDir), "workspaces.json")
+	workspaces, err := wiki.NewWorkspaces(cfg.PagesDir, workspaceMetaPath)
 	if err != nil {
 		return nil, err
 	}
@@ -296,8 +296,7 @@ func NewServer(cfg Config) (*Server, error) {
 	app := &Server{
 		cfg:          cfg,
 		auth:         authManager,
-		store:        store,
-		hub:          wiki.NewHub(store),
+		workspaces:   workspaces,
 		staticFS:     staticHandler(cfg.FrontendDist),
 		blobStore:    blobStore,
 		media:        mediaHandler,
@@ -318,7 +317,7 @@ func NewServer(cfg Config) (*Server, error) {
 		if err != nil {
 			return nil, fmt.Errorf("snapshot target: %w", err)
 		}
-		app.snapshotScheduler = snapshot.NewScheduler(target, &wikiSource{store: store, blobs: blobStore}, cfg.SnapshotInterval, nil)
+		app.snapshotScheduler = snapshot.NewScheduler(target, &wikiSource{workspaces: workspaces, blobs: blobStore}, cfg.SnapshotInterval, nil)
 	}
 
 	// INT-14: always-on rate-limit floor for auth endpoints. Satisfies RT-10,
