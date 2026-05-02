@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Editor from './lib/Editor.svelte';
   import ThemeSwitcher from './lib/ThemeSwitcher.svelte';
+  import CommandPalette from './lib/CommandPalette.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -30,9 +31,26 @@
   // | saved | disconnected. This is the v1 approximation; once the server
   // emits op_acked/op_saved over SSE the indicator can drive itself.
   let durability = $state('idle');
+  let paletteOpen = $state(false);
+
+  function onPaletteSelect(item) {
+    if (item.type === 'page' || item.type === 'new-page') {
+      loadPage(item.name);
+    }
+  }
 
   onMount(async () => {
     loadTheme();
+    // Cmd-K / Ctrl-K opens the command palette globally. Escape and
+    // arrow keys are handled inside the palette while it's open.
+    const onGlobalKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        paletteOpen = !paletteOpen;
+      }
+    };
+    window.addEventListener('keydown', onGlobalKey);
+
     await loadSession();
     if (authenticated) {
       const match = window.location.pathname.match(/^\/w\/(.+)$/);
@@ -244,10 +262,10 @@
         </div>
         <button class="ghost" onclick={() => (sidebarOpen = !sidebarOpen)}>{sidebarOpen ? 'Hide' : 'Show'}</button>
       </div>
-      <div class="page-jump">
-        <input bind:value={pageName} placeholder="wiki/url" />
-        <button onclick={() => loadPage(pageName)}>Open</button>
-      </div>
+      <button class="cmdk-launcher" onclick={() => (paletteOpen = true)} title="Open command palette (⌘K)">
+        <span class="cmdk-icon" aria-hidden="true">⌘K</span>
+        <span>Quick open…</span>
+      </button>
       <nav>
         {#each pages as entry (entry.name)}
           <button class:selected={entry.name === page.name} class="nav-link" onclick={() => loadPage(entry.name)}>
@@ -378,6 +396,12 @@
     </section>
   </main>
 {/if}
+
+<CommandPalette
+  bind:open={paletteOpen}
+  pages={pages}
+  onSelect={onPaletteSelect}
+/>
 
 <style>
   /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).
@@ -543,6 +567,34 @@
   .sidebar-foot {
     display: grid;
     gap: 0.5rem;
+  }
+
+  .cmdk-launcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    background: var(--bg-control);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    cursor: pointer;
+    text-align: left;
+  }
+  .cmdk-launcher:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  .cmdk-icon {
+    font-size: 0.78rem;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
   }
 
   .workspace {
