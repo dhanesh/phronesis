@@ -243,8 +243,8 @@
       }}
     >
       <p class="eyebrow">phronesis</p>
-      <h1>Project knowledge without the ticket sprawl</h1>
-      <p class="lede">Sign in to browse and edit Markdown pages with autosave and a single document surface.</p>
+      <h1>A knowledge base for humans and AI agents</h1>
+      <p class="lede">Share notes, docs, and context in plain Markdown — agent-readable by design, self-hosted by default.</p>
       {#if bootError}<p class="error">{bootError}</p>{/if}
       <label>
         Username

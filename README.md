@@ -1,8 +1,8 @@
 # phronesis
 
-`phronesis` is a self-hosted document server for team knowledge, project notes, and wiki-style documentation. It stores pages as Markdown files on disk, serves them through a Go backend, and provides a Svelte-based web client with a single-surface editor designed to move toward SilverBullet-style live wiki editing.
+`phronesis` is a self-hosted knowledge base for humans and AI agents. It stores everything as plain Markdown on disk, makes pages agent-readable through structured wiki primitives (links, tags, frontmatter, attributes), and serves a single-surface live editor for browser editing.
 
-The long-term goal is broader than a notes app: `phronesis` is intended to become a documentation and project context layer that can replace a mix of Confluence, Google Docs, and parts of Jira or Linear, while remaining readable and portable because the source of truth is plain Markdown in a filesystem-backed space.
+The product is positioned for individuals capturing personal notes, teams sharing context, and AI agents reading and writing alongside their humans. The source of truth stays as plain Markdown in a filesystem-backed space — portable, grep-able, version-controllable — so neither humans nor agents are locked into a proprietary format.
 
 ## Current Status
 
