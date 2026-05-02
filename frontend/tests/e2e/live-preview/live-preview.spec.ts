@@ -60,9 +60,9 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     const name = `lp-headings-${Date.now()}`;
     await seedPage(page, name);
     await page.goto(`/w/${name}`);
-    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
-    await expect(page.locator('.cm-md-heading-2').first()).toBeVisible();
-    await expect(page.locator('.cm-md-heading-3').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-2').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-3').first()).toBeVisible();
   });
 
   test('emphasis renders cm-md-strong and cm-md-emphasis', async ({ page }) => {
@@ -151,10 +151,10 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     // not retry, unlike toBeVisible. Without this wait the count races
     // ahead of decoration application and returns 0 even when everything
     // works.
-    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
     const decorationCount = await page.locator(
       [
-        '.cm-md-heading-1',
+        '.cm-md-line-heading-1',
         '.cm-md-strong',
         '.cm-md-emphasis',
         '.cm-md-inline-code',
@@ -197,7 +197,7 @@ test.describe('live-preview safety properties', () => {
     });
 
     await page.goto(`/w/${name}`);
-    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
 
     // Trigger autosave by typing one character at end of doc.
     await page.locator('.cm-content').click();
@@ -404,7 +404,7 @@ Inline \`<script>window.__pwned=3</script>\` code.
     expect(res.ok()).toBeTruthy();
 
     await page.goto(`/w/${name}`);
-    await expect(page.locator('.cm-md-heading-1').first()).toBeVisible();
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
 
     // No <script> elements should exist anywhere inside the editor.
     const scriptCount = await page.locator('.cm-editor script').count();

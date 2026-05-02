@@ -97,16 +97,16 @@
           // Live-preview decoration styles. Class contract documented in
           // docs/silverbullet-like-live-preview/README.md and asserted by
           // frontend/tests/e2e/live-preview/.
-          '.cm-md-heading': {
+          '.cm-md-line-heading': {
             fontWeight: '600',
             color: '#1f241c'
           },
-          '.cm-md-heading-1': { fontSize: '1.85em', lineHeight: '1.25' },
-          '.cm-md-heading-2': { fontSize: '1.5em',  lineHeight: '1.3'  },
-          '.cm-md-heading-3': { fontSize: '1.25em', lineHeight: '1.35' },
-          '.cm-md-heading-4': { fontSize: '1.1em' },
-          '.cm-md-heading-5': { fontSize: '1.0em', textTransform: 'uppercase', letterSpacing: '0.06em' },
-          '.cm-md-heading-6': { fontSize: '0.95em', color: '#5d5847' },
+          '.cm-md-line-heading-1': { fontSize: '1.85em', lineHeight: '1.25', padding: '0.4rem 0 0.2rem' },
+          '.cm-md-line-heading-2': { fontSize: '1.5em',  lineHeight: '1.3',  padding: '0.35rem 0 0.15rem' },
+          '.cm-md-line-heading-3': { fontSize: '1.25em', lineHeight: '1.35', padding: '0.3rem 0 0.1rem' },
+          '.cm-md-line-heading-4': { fontSize: '1.1em',  padding: '0.25rem 0' },
+          '.cm-md-line-heading-5': { fontSize: '1.0em',  textTransform: 'uppercase', letterSpacing: '0.06em' },
+          '.cm-md-line-heading-6': { fontSize: '0.95em', color: '#5d5847' },
           '.cm-md-strong':   { fontWeight: '700' },
           '.cm-md-emphasis': { fontStyle: 'italic' },
           '.cm-md-inline-code': {

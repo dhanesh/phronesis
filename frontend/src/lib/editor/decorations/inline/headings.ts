@@ -1,14 +1,18 @@
 // ATX heading decoration: `# Title` ... `###### Title`.
-// When the cursor is outside the heading, the leading `#` marker is
-// hidden via Decoration.replace and the whole heading node is wrapped
-// in a mark with `cm-md-heading cm-md-heading-N` so CSS can scale it.
-// When the cursor enters the heading range, the marker is revealed
-// (U1) but the styling mark stays applied.
+//
+// Two decorations per heading:
+//   1. Decoration.line({class: cm-md-line-heading-N}) on the heading
+//      line so CSS can style the entire line (font size, weight,
+//      padding, background) the way SilverBullet's .sb-line-hN does.
+//   2. Decoration.replace on the leading `#` marker(s) when the
+//      cursor is outside, so the heading reads "Title" not "# Title".
+//      Revealed when the cursor enters the heading range (U1).
+//
+// Decoration.line is block-level — CM6 forbids these from ViewPlugins,
+// so this family runs in the block StateField path.
 //
 // Satisfies: U1 (cursor-in reveals source), U2 (heading coverage),
-// T1 (visual-only — no doc mutation), T4 (treeFamily skeleton),
-// TN3 (no widget allocation; mark/replace decorations are diffed
-// trivially by CodeMirror).
+// T1 (visual-only — no doc mutation; only marker is replaced).
 
 import type { Range } from '@codemirror/state';
 import { Decoration, treeFamily } from '../base';
@@ -36,43 +40,36 @@ const LEVEL_BY_NAME: Record<string, number> = {
 export function headingsFamily(): DecorationFamily {
   return treeFamily({
     name: 'headings',
-    kind: 'inline',
+    kind: 'block',
     nodeTypes: HEADING_NODES,
-    build({ node, isCursorInRange }): Array<Range<Decoration>> | null {
+    build({ node, state, isCursorInRange }): Array<Range<Decoration>> | null {
       const level = LEVEL_BY_NAME[node.name];
       if (!level) return null;
       if (node.to <= node.from) return null;
 
       const out: Array<Range<Decoration>> = [];
 
-      // Find the leading HeaderMark range so the style mark can start
-      // *after* it. CM6 silently drops a Decoration.replace nested
-      // inside an overlapping Decoration.mark of the same plugin, so
-      // we never let the style mark cover the marker source — instead
-      // it covers from marker-end to node-end. When the cursor is
-      // outside, the marker is replaced with a zero-width widget.
-      let markerFrom = -1;
-      let markerTo = -1;
-      const cursor = node.node.cursor();
-      if (cursor.firstChild()) {
-        do {
-          if (cursor.name === 'HeaderMark' && cursor.to > cursor.from) {
-            markerFrom = cursor.from;
-            markerTo = cursor.to;
-            break;
-          }
-        } while (cursor.nextSibling());
-      }
-      const styleFrom = markerTo > 0 ? markerTo : node.from;
-      if (styleFrom < node.to) {
-        out.push(
-          Decoration.mark({
-            class: `cm-md-heading cm-md-heading-${level}`,
-          }).range(styleFrom, node.to),
-        );
-      }
-      if (!isCursorInRange && markerFrom >= 0) {
-        out.push(hideMarker(markerFrom, markerTo));
+      // Decoration.line on the heading line — CSS targets
+      // `.cm-md-line-heading-N` to style the whole line.
+      const line = state.doc.lineAt(node.from);
+      out.push(
+        Decoration.line({
+          class: `cm-md-line-heading cm-md-line-heading-${level}`,
+        }).range(line.from),
+      );
+
+      // Hide the leading `#` marker(s) only when the cursor is
+      // elsewhere. The HeaderMark child carries the exact range.
+      if (!isCursorInRange) {
+        const cursor = node.node.cursor();
+        if (cursor.firstChild()) {
+          do {
+            if (cursor.name === 'HeaderMark' && cursor.to > cursor.from) {
+              out.push(hideMarker(cursor.from, cursor.to));
+              break;
+            }
+          } while (cursor.nextSibling());
+        }
       }
       return out;
     },
