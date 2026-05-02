@@ -1,6 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import Editor from './lib/Editor.svelte';
+  import ThemeSwitcher from './lib/ThemeSwitcher.svelte';
+  import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
   let checkingSession = $state(true);
@@ -30,6 +32,7 @@
   let durability = $state('idle');
 
   onMount(async () => {
+    loadTheme();
     await loadSession();
     if (authenticated) {
       const match = window.location.pathname.match(/^\/w\/(.+)$/);
@@ -252,7 +255,10 @@
           </button>
         {/each}
       </nav>
-      <button class="logout" onclick={logout}>Sign out</button>
+      <div class="sidebar-foot">
+        <ThemeSwitcher />
+        <button class="logout" onclick={logout}>Sign out</button>
+      </div>
     </aside>
 
     <section class="workspace">
@@ -374,10 +380,15 @@
 {/if}
 
 <style>
+  /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).
+     Every value here references var(--…) so the theme switcher is a
+     one-attribute change at the documentElement level. */
+
   .center {
     display: grid;
     min-height: 100vh;
     place-items: center;
+    color: var(--text-primary);
   }
 
   .login-shell {
@@ -390,18 +401,19 @@
   .login-card {
     width: min(28rem, 100%);
     padding: 2rem;
-    border-radius: 24px;
-    background: rgba(255, 252, 244, 0.92);
-    border: 1px solid rgba(110, 97, 69, 0.18);
-    box-shadow: 0 24px 80px rgba(71, 58, 27, 0.12);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-primary);
   }
 
   .eyebrow {
     margin: 0 0 0.4rem;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.08em;
     font-size: 0.72rem;
-    color: #6d644f;
+    color: var(--text-secondary);
   }
 
   h1, h2, h3, p {
@@ -409,7 +421,7 @@
   }
 
   .lede {
-    color: #504835;
+    color: var(--text-secondary);
     margin-bottom: 1.2rem;
   }
 
@@ -422,27 +434,39 @@
     display: grid;
     gap: 0.35rem;
     margin-bottom: 1rem;
-    color: #403724;
+    color: var(--text-primary);
   }
 
   input {
-    border: 1px solid #c8b895;
-    border-radius: 14px;
-    padding: 0.85rem 1rem;
-    background: rgba(255,255,255,0.8);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.7rem 0.9rem;
+    background: var(--bg-control);
+    color: var(--text-primary);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-bg);
   }
 
   button {
     border: 0;
-    border-radius: 999px;
-    padding: 0.75rem 1rem;
-    background: #2d5b46;
-    color: white;
+    border-radius: var(--radius-md);
+    padding: 0.6rem 1rem;
+    background: var(--accent);
+    color: var(--text-on-accent);
     cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  button:hover {
+    background: var(--accent-hover);
   }
 
   .error {
-    color: #8a2e2e;
+    color: var(--danger);
     margin-top: 1rem;
   }
 
@@ -453,12 +477,13 @@
   }
 
   aside {
-    padding: 1.2rem;
-    background: rgba(38, 49, 41, 0.96);
-    color: #f4eee2;
+    padding: 1rem 1rem 1.2rem;
+    background: var(--bg-elevated);
+    border-right: 1px solid var(--border-subtle);
+    color: var(--text-primary);
     display: grid;
     grid-template-rows: auto auto 1fr auto;
-    gap: 1rem;
+    gap: 0.85rem;
   }
 
   aside.closed {
@@ -471,7 +496,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .page-jump input {
@@ -480,7 +505,7 @@
 
   nav {
     display: grid;
-    gap: 0.35rem;
+    gap: 0.15rem;
     align-content: start;
     overflow: auto;
   }
@@ -490,12 +515,34 @@
   .logout {
     justify-content: flex-start;
     background: transparent;
-    color: inherit;
-    border: 1px solid rgba(255,255,255,0.16);
+    color: var(--text-primary);
+    border: 0;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    font-weight: 400;
+  }
+  .nav-link:hover,
+  .ghost:hover,
+  .logout:hover {
+    background: var(--bg-hover);
   }
 
   .nav-link.selected {
-    background: rgba(255,255,255,0.12);
+    background: var(--bg-selected);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sidebar-foot {
+    display: grid;
+    gap: 0.5rem;
   }
 
   .workspace {
@@ -505,14 +552,22 @@
     gap: 1rem;
   }
 
+  .workspace-head h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
   .status-block {
     text-align: right;
-    color: #5d5847;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
   }
 
   .status-block strong {
     display: block;
-    color: #854f1c;
+    color: var(--warning);
+    font-weight: 500;
   }
 
   .workspace-body {
@@ -524,10 +579,10 @@
 
   .editor-card,
   .rail-card {
-    background: rgba(255,252,244,0.88);
-    border: 1px solid rgba(110, 97, 69, 0.12);
-    border-radius: 20px;
-    box-shadow: 0 18px 48px rgba(71, 58, 27, 0.08);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
   }
 
   .editor-card {
@@ -538,7 +593,7 @@
 
   .editor-head,
   .rail-card {
-    padding: 1rem 1.1rem;
+    padding: 0.9rem 1.1rem;
   }
 
   .editor-head {
@@ -546,12 +601,13 @@
     justify-content: space-between;
     align-items: end;
     gap: 1rem;
-    border-bottom: 1px solid rgba(110, 97, 69, 0.12);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .editor-hint {
     margin-bottom: 0;
-    color: #5d5847;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
     text-align: right;
     max-width: 18rem;
   }
@@ -564,71 +620,80 @@
   .context-rail {
     display: grid;
     align-content: start;
-    gap: 0.9rem;
+    gap: 0.85rem;
     background: transparent;
-    color: inherit;
+    color: var(--text-primary);
     grid-template-rows: none;
     padding: 0;
   }
 
+  .rail-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
   .rail-card p:last-child {
     margin-bottom: 0;
-    color: #5d5847;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
   }
 
   .pill-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.4rem;
   }
 
   .pill,
   .tag-chip,
   .ghost-pill {
-    font-size: 0.92rem;
+    font-size: 0.85rem;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
   }
 
   .pill {
-    padding: 0.5rem 0.8rem;
-    background: rgba(31, 92, 70, 0.1);
-    color: #1f5c46;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-bg);
+    color: var(--accent);
   }
+  .pill:hover { background: color-mix(in oklab, var(--accent) 18%, transparent); }
 
   .ghost-pill {
-    background: rgba(133, 79, 28, 0.08);
-    color: #854f1c;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-control);
+    color: var(--text-primary);
   }
+  .ghost-pill:hover { background: var(--bg-hover); }
 
   .tag-chip {
     display: inline-flex;
-    padding: 0.45rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(71, 58, 27, 0.08);
-    color: #4f4635;
-    border: 0;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.92rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-control);
+    color: var(--text-primary);
   }
   .tag-chip:hover {
-    background: rgba(71, 58, 27, 0.16);
+    background: var(--bg-hover);
   }
-  .rail-card h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+
   .rail-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.4rem;
-    height: 1.4rem;
+    min-width: 1.3rem;
+    height: 1.3rem;
     padding: 0 0.4rem;
-    border-radius: 999px;
-    background: rgba(110, 97, 69, 0.14);
-    color: #5d5847;
-    font-size: 0.78rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-control);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
     font-weight: 600;
   }
 
@@ -645,6 +710,8 @@
 
     aside {
       order: 2;
+      border-right: 0;
+      border-top: 1px solid var(--border-subtle);
     }
 
     .workspace-head {

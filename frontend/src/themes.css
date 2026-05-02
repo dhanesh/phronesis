@@ -1,0 +1,95 @@
+/* Theme tokens — Apple-inspired semantic system.
+ *
+ * Each theme is keyed by [data-theme="<id>"] on the documentElement.
+ * Component CSS uses var(--token) so theme switching is a one-attribute
+ * dataset change with no reflow beyond what the cascade does for free.
+ *
+ * Token naming follows Apple's HIG semantic vocabulary:
+ *   bg-canvas:    page background (system-grouped-bg)
+ *   bg-elevated:  primary content surfaces (cards, modals)
+ *   bg-control:   inputs, secondary buttons (system-fill)
+ *   bg-hover:     subtle hover wash on rows / interactive surfaces
+ *   bg-selected:  selection highlight tinted with the accent
+ *   text-primary / -secondary / -tertiary: label hierarchy
+ *   border-subtle / -strong: separators and outlines
+ *   accent + accent-hover + accent-bg: tint colour + interactive
+ *                                      states + tinted background
+ *   success / warning / danger: system-green / -orange / -red
+ *
+ * Spacing/radii/shadows/font-stack defined once on :root since they
+ * don't usually change per theme.
+ */
+
+:root {
+  --font-system:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono",
+    "IBM Plex Mono", monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+}
+
+[data-theme="apple-light"] {
+  --bg-canvas: #f2f2f7;
+  --bg-elevated: #ffffff;
+  --bg-control: rgba(120, 120, 128, 0.08);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-selected: rgba(0, 122, 255, 0.1);
+
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(60, 60, 67, 0.6);
+  --text-tertiary: rgba(60, 60, 67, 0.3);
+  --text-on-accent: #ffffff;
+
+  --border-subtle: rgba(60, 60, 67, 0.1);
+  --border-strong: rgba(60, 60, 67, 0.18);
+  --border-focus: #007aff;
+
+  --accent: #007aff;
+  --accent-hover: #0062cc;
+  --accent-bg: rgba(0, 122, 255, 0.1);
+
+  --success: #34c759;
+  --warning: #ff9500;
+  --danger: #ff3b30;
+  --purple: #af52de;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="apple-dark"] {
+  --bg-canvas: #000000;
+  --bg-elevated: #1c1c1e;
+  --bg-control: rgba(120, 120, 128, 0.24);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-selected: rgba(10, 132, 255, 0.18);
+
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-tertiary: rgba(235, 235, 245, 0.3);
+  --text-on-accent: #ffffff;
+
+  --border-subtle: rgba(84, 84, 88, 0.3);
+  --border-strong: rgba(84, 84, 88, 0.55);
+  --border-focus: #0a84ff;
+
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --accent-bg: rgba(10, 132, 255, 0.18);
+
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --danger: #ff453a;
+  --purple: #bf5af2;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+}

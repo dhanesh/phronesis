@@ -71,77 +71,79 @@
           '&': {
             height: '100%',
             fontSize: '16px',
-            background: 'transparent'
+            background: 'transparent',
+            color: 'var(--text-primary)'
           },
           '.cm-scroller': {
-            fontFamily: '"IBM Plex Mono", monospace',
+            fontFamily: 'var(--font-system)',
             lineHeight: '1.7',
             padding: '1.1rem 0 3rem'
           },
           '.cm-content': {
-            padding: '0 0.35rem 0 0'
+            padding: '0 0.35rem 0 0',
+            caretColor: 'var(--text-primary)'
           },
           '.cm-focused': {
             outline: 'none'
           },
           '.cm-cursor, .cm-dropCursor': {
-            borderLeftColor: '#1f241c'
+            borderLeftColor: 'var(--text-primary)'
           },
           '.cm-selectionBackground, ::selection': {
-            backgroundColor: 'rgba(222, 184, 90, 0.28)'
+            backgroundColor: 'var(--bg-selected)'
           },
           '.cm-wikilink': {
-            color: '#1f5c46',
+            color: 'var(--accent)',
             textDecoration: 'none',
-            background: 'rgba(82, 134, 111, 0.12)',
-            borderRadius: '999px',
+            background: 'var(--accent-bg)',
+            borderRadius: 'var(--radius-pill)',
             padding: '0.08rem 0.42rem'
           },
           '.cm-wikilink.current': {
-            background: 'rgba(31, 92, 70, 0.22)'
+            background: 'color-mix(in oklab, var(--accent) 22%, transparent)'
           },
           // Live-preview decoration styles. Class contract documented in
           // docs/silverbullet-like-live-preview/README.md and asserted by
           // frontend/tests/e2e/live-preview/.
           '.cm-md-line-heading': {
             fontWeight: '600',
-            color: '#1f241c'
+            color: 'var(--text-primary)'
           },
           '.cm-md-line-heading-1': { fontSize: '1.85em', lineHeight: '1.25', padding: '0.4rem 0 0.2rem' },
           '.cm-md-line-heading-2': { fontSize: '1.5em',  lineHeight: '1.3',  padding: '0.35rem 0 0.15rem' },
           '.cm-md-line-heading-3': { fontSize: '1.25em', lineHeight: '1.35', padding: '0.3rem 0 0.1rem' },
           '.cm-md-line-heading-4': { fontSize: '1.1em',  padding: '0.25rem 0' },
           '.cm-md-line-heading-5': { fontSize: '1.0em',  textTransform: 'uppercase', letterSpacing: '0.06em' },
-          '.cm-md-line-heading-6': { fontSize: '0.95em', color: '#5d5847' },
+          '.cm-md-line-heading-6': { fontSize: '0.95em', color: 'var(--text-secondary)' },
           '.cm-md-strong':   { fontWeight: '700' },
           '.cm-md-emphasis': { fontStyle: 'italic' },
           '.cm-md-inline-code': {
-            fontFamily: 'inherit',
-            background: 'rgba(110, 97, 69, 0.12)',
+            fontFamily: 'var(--font-mono)',
+            background: 'var(--bg-control)',
             padding: '0.05rem 0.35rem',
-            borderRadius: '6px',
-            fontSize: '0.95em'
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.92em'
           },
           '.cm-md-link': {
-            color: '#1f5c46',
+            color: 'var(--accent)',
             textDecoration: 'underline',
             textUnderlineOffset: '3px'
           },
           '.cm-md-list-marker': {
-            color: '#854f1c',
+            color: 'var(--accent)',
             fontWeight: '600'
           },
           '.cm-md-hashtag': {
-            color: '#854f1c',
+            color: 'var(--accent)',
             textDecoration: 'none',
-            background: 'rgba(133, 79, 28, 0.12)',
-            borderRadius: '999px',
+            background: 'var(--accent-bg)',
+            borderRadius: 'var(--radius-pill)',
             padding: '0.05rem 0.4rem',
             fontSize: '0.92em',
             cursor: 'pointer'
           },
           '.cm-md-hashtag:hover': {
-            background: 'rgba(133, 79, 28, 0.22)'
+            background: 'color-mix(in oklab, var(--accent) 22%, transparent)'
           },
           '.cm-md-task': {
             display: 'inline-flex',
@@ -151,21 +153,21 @@
           '.cm-md-task-checkbox': {
             cursor: 'pointer',
             margin: '0',
-            accentColor: '#1f5c46'
+            accentColor: 'var(--accent)'
           },
           '.cm-md-image': {
             display: 'inline-block',
             maxWidth: '100%',
             maxHeight: '24rem',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-md)',
             verticalAlign: 'middle'
           },
           '.cm-md-fenced-code-line': {
-            fontFamily: 'inherit',
-            background: 'rgba(110, 97, 69, 0.08)'
+            fontFamily: 'var(--font-mono)',
+            background: 'var(--bg-control)'
           },
           '.cm-md-fenced-code-fence': {
-            color: '#928b6f'
+            color: 'var(--text-tertiary)'
           },
           '.cm-md-fenced-code-language': {
             position: 'relative'
@@ -173,7 +175,7 @@
           '.cm-md-fenced-code-language::before': {
             content: 'attr(data-lang)',
             float: 'right',
-            color: '#928b6f',
+            color: 'var(--text-tertiary)',
             fontSize: '0.78em',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
@@ -181,48 +183,48 @@
           },
           '.cm-md-fenced-code-copy': {
             float: 'right',
-            border: '1px solid rgba(110, 97, 69, 0.25)',
-            background: 'rgba(255, 252, 244, 0.85)',
-            color: '#5d5847',
+            border: '1px solid var(--border-subtle)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-secondary)',
             fontSize: '0.78em',
             padding: '0.05rem 0.5rem',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-sm)',
             cursor: 'pointer',
             margin: '0 0.25rem 0 0'
           },
           '.cm-md-fenced-code-copy:hover': {
-            background: '#fff',
-            borderColor: 'rgba(110, 97, 69, 0.45)'
+            background: 'var(--bg-hover)',
+            borderColor: 'var(--border-strong)'
           },
           '.cm-md-blockquote': {
-            background: 'rgba(133, 79, 28, 0.05)',
-            borderLeft: '3px solid rgba(133, 79, 28, 0.45)',
+            background: 'var(--bg-hover)',
+            borderLeft: '3px solid var(--border-strong)',
             paddingLeft: '0.75rem',
-            color: '#5d5847'
+            color: 'var(--text-secondary)'
           },
           '.cm-md-blockquote-marker': {
-            color: 'rgba(133, 79, 28, 0.55)'
+            color: 'var(--text-tertiary)'
           },
           '.cm-md-admonition': {
             borderLeftWidth: '4px',
-            paddingLeft: '0.85rem',
-            background: 'rgba(31, 92, 70, 0.06)'
+            borderLeftStyle: 'solid',
+            paddingLeft: '0.85rem'
           },
-          '.cm-md-admonition-note':      { borderLeftColor: '#1f5c46', background: 'rgba(31, 92, 70, 0.06)' },
-          '.cm-md-admonition-tip':       { borderLeftColor: '#256d3d', background: 'rgba(37, 109, 61, 0.06)' },
-          '.cm-md-admonition-warning':   { borderLeftColor: '#a06a13', background: 'rgba(160, 106, 19, 0.08)' },
-          '.cm-md-admonition-caution':   { borderLeftColor: '#a06a13', background: 'rgba(160, 106, 19, 0.08)' },
-          '.cm-md-admonition-important': { borderLeftColor: '#7d3c8a', background: 'rgba(125, 60, 138, 0.07)' },
-          '.cm-md-admonition-danger':    { borderLeftColor: '#a13a3a', background: 'rgba(161, 58, 58, 0.07)' },
+          '.cm-md-admonition-note':      { borderLeftColor: 'var(--accent)',  background: 'var(--accent-bg)' },
+          '.cm-md-admonition-tip':       { borderLeftColor: 'var(--success)', background: 'color-mix(in oklab, var(--success) 14%, transparent)' },
+          '.cm-md-admonition-warning':   { borderLeftColor: 'var(--warning)', background: 'color-mix(in oklab, var(--warning) 14%, transparent)' },
+          '.cm-md-admonition-caution':   { borderLeftColor: 'var(--warning)', background: 'color-mix(in oklab, var(--warning) 14%, transparent)' },
+          '.cm-md-admonition-important': { borderLeftColor: 'var(--purple)',  background: 'color-mix(in oklab, var(--purple) 14%, transparent)' },
+          '.cm-md-admonition-danger':    { borderLeftColor: 'var(--danger)',  background: 'color-mix(in oklab, var(--danger) 14%, transparent)' },
           '.cm-md-frontmatter': {
             display: 'flex',
             flexWrap: 'wrap',
             gap: '0.4rem',
             margin: '0.4rem 0 0.8rem',
             padding: '0.5rem 0.6rem',
-            background: 'rgba(110, 97, 69, 0.06)',
-            border: '1px solid rgba(110, 97, 69, 0.18)',
-            borderRadius: '8px',
+            background: 'var(--bg-control)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
             fontSize: '0.88em'
           },
           '.cm-md-frontmatter-chip': {
@@ -230,25 +232,25 @@
             alignItems: 'center',
             gap: '0.3rem',
             padding: '0.1rem 0.55rem',
-            background: 'rgba(255, 252, 244, 0.85)',
-            border: '1px solid rgba(110, 97, 69, 0.18)',
-            borderRadius: '999px'
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-pill)'
           },
           '.cm-md-frontmatter-key': {
-            color: '#5d5847',
+            color: 'var(--text-secondary)',
             fontWeight: '600'
           },
           '.cm-md-frontmatter-value': {
-            color: '#1f241c'
+            color: 'var(--text-primary)'
           },
           '.cm-md-attribute': {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.25rem',
             padding: '0.05rem 0.45rem',
-            background: 'rgba(31, 92, 70, 0.1)',
-            color: '#1f5c46',
-            borderRadius: '6px',
+            background: 'var(--accent-bg)',
+            color: 'var(--accent)',
+            borderRadius: 'var(--radius-sm)',
             fontSize: '0.92em',
             verticalAlign: 'baseline'
           },
@@ -265,12 +267,12 @@
             fontSize: '0.95em'
           },
           '.cm-md-table-header, .cm-md-table-cell': {
-            border: '1px solid rgba(110, 97, 69, 0.25)',
+            border: '1px solid var(--border-subtle)',
             padding: '0.35rem 0.6rem',
             textAlign: 'left'
           },
           '.cm-md-table-header': {
-            background: 'rgba(110, 97, 69, 0.08)',
+            background: 'var(--bg-control)',
             fontWeight: '600'
           }
         })

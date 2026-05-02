@@ -1,22 +1,28 @@
+@import "./themes.css";
+
 :root {
-  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-  color: #1f241c;
-  background:
-    radial-gradient(circle at top left, rgba(255, 232, 176, 0.55), transparent 35%),
-    linear-gradient(180deg, #f3efe4 0%, #ebe5d6 100%);
+  font-family: var(--font-system);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
 }
 
 a {
-  color: inherit;
+  color: var(--accent);
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
+  color: inherit;
 }

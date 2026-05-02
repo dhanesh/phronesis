@@ -48,10 +48,10 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.82rem;
-    color: var(--durability-fg, #4a5568);
+    color: var(--text-secondary);
     padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    background: var(--durability-bg, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-pill);
+    background: var(--bg-control);
     user-select: none;
   }
 
@@ -63,12 +63,12 @@
     flex-shrink: 0;
   }
 
-  .tone-idle    { background: #a0aec0; }
-  .tone-dirty   { background: #ed8936; }
-  .tone-syncing { background: #4299e1; animation: pulse 1.2s ease-in-out infinite; }
-  .tone-synced  { background: #38b2ac; }
-  .tone-saved   { background: #38a169; }
-  .tone-offline { background: #e53e3e; }
+  .tone-idle    { background: var(--text-tertiary); }
+  .tone-dirty   { background: var(--warning); }
+  .tone-syncing { background: var(--accent);  animation: pulse 1.2s ease-in-out infinite; }
+  .tone-synced  { background: var(--accent); }
+  .tone-saved   { background: var(--success); }
+  .tone-offline { background: var(--danger); }
 
   .text {
     font-weight: 500;
@@ -83,8 +83,8 @@
   }
 
   .durability[data-state="disconnected"] {
-    color: #c53030;
-    background: rgba(229, 62, 62, 0.1);
+    color: var(--danger);
+    background: color-mix(in oklab, var(--danger) 14%, transparent);
   }
 
   @keyframes pulse {
