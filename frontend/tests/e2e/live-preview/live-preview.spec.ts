@@ -573,4 +573,107 @@ Inline \`<script>window.__pwned=3</script>\` code.
     const pwned = await page.evaluate(() => (window as Window & { __pwned?: unknown }).__pwned);
     expect(pwned).toBeUndefined();
   });
+
+  // G1 / B1 — the page renders exactly one CodeMirror editor surface.
+  // No split preview pane, no toolbar overlay that hides the source.
+  // Closes the m5-verify non-blocking gap on the single-surface
+  // invariant.
+  // @constraint B1 - single editing surface preserved
+  test('B1: exactly one .cm-editor renders on the workspace page', async ({ page }) => {
+    const name = `lp-single-surface-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
+    await expect(page.locator('.cm-editor')).toHaveCount(1);
+  });
+
+  // G5 / U3 — typing a single character moves the cursor by exactly
+  // 1 byte and does not scroll the viewport. Decoration rebuilds must
+  // not dispatch effects that reset selection or trigger
+  // scrollIntoView.
+  // @constraint U3 - plain typing must not move cursor or scroll
+  test('U3: single keypress moves cursor by 1 and does not scroll', async ({ page }) => {
+    const name = `lp-no-jump-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
+
+    // Click into the body paragraph so the cursor lives in plain text.
+    const para = page.locator('.cm-line', { hasText: 'Paragraph with' });
+    await expect(para).toBeVisible();
+    await para.click({ position: { x: 200, y: 4 } });
+
+    const before = await page.evaluate(() => {
+      const editor = document.querySelector('.cm-editor');
+      const scroller = editor?.querySelector('.cm-scroller');
+      const sel = window.getSelection();
+      return {
+        scrollTop: scroller?.scrollTop ?? 0,
+        anchorOffset: sel?.anchorOffset ?? 0,
+      };
+    });
+
+    await page.keyboard.type('a');
+    // Allow CodeMirror's frame-aligned update to flush.
+    await page.waitForTimeout(80);
+
+    const after = await page.evaluate(() => {
+      const editor = document.querySelector('.cm-editor');
+      const scroller = editor?.querySelector('.cm-scroller');
+      const sel = window.getSelection();
+      return {
+        scrollTop: scroller?.scrollTop ?? 0,
+        anchorOffset: sel?.anchorOffset ?? 0,
+      };
+    });
+
+    expect(after.scrollTop).toBe(before.scrollTop);
+    // Cursor advanced by exactly one byte. (anchorOffset is the
+    // browser-native selection offset within the rendered text node;
+    // a single-character insert moves it by 1.)
+    expect(after.anchorOffset - before.anchorOffset).toBe(1);
+  });
+
+  // G6 / U4 — markdown constructs not in the V1 list (e.g. footnotes)
+  // render as raw markdown source. No half-styled cm-md-* class is
+  // applied. Closes the gap on out-of-V1 rendering.
+  // @constraint U4 - markdown not in U2 renders as raw source unchanged
+  test('U4: footnote syntax renders raw — no cm-md-* class applied', async ({ page }) => {
+    const name = `lp-raw-footnote-${Date.now()}`;
+    const fixture = '# Body\n\nA footnote ref [^note] in text.\n\n[^note]: The footnote body.\n';
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content: fixture, baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('.cm-md-line-heading-1').first()).toBeVisible();
+
+    // Find the line with the footnote reference. Plain-text "[^note]"
+    // should be present, and no element on that line should have a
+    // cm-md-* class beyond the family-agnostic theme classes already
+    // applied to the line container itself (none of cm-md-link,
+    // cm-md-attribute, cm-md-strong, etc. should apply).
+    const footnoteLine = page.locator('.cm-line', { hasText: '[^note]' }).first();
+    await expect(footnoteLine).toBeVisible();
+    const text = await footnoteLine.textContent();
+    expect(text).toContain('[^note]');
+    // None of the V1 inline-decoration class names should appear on
+    // any descendant of the footnote line.
+    const decoratedDescendants = await footnoteLine.evaluate((el) => {
+      const classes = [
+        'cm-md-link',
+        'cm-md-attribute',
+        'cm-md-strong',
+        'cm-md-emphasis',
+        'cm-md-inline-code',
+        'cm-md-hashtag',
+      ];
+      let count = 0;
+      for (const c of classes) {
+        count += el.querySelectorAll('.' + c).length;
+      }
+      return count;
+    });
+    expect(decoratedDescendants).toBe(0);
+  });
 });
