@@ -185,10 +185,14 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
       - name: merge shard reports
-        # Playwright 1.50's merge-reports drops --output; reporter output
-        # paths come from playwright.config.ts (html -> playwright-report/,
-        # json -> test-results/results.json). The -c flag points at that
-        # config so the merged report lands where the upload steps expect.
+        # Playwright 1.50's merge-reports drops --output; --reporter html,json
+        # spawns fresh reporter instances whose default output paths resolve
+        # under configDir (frontend/), not repo root. PLAYWRIGHT_HTML_OUTPUT_DIR
+        # and PLAYWRIGHT_JSON_OUTPUT_FILE pin them to repo-root paths so the
+        # upload step's `path: playwright-report/` finds the merged report.
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ${{ github.workspace }}/playwright-report
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ github.workspace }}/test-results/results.json
         run: cd frontend && npx playwright merge-reports -c playwright.config.ts --reporter html,json ../all-blob-reports
       - name: upload merged HTML report
         uses: actions/upload-artifact@v4
