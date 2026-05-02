@@ -297,8 +297,47 @@
           </section>
 
           <section class="rail-card">
+            <p class="eyebrow">Incoming Links</p>
+            <h3>
+              Backlinks
+              {#if page.render.backlinks.length}
+                <span class="rail-count">{page.render.backlinks.length}</span>
+              {/if}
+            </h3>
+            {#if page.render.backlinks.length}
+              <div class="pill-list">
+                {#each page.render.backlinks as link (link)}
+                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
+                {/each}
+              </div>
+            {:else}
+              <p>No backlinks yet.</p>
+            {/if}
+          </section>
+
+          {#if (page.tagged ?? []).length}
+            <section class="rail-card">
+              <p class="eyebrow">Tagged</p>
+              <h3>
+                Pages tagged #{page.name}
+                <span class="rail-count">{(page.tagged ?? []).length}</span>
+              </h3>
+              <div class="pill-list">
+                {#each (page.tagged ?? []) as link (link)}
+                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
+                {/each}
+              </div>
+            </section>
+          {/if}
+
+          <section class="rail-card">
             <p class="eyebrow">Outgoing Links</p>
-            <h3>Wiki Graph</h3>
+            <h3>
+              Wiki Graph
+              {#if page.render.links.length}
+                <span class="rail-count">{page.render.links.length}</span>
+              {/if}
+            </h3>
             {#if page.render.links.length}
               <div class="pill-list">
                 {#each page.render.links as link (link)}
@@ -311,22 +350,13 @@
           </section>
 
           <section class="rail-card">
-            <p class="eyebrow">Incoming Links</p>
-            <h3>Backlinks</h3>
-            {#if page.render.backlinks.length}
-              <div class="pill-list">
-                {#each page.render.backlinks as link (link)}
-                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
-                {/each}
-              </div>
-            {:else}
-              <p>No backlinks yet.</p>
-            {/if}
-          </section>
-
-          <section class="rail-card">
             <p class="eyebrow">Tags</p>
-            <h3>Metadata</h3>
+            <h3>
+              Metadata
+              {#if page.render.tags.length}
+                <span class="rail-count">{page.render.tags.length}</span>
+              {/if}
+            </h3>
             {#if page.render.tags.length}
               <div class="pill-list">
                 {#each page.render.tags as tag (tag)}
@@ -337,18 +367,6 @@
               <p>No tags yet.</p>
             {/if}
           </section>
-
-          {#if (page.tagged ?? []).length}
-            <section class="rail-card">
-              <p class="eyebrow">Tagged</p>
-              <h3>Pages tagged #{page.name}</h3>
-              <div class="pill-list">
-                {#each (page.tagged ?? []) as link (link)}
-                  <button class="pill ghost-pill" onclick={() => loadPage(link)}>{link}</button>
-                {/each}
-              </div>
-            </section>
-          {/if}
         </aside>
       </div>
     </section>
@@ -594,6 +612,24 @@
   }
   .tag-chip:hover {
     background: rgba(71, 58, 27, 0.16);
+  }
+  .rail-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .rail-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: rgba(110, 97, 69, 0.14);
+    color: #5d5847;
+    font-size: 0.78rem;
+    font-weight: 600;
   }
 
   @media (max-width: 1100px) {
