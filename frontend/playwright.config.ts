@@ -29,10 +29,13 @@ export default defineConfig({
   // SPA tests navigate → session check → data fetch → CodeMirror render; 5s too tight on CI.
   expect: { timeout: 10000 },
 
-  // RT-7 + RT-9: blob reporter for shard merging; JSON for flake-monitor; list for CI output
+  // RT-7 + RT-9: blob reporter for shard merging; JSON for flake-monitor; list for CI output.
+  // Note: blob reporter takes `outputDir` (not `outputFolder` like the HTML reporter); using
+  // the wrong key silently falls back to <configDir>/blob-report (i.e. frontend/blob-report)
+  // and the workflow's `path: blob-report/` upload (relative to repo root) finds nothing.
   reporter: process.env.CI
     ? [
-        ['blob', { outputFolder: path.join(REPO_ROOT, 'blob-report') }],
+        ['blob', { outputDir: path.join(REPO_ROOT, 'blob-report') }],
         ['list'],
         ['json', { outputFile: path.join(REPO_ROOT, 'test-results', 'results.json') }],
       ]
