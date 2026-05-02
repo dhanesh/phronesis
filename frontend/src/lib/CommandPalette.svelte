@@ -11,6 +11,9 @@
   let {
     open = $bindable(false),
     pages = [],
+    workspaces = [],
+    currentWorkspace = '',
+    isAdmin = false,
     onSelect,
   } = $props();
 
@@ -66,10 +69,38 @@
         invoke: () => onSelect?.({ type: 'new-page', name: trimmed }),
       });
     }
-    return [...matches, ...commands];
+    // Workspace switching: surface other workspaces as commands so users
+    // can jump between them with Cmd-K rather than mousing to the
+    // top-bar dropdown.
+    const wsCommands = workspaces
+      .filter((w) => w.slug !== currentWorkspace)
+      .filter((w) => !trimmed || w.slug.toLowerCase().includes(trimmed) || (w.name ?? '').toLowerCase().includes(trimmed))
+      .map((w) => ({
+        kind: 'command',
+        id: `cmd:workspace.switch:${w.slug}`,
+        label: `Switch to ${w.name || w.slug}`,
+        hint: 'Workspace',
+        invoke: () => onSelect?.({ type: 'switch-workspace', slug: w.slug }),
+      }));
+    if (isAdmin) {
+      commands.push({
+        kind: 'command',
+        id: 'cmd:workspace.manage',
+        label: 'Manage workspaces',
+        hint: 'Admin',
+        invoke: () => onSelect?.({ type: 'open-workspace-manager' }),
+      });
+    }
+    return [...matches, ...wsCommands, ...commands];
   }
 
-  let items = $derived(buildItems(query, pages));
+  // Re-derive whenever any of the inputs change. Listed explicitly so
+  // Svelte's reactive graph picks up workspaces / currentWorkspace /
+  // isAdmin changes from the host App.
+  let items = $derived.by(() => {
+    void workspaces; void currentWorkspace; void isAdmin;
+    return buildItems(query, pages);
+  });
 
   // Keep activeIndex within bounds when items shrinks.
   $effect(() => {

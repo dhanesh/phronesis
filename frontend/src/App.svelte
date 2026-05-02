@@ -3,6 +3,7 @@
   import Editor from './lib/Editor.svelte';
   import CommandPalette from './lib/CommandPalette.svelte';
   import TopBar from './lib/TopBar.svelte';
+  import WorkspaceManager from './lib/WorkspaceManager.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -33,9 +34,59 @@
   let durability = $state('idle');
   let paletteOpen = $state(false);
 
+  // Multi-workspace state. Loaded after auth; persisted across the
+  // session via localStorage so the top-bar selector remembers the
+  // last active workspace across reloads.
+  const WORKSPACE_STORAGE_KEY = 'phronesis.workspace';
+  let workspaces = $state([]);
+  let currentWorkspace = $state('default');
+  let userRole = $state('');
+  let workspaceManagerOpen = $state(false);
+
+  function pagePath(name) {
+    const ws = encodeURIComponent(currentWorkspace);
+    const n = encodeURIComponent(name);
+    return `/api/workspaces/${ws}/pages/${n}`;
+  }
+
+  function pagesListPath() {
+    return `/api/workspaces/${encodeURIComponent(currentWorkspace)}/pages`;
+  }
+
   function onPaletteSelect(item) {
     if (item.type === 'page' || item.type === 'new-page') {
       loadPage(item.name);
+    } else if (item.type === 'switch-workspace') {
+      switchWorkspace(item.slug);
+    } else if (item.type === 'open-workspace-manager') {
+      workspaceManagerOpen = true;
+    }
+  }
+
+  async function switchWorkspace(slug) {
+    if (!slug || slug === currentWorkspace) return;
+    if (!workspaces.some((w) => w.slug === slug)) return;
+    currentWorkspace = slug;
+    try { localStorage.setItem(WORKSPACE_STORAGE_KEY, slug); } catch {}
+    pageName = defaultPage;
+    await Promise.all([loadPages(), loadPage(defaultPage)]);
+  }
+
+  async function loadWorkspaces() {
+    try {
+      const res = await fetch('/api/workspaces');
+      if (!res.ok) return;
+      const data = await res.json();
+      workspaces = data.workspaces ?? [];
+      let stored = '';
+      try { stored = localStorage.getItem(WORKSPACE_STORAGE_KEY) || ''; } catch {}
+      if (stored && workspaces.some((w) => w.slug === stored)) {
+        currentWorkspace = stored;
+      } else if (!workspaces.some((w) => w.slug === currentWorkspace)) {
+        currentWorkspace = workspaces[0]?.slug || 'default';
+      }
+    } catch {
+      // Best-effort; leave defaults.
     }
   }
 
@@ -53,6 +104,7 @@
 
     await loadSession();
     if (authenticated) {
+      await loadWorkspaces();
       const match = window.location.pathname.match(/^\/w\/(.+)$/);
       const initialPage = match ? decodeURIComponent(match[1]) : defaultPage;
       await Promise.all([loadPages(), loadPage(initialPage)]);
@@ -101,6 +153,7 @@
 
       const data = await res.json();
       authenticated = Boolean(data.authenticated);
+      userRole = data.role || '';
     } catch (error) {
       authenticated = false;
       bootError = error?.name === 'AbortError'
@@ -125,6 +178,9 @@
     }
     authenticated = true;
     password = '';
+    // Re-pull session to capture role for the freshly-logged-in user.
+    await loadSession();
+    await loadWorkspaces();
     await Promise.all([loadPages(), loadPage(pageName)]);
     // loadPage calls reconnectStream() internally; no extra connectStream() needed.
   }
@@ -138,14 +194,14 @@
   }
 
   async function loadPages() {
-    const res = await fetch('/api/pages');
+    const res = await fetch(pagesListPath());
     const data = await res.json();
     pages = data.pages ?? [];
   }
 
   async function loadPage(name) {
     pageName = (name || defaultPage).toLowerCase();
-    const res = await fetch(`/api/pages/${encodeURIComponent(pageName)}`);
+    const res = await fetch(pagePath(pageName));
     const data = await res.json();
     page = data.page ?? emptyPage(pageName);
     draft = page.content;
@@ -162,7 +218,7 @@
   }
 
   function connectStream() {
-    source = new EventSource(`/api/pages/${encodeURIComponent(pageName)}/events`);
+    source = new EventSource(`${pagePath(pageName)}/events`);
     source.addEventListener('snapshot', (event) => {
       const payload = JSON.parse(event.data);
       page = payload.page;
@@ -192,7 +248,7 @@
 
   async function saveDraft() {
     const currentDraft = draft;
-    const res = await fetch(`/api/pages/${encodeURIComponent(pageName)}`, {
+    const res = await fetch(pagePath(pageName), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -264,6 +320,11 @@
       pageName={page.name}
       {status}
       {mergedNotice}
+      {workspaces}
+      {currentWorkspace}
+      onSwitchWorkspace={switchWorkspace}
+      isAdmin={userRole === 'admin'}
+      onManageWorkspaces={() => (workspaceManagerOpen = true)}
       onOpenPalette={() => (paletteOpen = true)}
       onLogout={logout}
     />
@@ -393,7 +454,17 @@
 <CommandPalette
   bind:open={paletteOpen}
   pages={pages}
+  workspaces={workspaces}
+  currentWorkspace={currentWorkspace}
+  isAdmin={userRole === 'admin'}
   onSelect={onPaletteSelect}
+/>
+
+<WorkspaceManager
+  bind:open={workspaceManagerOpen}
+  bind:workspaces
+  currentWorkspace={currentWorkspace}
+  onChanged={loadWorkspaces}
 />
 
 <style>

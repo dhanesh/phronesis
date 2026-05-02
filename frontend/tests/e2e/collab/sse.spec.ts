@@ -32,9 +32,13 @@ test.describe('SSE live updates', () => {
       data: { content: '# SSE Connection Test\n', baseVersion: 0 },
     });
 
-    // Intercept the SSE request to verify it's made.
+    // Intercept the SSE request to verify it's made. The frontend
+    // now posts to /api/workspaces/<slug>/pages/<name>/events; the
+    // legacy /api/pages/<name>/events path is still aliased server-
+    // side. Match by the trailing path so the test passes regardless
+    // of which scheme the client picks.
     const sseRequest = page.waitForRequest((req) =>
-      req.url().includes(`/api/pages/${name}/events`),
+      req.url().endsWith(`/pages/${name}/events`),
     );
     await page.goto(`/w/${name}`);
     const req = await sseRequest;

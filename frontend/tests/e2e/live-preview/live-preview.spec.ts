@@ -309,10 +309,15 @@ test.describe('live-preview safety properties', () => {
     const name = `lp-roundtrip-${Date.now()}`;
     await seedPage(page, name);
 
-    // Capture every POST to /api/pages/<name> after the editor mounts.
+    // Capture every POST to the page endpoint after the editor mounts.
+    // The frontend posts to /api/workspaces/<slug>/pages/<name>; the
+    // legacy /api/pages/<name> path also exists for default-workspace
+    // backward compat. Match either by checking the page name suffix.
     const autosaveBodies: string[] = [];
     page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes(`/api/pages/${name}`)) {
+      if (req.method() !== 'POST') return;
+      const url = req.url();
+      if (url.endsWith(`/pages/${name}`)) {
         const body = req.postData();
         if (body) autosaveBodies.push(body);
       }

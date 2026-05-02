@@ -24,9 +24,14 @@ func requestIsSecure(r *http.Request) bool {
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	username, ok := s.auth.Username(r)
+	role := ""
+	if p, err := principal.FromContext(r.Context()); err == nil {
+		role = string(p.Role)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authenticated": ok,
 		"username":      username,
+		"role":          role,
 	})
 }
 
