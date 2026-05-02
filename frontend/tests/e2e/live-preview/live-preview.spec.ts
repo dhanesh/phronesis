@@ -45,6 +45,8 @@ const fenced = "code";
 
 ![image alt](/media/abc123def)
 
+#urgent and #design-review tags inline.
+
 [[wiki-page]]
 `;
 
@@ -131,6 +133,20 @@ test.describe('live-preview decorations — Full V1 coverage', () => {
     await expect(page.locator('table.cm-md-table')).toBeVisible();
     await expect(page.locator('.cm-md-table-header').first()).toBeVisible();
     await expect(page.locator('.cm-md-table-row').first()).toBeVisible();
+  });
+
+  test('hashtags render as cm-md-hashtag anchors with /w/<tag> href', async ({ page }) => {
+    const name = `lp-hashtag-${Date.now()}`;
+    await seedPage(page, name);
+    await page.goto(`/w/${name}`);
+    await expect(page.locator('a.cm-md-hashtag').first()).toBeVisible();
+    // Both hashtags from the fixture appear.
+    await expect(page.locator('a.cm-md-hashtag[data-hashtag="urgent"]')).toBeVisible();
+    await expect(page.locator('a.cm-md-hashtag[data-hashtag="design-review"]')).toBeVisible();
+    // Internal-style href so it can be intercepted by the navigation
+    // delegation in Editor.svelte.
+    const href = await page.locator('a.cm-md-hashtag[data-hashtag="urgent"]').getAttribute('href');
+    expect(href).toBe('/w/urgent');
   });
 
   test('wiki-links still render after decoration migration (regression)', async ({ page }) => {

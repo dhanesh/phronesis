@@ -125,6 +125,18 @@
             color: '#854f1c',
             fontWeight: '600'
           },
+          '.cm-md-hashtag': {
+            color: '#854f1c',
+            textDecoration: 'none',
+            background: 'rgba(133, 79, 28, 0.12)',
+            borderRadius: '999px',
+            padding: '0.05rem 0.4rem',
+            fontSize: '0.92em',
+            cursor: 'pointer'
+          },
+          '.cm-md-hashtag:hover': {
+            background: 'rgba(133, 79, 28, 0.22)'
+          },
           '.cm-md-image': {
             display: 'inline-block',
             maxWidth: '100%',
@@ -180,6 +192,20 @@
     view = new EditorView({
       state: createState(value),
       parent: root
+    });
+    // Delegated click handler for hashtag mark decorations. Decoration
+    // .mark cannot attach an event listener directly (unlike a widget),
+    // so we delegate from the editor content root. Internal navigation
+    // bypasses the browser-default href so we route through onnavigate.
+    root.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const tag = target.closest('a.cm-md-hashtag');
+      if (!tag) return;
+      const tagName = tag.getAttribute('data-hashtag');
+      if (!tagName) return;
+      event.preventDefault();
+      onnavigate?.({ page: tagName, source: 'hashtag' });
     });
   });
 

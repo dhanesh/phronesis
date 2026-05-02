@@ -13,6 +13,7 @@ import { inlineCodeFamily } from './inline/inline-code';
 import { markdownLinksFamily } from './inline/markdown-links';
 import { listsFamily } from './inline/lists';
 import { imagesFamily } from './inline/images';
+import { hashtagFamily } from './inline/hashtag';
 import { fencedCodeFamily } from './block/fenced-code';
 import { blockquoteFamily } from './block/blockquote';
 import { tablesFamily } from './block/tables';
@@ -43,6 +44,7 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
     markdownLinksFamily({ onnavigate: opts.onnavigate }),
     listsFamily(),
     imagesFamily(),
+    hashtagFamily({ onnavigate: opts.onnavigate }),
     // Wiki-links (foundation)
     wikiLinksFamily({ currentPage: opts.currentPage, onnavigate: opts.onnavigate }),
   ];
