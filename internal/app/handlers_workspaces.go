@@ -22,9 +22,11 @@ func (s *Server) handleWorkspacesList(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleWorkspaceRoutes parses URLs of the form
-//   /api/workspaces/<slug>/pages
-//   /api/workspaces/<slug>/pages/<name>
-//   /api/workspaces/<slug>/pages/<name>/events
+//
+//	/api/workspaces/<slug>/pages
+//	/api/workspaces/<slug>/pages/<name>
+//	/api/workspaces/<slug>/pages/<name>/events
+//
 // and dispatches to the existing page handlers with the workspace slug
 // threaded through. The exact /api/workspaces path (no trailing slash)
 // is served by handleWorkspacesList; this handler is registered at the
