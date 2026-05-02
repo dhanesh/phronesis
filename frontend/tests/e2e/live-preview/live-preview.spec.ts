@@ -443,6 +443,30 @@ test.describe('live-preview safety properties', () => {
   // in markdown source must remain inert. If any widget regresses to
   // innerHTML, this test fires window.__pwned and we catch it.
   // @constraint S2 - widget content via textContent only; no innerHTML
+  test('smart quotes: typing " produces curly quotes outside code', async ({ page }) => {
+    const name = `lp-smartq-${Date.now()}`;
+    // Seed a fresh page with a simple paragraph so we have a known cursor anchor.
+    const res = await page.request.post(`/api/pages/${name}`, {
+      data: { content: 'hello\n', baseVersion: 0 },
+    });
+    expect(res.ok()).toBeTruthy();
+    await page.goto(`/w/${name}`);
+    const line = page.locator('.cm-line').filter({ hasText: 'hello' });
+    await expect(line).toBeVisible();
+
+    // Cursor at end of "hello", type a space then `"x"`.
+    await line.click({ position: { x: 200, y: 4 } });
+    await page.keyboard.press('End');
+    await page.keyboard.type(' "x"');
+    await page.waitForTimeout(900);
+
+    const fetched = await page.request.get(`/api/pages/${name}`);
+    const body = await fetched.json();
+    // Open quote after space, close quote after letter.
+    expect(body.page.content).toContain('“x”');
+    expect(body.page.content).not.toContain('"x"');
+  });
+
   test('S2: embedded <script> and onerror handlers stay inert', async ({ page }) => {
     const name = `lp-injection-${Date.now()}`;
     const fixture = `# Injection probe

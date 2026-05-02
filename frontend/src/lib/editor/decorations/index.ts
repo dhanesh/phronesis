@@ -6,6 +6,7 @@
 
 import { liveDecorationExtension } from './base';
 import type { DecorationFamily } from './base';
+import { smartQuotesExtension } from './smart-quotes';
 import { wikiLinksFamily } from './inline/wiki-links';
 import { headingsFamily } from './inline/headings';
 import { emphasisFamily } from './inline/emphasis';
@@ -55,6 +56,9 @@ export function composeV1Families(opts: V1Options): readonly DecorationFamily[] 
   ];
 }
 
-export function livePreviewExtension(opts: V1Options): Extension {
-  return liveDecorationExtension(composeV1Families(opts));
+export function livePreviewExtension(opts: V1Options): Extension[] {
+  return [
+    ...liveDecorationExtension(composeV1Families(opts)),
+    smartQuotesExtension(),
+  ];
 }
