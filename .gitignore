@@ -11,6 +11,7 @@ frontend/dist/
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # Go build artifacts (compiled binary at repo root, anchored to avoid
 # accidentally matching cmd/phronesis/)

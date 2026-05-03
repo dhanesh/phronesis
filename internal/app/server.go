@@ -6,6 +6,13 @@ package app
 
 import (
 	"context"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,10 +25,12 @@ import (
 
 	"github.com/dhanesh/phronesis/internal/audit"
 	"github.com/dhanesh/phronesis/internal/auth"
+	"github.com/dhanesh/phronesis/internal/auth/oauth"
 	"github.com/dhanesh/phronesis/internal/auth/oidc"
 	"github.com/dhanesh/phronesis/internal/blob"
 	"github.com/dhanesh/phronesis/internal/crdt"
 	"github.com/dhanesh/phronesis/internal/journal"
+	"github.com/dhanesh/phronesis/internal/mcp"
 	"github.com/dhanesh/phronesis/internal/media"
 	"github.com/dhanesh/phronesis/internal/principal"
 	"github.com/dhanesh/phronesis/internal/ratelimit"
@@ -76,6 +85,13 @@ type Config struct {
 	KeyRateLimitWindow time.Duration
 	KeyRateLimitMax    int
 
+	// Stage 3d (S6 closure): per-key in-flight concurrency cap.
+	// Pairs with the sliding-window limiter above — windowing bounds
+	// rate over time, this bounds parallel work at any one instant.
+	// Default 5 in-flight per the S6 manifest rationale (prevents one
+	// rogue agent from monopolising the worker pool).
+	KeyConcurrencyMax int
+
 	// INT-6 (Wave-3): snapshot scheduler. When SnapshotDir is non-empty,
 	// NewServer constructs a snapshot.LocalFSTarget + Scheduler that
 	// periodically backs up wiki.Store + blob.LocalFSStore.
@@ -99,6 +115,17 @@ type Config struct {
 	// derived in applyConfigDefaults so tests with an empty Config get
 	// the in-memory-feeling temp-dir behaviour they expect.
 	StorePath string
+
+	// user-mgmt-mcp Stage 3a: OAuth 2.1 authorization server.
+	// OAuthEnabled mounts /oauth/{authorize,token,register} and the
+	// matching /.well-known/{oauth-authorization-server,jwks.json}.
+	// OAuthIssuer is the canonical iss claim (e.g.
+	// https://phronesis.example.com); required when OAuthEnabled=true.
+	// OAuthKeyPath is the on-disk RSA private key; generated on first
+	// start if absent.
+	OAuthEnabled bool
+	OAuthIssuer  string
+	OAuthKeyPath string
 }
 
 type Server struct {
@@ -150,6 +177,18 @@ type Server struct {
 	// Invalidate is called by revoke/suspend handlers. Nil when
 	// StorePath is empty (no keys exist; nothing to cache).
 	authCache *auth.Cache
+
+	// Stage 3a: OAuth 2.1 authorization server. Nil when
+	// OAuthEnabled=false; oauth route handlers short-circuit to 503
+	// in that mode so a misconfigured deploy fails closed instead of
+	// silently issuing tokens.
+	oauth *oauthHandlers
+
+	// Stage 3b: MCP HTTP transport. Mounted at /mcp behind isolated
+	// recover middleware (RT-11 / T6). Nil when OAuthEnabled=false
+	// since MCP requires Bearer-JWT auth; without OAuth there is no
+	// way to authenticate an MCP client.
+	mcp *mcp.Server
 }
 
 // defaultWorkspaceID names the single implicit workspace v1 ships with.
@@ -201,6 +240,13 @@ func LoadConfig() Config {
 		// (admin endpoints return 503). Default for the bundled binary is
 		// "data/phronesis.db"; tests pass a temp path explicitly.
 		StorePath: env("PHRONESIS_STORE_PATH", "./data/phronesis.db"),
+
+		// Stage 3a: OAuth 2.1 substrate. Off by default — enabling
+		// requires setting both PHRONESIS_OAUTH_ENABLED and
+		// PHRONESIS_OAUTH_ISSUER (a public URL clients can reach).
+		OAuthEnabled: envBool("PHRONESIS_OAUTH_ENABLED"),
+		OAuthIssuer:  env("PHRONESIS_OAUTH_ISSUER", ""),
+		OAuthKeyPath: env("PHRONESIS_OAUTH_KEY_PATH", "./data/oauth-key.pem"),
 	}
 }
 
@@ -251,6 +297,9 @@ func applyConfigDefaults(cfg Config) Config {
 	}
 	if cfg.KeyRateLimitMax == 0 {
 		cfg.KeyRateLimitMax = 60
+	}
+	if cfg.KeyConcurrencyMax == 0 {
+		cfg.KeyConcurrencyMax = 5
 	}
 	return cfg
 }
@@ -424,6 +473,24 @@ func NewServer(cfg Config) (*Server, error) {
 		return nil, err
 	}
 
+	oauthSubstrate, err := buildOAuthSubstrate(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Stage 3b: MCP server is constructed only when OAuth is enabled
+	// (Bearer-JWT auth is the only way an MCP client can authenticate).
+	// Stage 3c: register the baseline echo tool so the MCP transport
+	// has something in tools/list and the spec smoke test exercises a
+	// real tools/call round-trip.
+	var mcpServer *mcp.Server
+	if oauthSubstrate != nil {
+		mcpServer = mcp.NewServer()
+		if err := mcpServer.Tools.Register(mcp.EchoTool()); err != nil {
+			return nil, fmt.Errorf("mcp: register echo tool: %w", err)
+		}
+	}
+
 	app := &Server{
 		cfg:            cfg,
 		auth:           authManager,
@@ -440,6 +507,8 @@ func NewServer(cfg Config) (*Server, error) {
 		store:          sqliteStore,
 		auditCompactor: auditCompactor,
 		authCache:      authCache,
+		oauth:          oauthSubstrate,
+		mcp:            mcpServer,
 	}
 
 	// INT-6: snapshot scheduler. When SnapshotDir is non-empty, construct
@@ -463,9 +532,13 @@ func NewServer(cfg Config) (*Server, error) {
 	// resolves the prefix. Closes RT-7 / S6.
 	keyRateLimiter := ratelimit.NewLimiter(cfg.KeyRateLimitWindow, cfg.KeyRateLimitMax)
 
+	// Stage 3d: per-key in-flight cap. Pairs with the sliding window
+	// — windowing for rate, semaphore for parallel work.
+	keyConcurrency := ratelimit.NewSemaphore(cfg.KeyConcurrencyMax)
+
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           app.routes(authRateLimiter, keyRateLimiter),
+		Handler:           app.routes(authRateLimiter, keyRateLimiter, keyConcurrency),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	app.http = server
@@ -484,6 +557,133 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	return app, nil
+}
+
+// buildOAuthSubstrate constructs the Stage 3a OAuth 2.1 server when
+// cfg.OAuthEnabled is true. Returns (nil, nil) when disabled — the
+// /oauth/* and /.well-known/* handlers fall back to 503 in that mode.
+//
+// On enable: load (or generate) the RSA-2048 signing key, build the
+// signer + state store, and assemble the handler bundle. The issuer
+// must be set explicitly — deriving it from the listen addr is too
+// brittle (reverse proxies, host headers).
+//
+// Satisfies: RT-2 (OAuth 2.1 server bootstraps with a stable signing
+//
+//	key persisted across restarts).
+func buildOAuthSubstrate(cfg Config) (*oauthHandlers, error) {
+	if !cfg.OAuthEnabled {
+		return nil, nil
+	}
+	if cfg.OAuthIssuer == "" {
+		return nil, fmt.Errorf("oauth: PHRONESIS_OAUTH_ISSUER is required when OAuth is enabled")
+	}
+	if cfg.OAuthKeyPath == "" {
+		return nil, fmt.Errorf("oauth: PHRONESIS_OAUTH_KEY_PATH is required when OAuth is enabled")
+	}
+	key, kid, err := loadOrGenerateOAuthKey(cfg.OAuthKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: load signing key: %w", err)
+	}
+	signer, err := oidc.NewRS256Signer(key, kid)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: signer: %w", err)
+	}
+	now := time.Now
+
+	// Stage 3b: a JWKSCache pre-seeded with our own public key
+	// drives the self-token verifier. The cache.TTL is generous
+	// because the key only changes when the operator replaces
+	// data/oauth-key.pem; a long TTL avoids needless re-seeding.
+	cache := oidc.NewJWKSCache("self", 24*time.Hour)
+	jwksDoc, err := signer.JWKSDocument()
+	if err != nil {
+		return nil, fmt.Errorf("oauth: marshal JWKS: %w", err)
+	}
+	keyBytes, err := extractFirstJWK(jwksDoc)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: extract JWK: %w", err)
+	}
+	cache.Set(kid, keyBytes, "RS256")
+
+	verifier := &oauth.Verifier{
+		Cache:    cache,
+		Inner:    &oidc.RS256Verifier{Cache: cache},
+		Issuer:   cfg.OAuthIssuer,
+		Audience: cfg.OAuthIssuer,
+		Now:      now,
+	}
+
+	return &oauthHandlers{
+		store:         oauth.NewStore(now),
+		signer:        signer,
+		issuer:        cfg.OAuthIssuer,
+		audience:      cfg.OAuthIssuer, // self-issued tokens; aud == iss
+		now:           now,
+		tokenVerifier: verifier,
+	}, nil
+}
+
+// extractFirstJWK parses the marshalled JWKS document the signer
+// produces and returns the first key entry as raw JSON bytes — the
+// shape JWKSCache.Set expects.
+func extractFirstJWK(doc []byte) ([]byte, error) {
+	var set struct {
+		Keys []json.RawMessage `json:"keys"`
+	}
+	if err := json.Unmarshal(doc, &set); err != nil {
+		return nil, err
+	}
+	if len(set.Keys) == 0 {
+		return nil, fmt.Errorf("oauth: empty JWKS")
+	}
+	return set.Keys[0], nil
+}
+
+// loadOrGenerateOAuthKey reads an RSA private key from path. If the
+// file does not exist, it generates a fresh 2048-bit key, writes it
+// (mode 0600), and returns it. The kid is derived from the modulus
+// hash so the same key always produces the same kid — JWKS rotation
+// is implicit when the operator replaces the file.
+func loadOrGenerateOAuthKey(path string) (*rsa.PrivateKey, string, error) {
+	if data, err := os.ReadFile(path); err == nil {
+		block, _ := pem.Decode(data)
+		if block == nil || block.Type != "RSA PRIVATE KEY" {
+			return nil, "", fmt.Errorf("oauth: %s does not contain a PKCS#1 RSA PRIVATE KEY", path)
+		}
+		key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, "", fmt.Errorf("oauth: parse key: %w", err)
+		}
+		return key, kidForKey(key), nil
+	} else if !os.IsNotExist(err) {
+		return nil, "", err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return nil, "", err
+	}
+	key, err := rsa.GenerateKey(crand.Reader, 2048)
+	if err != nil {
+		return nil, "", err
+	}
+	pemBytes := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	if err := os.WriteFile(path, pemBytes, 0o600); err != nil {
+		return nil, "", err
+	}
+	slog.Info("oauth: generated new signing key",
+		slog.String("component", "phronesis"),
+		slog.String("path", path),
+	)
+	return key, kidForKey(key), nil
+}
+
+func kidForKey(key *rsa.PrivateKey) string {
+	sum := sha256.Sum256(key.PublicKey.N.Bytes())
+	return "phronesis-oauth-" + hex.EncodeToString(sum[:6])
 }
 
 // buildOIDCAdapter constructs the OIDC adapter when OIDC is enabled in cfg.

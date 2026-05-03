@@ -153,25 +153,41 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 			Claims:      claims,
 		}, true
 	}
-	// RT-3 / Stage 2a: Authorization: Bearer phr_live_... against
-	// the SQLite api_keys table. Only attempted when the SQLite
-	// store is configured (s.store non-nil) — otherwise fall
-	// through to the legacy single-key path.
-	if s.store != nil {
-		if authz := r.Header.Get("Authorization"); strings.HasPrefix(authz, "Bearer ") {
-			plaintext := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
-			if plaintext != "" && strings.HasPrefix(plaintext, "phr_live_") {
-				p, err := auth.ResolveBearerKey(r.Context(), s.store.DB(), plaintext, s.authCache)
-				if err == nil && p != nil {
-					return *p, true
-				}
-				// Resolution failed (key not found / revoked / expired /
-				// invalid). Do NOT fall through to other auth paths —
-				// presenting a wrong bearer token MUST NOT silently
-				// downgrade to legacy auth. Return false so withAuth
-				// returns 401.
+	// Bearer-token paths (RT-3 phr_live_, RT-2 self-issued OAuth JWT).
+	// Both reach the same Principal shape so authz at the inner layers
+	// doesn't care which bearer flavour brought the request in.
+	//
+	// Resolution priority within Bearer:
+	//   1. phr_live_… prefix → API-key path (Stage 2a, requires SQLite)
+	//   2. JWT shape (3 base64url segments) → OAuth access-token path
+	//      (Stage 3b, requires the OAuth substrate)
+	//
+	// Presenting a wrong bearer MUST NOT silently downgrade to a
+	// different auth path — fail closed by returning false.
+	if authz := r.Header.Get("Authorization"); strings.HasPrefix(authz, "Bearer ") {
+		plaintext := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+		switch {
+		case plaintext == "":
+			// fall through to legacy paths (empty Bearer is not
+			// a positive credential).
+		case strings.HasPrefix(plaintext, "phr_live_"):
+			if s.store == nil {
 				return principal.Principal{}, false
 			}
+			p, err := auth.ResolveBearerKey(r.Context(), s.store.DB(), plaintext, s.authCache)
+			if err == nil && p != nil {
+				return *p, true
+			}
+			return principal.Principal{}, false
+		case strings.Count(plaintext, ".") == 2:
+			if s.oauth == nil || s.oauth.tokenVerifier == nil {
+				return principal.Principal{}, false
+			}
+			p, err := s.oauth.tokenVerifier.VerifyAccessToken(plaintext)
+			if err == nil {
+				return p, true
+			}
+			return principal.Principal{}, false
 		}
 	}
 
