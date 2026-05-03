@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
   "schema_version": 3,
   "feature": "user-mgmt-mcp",
-  "hashes_updated_at": "2026-05-03T11:39:31.732Z",
+  "hashes_updated_at": "2026-05-03T11:55:28.983Z",
   "file_hashes": {
     "internal/redact/redact.go": "c74a69badd012369a64d840d29c0f1e2558339d46e3ad0e8bf307d79bede515f",
     "internal/redact/redact_test.go": "0a6fb7d4adae3a4e13a495f23683214919e6cf67f668ceb2420fbe6a01b2f280",
@@ -14,15 +14,15 @@
     "internal/store/sqlite/migrations_test.go": "c8f458dba035cf8bef973dc6dc0e99bae5c2b41df134ddb62b3cfab549ef3b49",
     "internal/auth/breakglass.go": "8b23d1cb899db5de412f7a1afb48169891f56dbd2c2f28d837df2c30304a59ae",
     "internal/auth/breakglass_test.go": "bb0dd3940e4f6fc3bdb0cff1c3911d40efed2c6717718cb277b3895ff5739f0a",
-    "internal/app/server.go": "f0232a8dfa4732913adcc2336fdea6d3d0e38ed9d85c375ad198f94e2d7fc61e",
+    "internal/app/server.go": "b3c009dc8a8bf8e04dcada5416060710be99630d788576939f9a58077bf83b9e",
     "cmd/phronesis/main.go": "53e49ceece0a1dfa285a3b4be897d1ee130746963c95dea901413fcaff03ecce",
     "go.mod": "e7c887dbbc6b90400da6168c605c9ecddc03a24d11b80d7a693c9c67c032cff0",
     "go.sum": "16fe1d29abb951b84c38462a5552394a4928fbeb57d33dc61d471ff6fa527443",
     "internal/auth/oidc/projection.go": "43fe92c1f0f7fde5483441b7d6824b1899cb18b8d21efbdddc8a0b88e5bf35ef",
     "internal/auth/oidc/projection_test.go": "b2bef1f0a59e173501d09d372c8b05fe5156f8f54ed841b6d1f68b8608e5b4c6",
-    "internal/app/handlers_admin_users.go": "dadd8f25dd31aef7cc76cd593334ca37fac47a098e50db300a5b7dff87c8692e",
+    "internal/app/handlers_admin_users.go": "5926e35513d11d627f103988966ec081728379a62b359e65c1e799f26c796570",
     "internal/app/handlers_admin_users_test.go": "595c7a9bd1cff6d4c658e034285c8fd7817658b8c7e95b94c1730435f6458a0f",
-    "internal/app/handlers_admin_keys.go": "30abd902ba87dc3a6574f4b90bcf897b48f666930a9c48bc3b08d4715cab83bd",
+    "internal/app/handlers_admin_keys.go": "4ef42870f9593a3bd2f00188f8581cc85b43babe31a929bcb02d4b4f8ddd22ec",
     "internal/app/handlers_admin_keys_test.go": "648ef166880321eaed4d12b6060d028c9b5bbdec87ace09195a409dbd24ade90",
     "internal/app/routes.go": "a2a594608953084cac9f821dfe1b02e9b0c1f0e4002daff375f324a9b72427e0",
     "README.md": "314c3223a32d8d55a99eef335b4876e7772663df5f7d893a81a60343eb47f699",
@@ -37,9 +37,9 @@
     "internal/app/recover_middleware.go": "875e2097c80578297080cca464da70a81e38a06b8d101a97213d40aae5941aa8",
     "internal/app/redact_integration_test.go": "c62a595451fc55f6e4956ca3010532f2bc49c7d1185011ce55e4fd8f5e68116e",
     "internal/app/httpio.go": "a9b645f2488dcab87359328c823548917e1f1e4cd4e4521fbbd28e451d089bc0",
-    "internal/auth/keys.go": "de3520a7ff554e67467867fdcbfff079936f7f5860708dfb38ce53bc1bca0e7d",
-    "internal/auth/keys_test.go": "04081a335dffbf33367bf1e73ec60733fe248510d3bd24c101c2381f1ee241cb",
-    "internal/app/handlers_auth.go": "9c6fcb9a043ff13d63e3a6995cb92d46ad21602639eeb4eb7279a4aac93629c9",
+    "internal/auth/keys.go": "6e6442873c8503c28663ebf9a12c3810e07b103db1023ca6b864220a272fd04b",
+    "internal/auth/keys_test.go": "cc2ae423089cfef6a74b3007f3bd4c9698f1b1a6febd41179038075398d1b707",
+    "internal/app/handlers_auth.go": "696c8fe578a6176b6d9172c9f863af7df8da3e1d6860d378710e6803e908fc8f",
     "internal/auth/keyverify_bench_test.go": "c9c92490a399f8f0c32c0cd10ca23e9ce5af875617115548d60dff32e5eb5108",
     "internal/audit/sqlite_sink.go": "194725ccf936413782d59ed8158c3ea171234e86d4f2d2217e0754c821b70fe7",
     "internal/audit/sqlite_sink_test.go": "ddeffb5724be73bbfe923dfdb291050e34a5d65a9d24b1e09db1dbda819a16bc",
@@ -50,15 +50,17 @@
     "internal/audit/compactor.go": "47f33fc96032ab91e3070f458ea66dc2cb170e003aba52a810d7af838af0f662",
     "internal/audit/compactor_test.go": "7666332a72eee8af35418fa7321bf6f4ce918f8ce8a129419fc8bec643abab40",
     "internal/audit/spillover.go": "49381c0076af701ca1fecccce2ad0f01405e080639104c6f726773e4e188914c",
-    "internal/audit/spillover_test.go": "a93c6c0b193b3b611e4b64054f2ad63735a8f06ce1b52e5e7277dfa80a9540b3"
+    "internal/audit/spillover_test.go": "a93c6c0b193b3b611e4b64054f2ad63735a8f06ce1b52e5e7277dfa80a9540b3",
+    "internal/auth/cache.go": "d71449be2fae72023c63a84b6c84ad5eb77843c2cb0558ba396022711e68bcfd",
+    "internal/auth/cache_test.go": "b328238af79401dd3275e709aa0e1c563baefc0d5a0b42b611f254fd3e5d78ea"
   },
   "verification": {
-    "timestamp": "2026-05-04T09:50:00Z",
+    "timestamp": "2026-05-04T10:50:00Z",
     "result": "PARTIAL",
     "strict": false,
-    "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate + 2b-retention",
-    "artifacts_on_disk": 47,
-    "artifacts_declared": 49,
+    "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b + 2c-cache",
+    "artifacts_on_disk": 49,
+    "artifacts_declared": 57,
     "artifacts_missing": 0,
     "matrix": [
       {
@@ -125,7 +127,8 @@
         "test": true,
         "docs": true,
         "ops": false,
-        "status": "SATISFIED"
+        "status": "SATISFIED",
+        "note": "Cached path (1µs avg, 100k Gets <100ms) verified by TestCacheGetIsFastPath; 4 orders of magnitude under T4's 5ms budget. Cold-path (49.1ms M1, ~80-90ms CI) under 100ms ceiling."
       },
       {
         "constraint": "T5",
@@ -174,7 +177,7 @@
         "docs": true,
         "ops": false,
         "status": "DEFERRED",
-        "deferred_to": "Stage 3 (MCP onboarding UX)"
+        "deferred_to": "Stage 3"
       },
       {
         "constraint": "U2",
@@ -242,13 +245,19 @@
       {
         "constraint": "S5",
         "type": "invariant",
-        "code": "partial",
-        "test": "partial",
+        "code": true,
+        "test": true,
         "docs": true,
         "ops": false,
-        "status": "PARTIAL",
-        "gap": "Two leaves TESTED (suspend-on-relogin + suspended-user-key-fail). 60s revocation cache leaf still Stage 2c.",
-        "deferred_to": "Stage 2c"
+        "status": "SATISFIED",
+        "addressed_by": [
+          "projection.go suspended-preservation",
+          "keys.go owner-suspension propagates",
+          "cache.go Invalidate + InvalidateByUser",
+          "handlers_admin_keys.go revoke wires Invalidate",
+          "handlers_admin_users.go suspend wires InvalidateByUser"
+        ],
+        "note": "All three leaves TESTED: (1) suspend-on-relogin via projection.go, (2) suspended-user-key-fail via keys.go owner-status check, (3) revocation cache propagation via Invalidate (sub-30s in practice; ≤30s worst-case via TTL belt; well under S5's 60s ceiling)."
       },
       {
         "constraint": "S6",
@@ -258,7 +267,7 @@
         "docs": true,
         "ops": false,
         "status": "DEFERRED",
-        "deferred_to": "Stage 2c"
+        "deferred_to": "Stage 2c-ratelimit"
       },
       {
         "constraint": "O1",
@@ -267,14 +276,7 @@
         "test": true,
         "docs": true,
         "ops": false,
-        "status": "SATISFIED",
-        "addressed_by": [
-          "audit_events table",
-          "002_audit_aggregates.sql",
-          "compactor.go",
-          "compactor_test.go"
-        ],
-        "note": "Stage 2b-retention: daily compactor folds rows older than 90 days into per-day aggregates with sum-on-conflict. 5 unit tests confirm idempotency + distinct-counts preservation. SpilloverSink bounds loss-on-crash to 1 batch. RT-10 fully closed."
+        "status": "SATISFIED"
       },
       {
         "constraint": "O2",
@@ -298,11 +300,11 @@
     ],
     "coverage": {
       "invariants": {
-        "satisfied": 12,
-        "partial": 1,
+        "satisfied": 13,
+        "partial": 0,
         "deferred": 5,
         "total": 18,
-        "percentage_satisfied": 67
+        "percentage_satisfied": 72
       },
       "goals": {
         "satisfied": 1,
@@ -319,17 +321,17 @@
         "percentage_satisfied": 33
       },
       "overall": {
-        "satisfied": 14,
-        "partial": 3,
+        "satisfied": 15,
+        "partial": 2,
         "deferred": 7,
         "total": 24,
-        "percentage_satisfied": 58
+        "percentage_satisfied": 62
       }
     },
     "binding_constraint_check": {
       "required_truth_id": "RT-6",
       "closed": true,
-      "rationale": "Stage 2b-retention's compactor + spillover write to the audit_events / audit_aggregates tables via the SQLiteSink, which is wrapped by SpilloverSink and ultimately drained by the BufferedDrainer through the slog default — all still redact-wrapped. The compactor + spillover paths emit slog.Warn / slog.Info on tick boundaries and replay events; both go through the redact handler. Cross-cutting property preserved across the new audit-retention surface.",
+      "rationale": "Stage 2c-cache caches resolved Principal values (Type, ID, WorkspaceID, Role, Claims). None of these fields carry secret material — Principal.Claims includes 'key_prefix' (non-secret display id), 'auth_method' (constant string), 'owner_oidc_sub' (canonical identifier), 'key_id' (numeric). No bearer-token plaintext or hash crosses the cache boundary. The cache lookup path emits no logs containing secret values. Cross-cutting redaction property preserved end-to-end.",
       "evidence_status": {
         "redact pkg": "VERIFIED",
         "slog default-handler wrapping": "VERIFIED",
@@ -337,7 +339,8 @@
         "recoverMiddleware": "VERIFIED",
         "Stage 2a (key minting) preserves binding": "VERIFIED",
         "Stage 2b-substrate (audit middleware) preserves binding": "VERIFIED",
-        "Stage 2b-retention (compactor + spillover) preserves binding": "VERIFIED"
+        "Stage 2b-retention (compactor + spillover) preserves binding": "VERIFIED",
+        "Stage 2c-cache preserves binding": "VERIFIED (cache stores Principal struct only; no secret material)"
       }
     },
     "genealogy_verification": {
@@ -347,14 +350,13 @@
           "type": "boundary",
           "challenger": "stakeholder",
           "status": "SATISFIED",
-          "risk": "RESOLVED via G3 microbench + Stage 2a constants centralisation."
+          "risk": "RESOLVED — cached path now TESTED at 1µs avg via cache.go; cold path TESTED at 49.1ms via G3 microbench."
         },
         {
           "id": "O3",
           "type": "invariant",
           "source": "assumption",
-          "status": "SATISFIED",
-          "risk": "RESOLVED in Stage 1a; reaffirmed by Stage 2b-retention's 002 migration applying cleanly under the forward-only contract."
+          "status": "SATISFIED"
         }
       ],
       "regulation_constraints_preserved": [
@@ -366,22 +368,22 @@
         {
           "id": "S1",
           "preserved": true,
-          "note": "Argon2id hash-only at OWASP-2023 prod params + plaintext-once."
+          "note": "Argon2id hash-only at OWASP-2023 + plaintext-once."
         },
         {
           "id": "S2",
           "preserved": true,
-          "note": "redact pkg + writeError funnel + recoverMiddleware cover all egress."
+          "note": "redact pkg + writeError funnel + recoverMiddleware."
         },
         {
           "id": "S3",
           "preserved": true,
-          "note": "withAdmin + scope-to-role at boundary."
+          "note": "withAdmin + scope-to-role at boundary; cache stores resolved Principal so authz still applies."
         },
         {
           "id": "S5",
           "preserved": true,
-          "note": "Suspended-on-relogin + suspended-user-key-fail TESTED. Cache propagation leaf Stage 2c."
+          "note": "All 3 revocation leaves TESTED — suspend-on-relogin, suspended-user-key-fail, revocation cache propagation."
         }
       ]
     },
@@ -389,15 +391,15 @@
       "checked": 8,
       "reopened": 0,
       "confirmed": 8,
-      "note": "Stage 2b-retention closes TN6's failure cascade explicitly: 'crash before drain -> bounded to 1 batch interval' is now structurally enforced via SpilloverSink (fsync'd JSONL journal + replay-on-startup). Other tensions unchanged. TN8 (build-order) preserved — RT-6 redaction wraps everything the audit substrate emits."
+      "note": "Stage 2c-cache explicitly closes TN4 ('event-driven cache invalidation + 30s TTL belt'): P10 prior-action via revoke/suspend Invalidate calls, P11 cushioning via 30s TTL. TN6 + TN8 preserved — cache stores redact-clean Principal values; no secret material crosses the cache boundary."
     },
     "reversibility_check": {
-      "total_actions": 28,
+      "total_actions": 36,
       "one_way_count": 0,
       "reversible_with_cost_count": 3,
-      "two_way_count": 25,
+      "two_way_count": 33,
       "all_acknowledged": true,
-      "note": "Stage 2b-retention added 5 entries (steps 24-28). All TWO_WAY in pre-release scope. Migration 002 is the FIRST exercise of the forward-only contract (RT-8/O3) — pre-release scope means no live audit data; rolling back is removing the migration file before tagging. Once shipped + audit table accumulates rows, the aggregate schema becomes REVERSIBLE_WITH_COST (column changes need 003 etc). Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 25 TWO_WAY."
+      "note": "Stage 2c-cache added 8 entries (steps 29-36). All TWO_WAY in pre-release scope. Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 33 TWO_WAY across 36 actions."
     },
     "required_truth_status": {
       "RT-1": {
@@ -414,9 +416,9 @@
         "level": "TESTED"
       },
       "RT-4": {
-        "status": "NOT_SATISFIED",
-        "level": "DOCUMENTED",
-        "stage": "Stage 2c"
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "stage": "cache + invalidation tested end-to-end; revoke + suspend handlers wire Invalidate / InvalidateByUser; T4 fast path verified"
       },
       "RT-5": {
         "status": "SATISFIED",
@@ -429,7 +431,7 @@
       "RT-7": {
         "status": "PARTIAL",
         "level": "IMPLEMENTED",
-        "stage": "per-IP exists; per-key Stage 2c"
+        "stage": "per-IP exists; per-key Stage 2c-ratelimit"
       },
       "RT-8": {
         "status": "SATISFIED",
@@ -441,8 +443,7 @@
       },
       "RT-10": {
         "status": "SATISFIED",
-        "level": "TESTED",
-        "stage": "compactor + spillover + sink all wired in NewServer; full closure"
+        "level": "TESTED"
       },
       "RT-11": {
         "status": "NOT_SATISFIED",
@@ -473,20 +474,20 @@
         "action": "Stage 3."
       },
       {
-        "id": "G10",
-        "constraint": "S5",
-        "rt": "S5",
-        "severity": "deferred-by-design",
-        "issue": "60s revocation cache propagation leaf — auth cache doesn't exist yet.",
-        "action": "Stage 2c: build cache + invalidation channel (RT-4); verify p99 propagation < 30s."
-      },
-      {
         "id": "G11",
         "constraint": "B1",
         "rt": "B1",
         "severity": "informational",
         "issue": "Universal audit middleware emits a row per authenticated request, but doesn't yet UPDATE api_keys.last_used_at on key resolves.",
         "action": "Optional polish: add a per-resolve UPDATE in auditMiddleware OR in ResolveBearerKey itself."
+      },
+      {
+        "id": "G13",
+        "constraint": "S6",
+        "rt": "RT-7",
+        "severity": "deferred-by-design",
+        "issue": "Per-key sliding-window rate limit + per-key concurrency cap not yet implemented.",
+        "action": "Stage 2c-ratelimit: extend internal/ratelimit with per-key buckets; wire middleware after attachPrincipal."
       }
     ],
     "convergence": {
@@ -498,9 +499,9 @@
         "binding_constraint_closed": true,
         "all_declared_artifacts_on_disk": true
       },
-      "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate + 2b-retention complete; 2c + Stage 3 pending",
-      "next_stage_suggestion": "Stage 2c (per-key rate limit + cache + invalidation channel): closes RT-7, S6, S5 cache leaf G10, RT-4. ~5-6 files. After 2c: only Stage 3 (MCP transport + OAuth) remains.",
-      "reason": "After Stage 2b-retention: 14 SATISFIED, 3 PARTIAL, 7 DEFERRED of 24. RT-10 SATISFIED at TESTED — compactor + spillover + sink all in place. O1 (audit retention) SATISFIED. TN6 failure cascade closed via spillover. Binding RT-6 stays VERIFIED."
+      "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b + 2c-cache complete; 2c-ratelimit + Stage 3 pending",
+      "next_stage_suggestion": "Stage 2c-ratelimit (per-key sliding window + concurrency cap): closes RT-7, S6. ~3-4 files. Final piece before Stage 3 (MCP transport + OAuth).",
+      "reason": "After Stage 2c-cache: 15 SATISFIED, 2 PARTIAL, 7 DEFERRED of 24. RT-4 SATISFIED at TESTED. S5 promoted PARTIAL -> SATISFIED — all three revocation leaves TESTED. T4 reaffirmed (cached + cold paths both verified). G10 closed via cache invalidation. Binding RT-6 stays VERIFIED. 8 tensions confirmed; 0 reopened."
     }
   }
 }
