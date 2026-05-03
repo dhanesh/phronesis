@@ -716,7 +716,7 @@
     "required_truths": [
       {
         "id": "RT-1",
-        "status": "NOT_SATISFIED",
+        "status": "SATISFIED",
         "maps_to": [
           "B1",
           "S3",
@@ -725,17 +725,46 @@
         "evidence": [
           {
             "id": "E1",
+            "type": "file_exists",
+            "path": "internal/app/audit_middleware.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E1a",
             "type": "content_match",
-            "path": "internal/audit/audit.go",
-            "pattern": "Enqueue",
-            "status": "PENDING"
+            "path": "internal/app/audit_middleware.go",
+            "pattern": "auditMiddleware|markRequestAudited",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E1b",
+            "type": "content_match",
+            "path": "internal/app/routes.go",
+            "pattern": "auditMiddleware",
+            "status": "VERIFIED"
           },
           {
             "id": "E2",
             "type": "test_passes",
-            "path": "internal/app/audit_attribution_test.go",
-            "test_name": "every_authenticated_handler_writes_audit",
-            "status": "PENDING",
+            "path": "internal/app/audit_middleware_test.go",
+            "test_name": "TestAuditMiddlewareEmitsDefaultEventWhenHandlerDoesNot",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E2a",
+            "type": "test_passes",
+            "path": "internal/app/audit_middleware_test.go",
+            "test_name": "TestAuditMiddlewareSkipsWhenHandlerAuditedExplicitly",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E2b",
+            "type": "test_passes",
+            "path": "internal/app/audit_middleware_test.go",
+            "test_name": "TestAuditMiddlewareEmitsAfterPanicRecovery",
+            "status": "VERIFIED",
             "test_tier": "integration"
           }
         ]
@@ -1074,15 +1103,36 @@
             "type": "content_match",
             "path": "internal/audit/",
             "pattern": "(?i)drainer|enqueue|buffer",
-            "status": "PENDING"
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E23a",
+            "type": "file_exists",
+            "path": "internal/audit/sqlite_sink.go",
+            "status": "VERIFIED"
           },
           {
             "id": "E24",
             "type": "test_passes",
-            "path": "internal/audit/retention_test.go",
-            "test_name": "compactor_purges_raw_after_aggregate_write",
-            "status": "PENDING",
-            "test_tier": "integration"
+            "path": "internal/audit/sqlite_sink_test.go",
+            "test_name": "TestSQLiteSinkWritesEventsToTable",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E24a",
+            "type": "test_passes",
+            "path": "internal/audit/sqlite_sink_test.go",
+            "test_name": "TestSQLiteSinkMapsServiceAccountToService",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E24b",
+            "type": "manual_review",
+            "path": ".manifold/user-mgmt-mcp.md",
+            "reason": "Compactor + retention policy land in 2b-retention pass; SQLiteSink + universal middleware are the substrate.",
+            "status": "PENDING"
           }
         ]
       },
@@ -1720,6 +1770,62 @@
       "tensions_reopened": 0,
       "gaps_total": 4,
       "gaps_blocking": 0
+    },
+    {
+      "number": 15,
+      "phase": "generate",
+      "timestamp": "2026-05-04T08:30:00Z",
+      "result": "Stage 2b-substrate (SQLite audit sink + universal middleware) generated. 4 new files + 3 modified = 7 artifacts. internal/audit/sqlite_sink.go writes audit_events rows in a single tx per Write; maps service_account -> service at the storage boundary to satisfy the table CHECK constraint without leaking the canonical principal.Type. 8 unit tests cover happy path, principal-type mapping, JSON metadata, NULL body for empty metadata, unknown-type fallback, batch transactional, close + empty-batch. internal/app/audit_middleware.go ensures every authenticated request produces at least one audit row; defaults to action=http.<method> with path/status/duration in metadata; flips per-request marker via auditEnqueue to avoid duplicate semantic+default rows. 6 integration tests cover default emission, explicit-handler skip, unauthenticated-request skip, service-account principal, panic-recover-survives, no-cell-noop. auditMiddleware wired into routes.go between attachPrincipal and recoverMiddleware. Server.auditSink field widened to audit.Sink interface; NewServer prefers SQLiteSink when StorePath set, falls back to FileSink otherwise. RT-1 reaches TESTED, RT-10 reaches IMPLEMENTED+TESTED-for-substrate (compactor + retention deferred to 2b-retention). 21 packages green; lint clean.",
+      "option": "B",
+      "stage": "2b-substrate",
+      "artifacts_added": 4,
+      "artifacts_modified": 3,
+      "rts_addressed": [
+        "RT-1",
+        "RT-10 substrate"
+      ],
+      "tests_green": true,
+      "lint_green": true
+    },
+    {
+      "number": 16,
+      "phase": "verify",
+      "timestamp": "2026-05-04T08:50:00Z",
+      "result": "m5-verify after Stage 2b-substrate. 13 SATISFIED, 4 PARTIAL, 7 DEFERRED of 24. RT-1 promoted NOT_SATISFIED -> SATISFIED/TESTED \u2014 universal audit middleware ensures every authenticated request produces at least one audit row (default http.<method> or handler-explicit semantic action). RT-10 promoted PARTIAL/IMPLEMENTED -> PARTIAL/TESTED \u2014 SQLite sink + drainer-wired in NewServer; compactor + retention deferred to 2b-retention. B1 promoted PARTIAL -> SATISFIED \u2014 every-action attribution structurally enforced. Binding RT-6 stays VERIFIED. 8 tensions confirmed; 0 reopened. Coverage: invariants 10/3/5, goals 1/1/1, boundaries 1/1/1.",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 11,
+          "partial": 2,
+          "deferred": 5,
+          "total": 18,
+          "percentage_satisfied": 61
+        },
+        "goals": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "boundaries": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "overall": {
+          "satisfied": 13,
+          "partial": 4,
+          "deferred": 7,
+          "total": 24,
+          "percentage_satisfied": 54
+        }
+      },
+      "binding_closed": true,
+      "tensions_reopened": 0,
+      "gaps_total": 4,
+      "gaps_blocking": 0
     }
   ],
   "convergence": {
@@ -1734,7 +1840,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T07:30:00Z",
+  "updated": "2026-05-04T08:50:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
@@ -1900,8 +2006,8 @@
   ],
   "generation": {
     "option": "B (stage-gated rollout)",
-    "stage": "1c + Stage 2a (key minting + bearer auth resolver)",
-    "timestamp": "2026-05-04T07:00:00Z",
+    "stage": "1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate",
+    "timestamp": "2026-05-04T08:30:00Z",
     "artifacts": [
       {
         "path": "internal/redact/redact.go",
@@ -2351,6 +2457,76 @@
         "status": "modified",
         "artifact_class": "substantive",
         "modification_note": "removed duplicate Argon2id constants \u2014 keys.go now owns them"
+      },
+      {
+        "path": "internal/audit/sqlite_sink.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/sqlite_sink_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-10",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/audit_middleware.go",
+        "type": "code",
+        "satisfies": [
+          "RT-1",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/audit_middleware_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-1",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/audit.go",
+        "type": "code",
+        "satisfies": [
+          "RT-1"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "auditEnqueue now flips per-request marker via markRequestAudited so auditMiddleware skips its default fallback emission"
+      },
+      {
+        "path": "internal/app/server.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "auditSink field type widened to audit.Sink interface; NewServer prefers SQLiteSink when StorePath set, falls back to FileSink otherwise"
+      },
+      {
+        "path": "internal/app/routes.go",
+        "type": "code",
+        "satisfies": [
+          "RT-1"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "wired auditMiddleware into chain between attachPrincipal and recoverMiddleware"
       }
     ],
     "coverage": {
