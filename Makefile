@@ -14,11 +14,13 @@
 #      target so `make help` can surface it without drifting. DO NOT put the
 #      doc on the preceding line.
 #   2. Tool versions are pinned.
-#      - staticcheck: via the Go 1.24 `tool` directive in go.mod (`go tool staticcheck`)
+#      - staticcheck: via the `tool` directive in go.mod (a Go 1.24+ feature),
+#        invoked as `go tool staticcheck`.
 #      - goreleaser:  pinned by version in `.github/workflows/release.yml` via
-#        goreleaser/goreleaser-action. Released tool; not carried in go.mod to
-#        keep the module's Go floor at 1.24.5.
+#        goreleaser/goreleaser-action. Released tool; not carried in go.mod.
 #      Never `go install <url>@latest` (unpinned).
+#      Module's Go floor: 1.25.0 (bumped from 1.24.5 in user-mgmt-mcp Stage 1a;
+#      modernc.org/sqlite v1.50 requires Go 1.25). go.mod is the source of truth.
 #   3. Production builds go through `build` which sets `-tags=prod`. Never
 #      bypass — a binary without the tag emits a startup warning (RT-9).
 
