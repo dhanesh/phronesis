@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/dhanesh/phronesis/internal/app"
+	"github.com/dhanesh/phronesis/internal/redact"
 )
 
 // Build-time metadata. Each var is overridden via `-ldflags "-X main.<name>=..."`
@@ -47,6 +48,12 @@ func main() {
 			version, commit, buildTime, runtime.Version())
 		return
 	}
+
+	// Satisfies: RT-6 (BINDING) — bearer-token redaction at every egress.
+	// Wrap the default slog handler so every logger downstream of
+	// slog.Default() (i.e. the entire codebase) inherits redaction. Keeps
+	// secrets out of logs even if a handler forgets to redact explicitly.
+	slog.SetDefault(slog.New(redact.NewSlogHandler(slog.NewTextHandler(os.Stderr, nil))))
 
 	cfg := app.LoadConfig()
 	server, err := app.NewServer(cfg)

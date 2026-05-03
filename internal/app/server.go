@@ -27,6 +27,7 @@ import (
 	"github.com/dhanesh/phronesis/internal/ratelimit"
 	"github.com/dhanesh/phronesis/internal/sessions"
 	"github.com/dhanesh/phronesis/internal/snapshot"
+	"github.com/dhanesh/phronesis/internal/store/sqlite"
 	"github.com/dhanesh/phronesis/internal/webfs"
 	"github.com/dhanesh/phronesis/internal/wiki"
 )
@@ -81,6 +82,15 @@ type Config struct {
 	OIDCIssuer   string
 	OIDCAudience string
 	OIDCSecret   string // HMAC shared secret (stub mode only)
+
+	// user-mgmt-mcp Stage 1a/1b: SQLite-backed projection store for
+	// users + api_keys + key_requests + audit_events. Empty disables
+	// the store; admin endpoints that depend on it return 503.
+	//
+	// Default (when unset and PagesDir is set) is "data/phronesis.db",
+	// derived in applyConfigDefaults so tests with an empty Config get
+	// the in-memory-feeling temp-dir behaviour they expect.
+	StorePath string
 }
 
 type Server struct {
@@ -117,6 +127,11 @@ type Server struct {
 
 	// INT-8: OIDC adapter (nil when OIDCEnabled=false).
 	oidc *oidc.Adapter
+
+	// user-mgmt-mcp Stage 1a/1b: SQLite-backed projection store. Nil
+	// when StorePath is empty; admin endpoints that depend on it
+	// return 503 in that mode.
+	store *sqlite.Store
 }
 
 // defaultWorkspaceID names the single implicit workspace v1 ships with.
@@ -163,6 +178,11 @@ func LoadConfig() Config {
 		OIDCIssuer:   env("PHRONESIS_OIDC_ISSUER", ""),
 		OIDCAudience: env("PHRONESIS_OIDC_AUDIENCE", ""),
 		OIDCSecret:   env("PHRONESIS_OIDC_SECRET", ""),
+
+		// user-mgmt-mcp Stage 1a/1b: SQLite-backed store. Empty disables
+		// (admin endpoints return 503). Default for the bundled binary is
+		// "data/phronesis.db"; tests pass a temp path explicitly.
+		StorePath: env("PHRONESIS_STORE_PATH", "./data/phronesis.db"),
 	}
 }
 
@@ -236,12 +256,44 @@ func NewServer(cfg Config) (*Server, error) {
 		)
 	}
 
+	// Satisfies: RT-12 (stub OIDC dev path with loud startup warning).
+	// The HMAC stub is the only verifier wired today; until a real OIDC
+	// verifier ships, OIDCEnabled implies stub mode. Mirror the
+	// webfs.IsStub() loud-warning convention so an operator scanning logs
+	// can't miss it.
+	if cfg.OIDCEnabled {
+		slog.Warn("OIDC adapter is using the HMAC-stub verifier; suitable for dev/eval only. "+
+			"Configure a real IdP before exposing this server beyond a trusted network.",
+			slog.String("component", "phronesis"),
+			slog.String("oidc", "stub"),
+		)
+	}
+
 	cfg = applyConfigDefaults(cfg)
 
 	workspaceMetaPath := filepath.Join(filepath.Dir(cfg.PagesDir), "workspaces.json")
 	workspaces, err := wiki.NewWorkspaces(cfg.PagesDir, workspaceMetaPath)
 	if err != nil {
 		return nil, err
+	}
+
+	// user-mgmt-mcp Stage 1a/1b: open the SQLite store when StorePath
+	// is set. Empty disables; admin user/key endpoints fall back to 503
+	// rather than crashing — preserves backward compatibility for tests
+	// that pass minimal Config{}.
+	//
+	// O3: Open returns an error and leaves the DB closed if any
+	// migration fails; we propagate that as a NewServer failure so the
+	// binary refuses to bind a port on a half-migrated schema.
+	var sqliteStore *sqlite.Store
+	if cfg.StorePath != "" {
+		if err := os.MkdirAll(filepath.Dir(cfg.StorePath), 0o755); err != nil {
+			return nil, fmt.Errorf("create store dir: %w", err)
+		}
+		sqliteStore, err = sqlite.Open(cfg.StorePath)
+		if err != nil {
+			return nil, fmt.Errorf("open sqlite store: %w", err)
+		}
 	}
 
 	// INT-4: blob store for media. Keeps binary content OUT of the markdown
@@ -306,6 +358,7 @@ func NewServer(cfg Config) (*Server, error) {
 		broadcaster:  broadcaster,
 		journal:      journalFile,
 		oidc:         oidcAdapter,
+		store:        sqliteStore,
 	}
 
 	// INT-6: snapshot scheduler. When SnapshotDir is non-empty, construct
@@ -478,6 +531,14 @@ func (s *Server) Close(ctx context.Context) error {
 				return fmt.Errorf("%w; journal close: %v", firstErr, err)
 			}
 			firstErr = fmt.Errorf("journal close: %w", err)
+		}
+	}
+	if s.store != nil {
+		if err := s.store.Close(); err != nil {
+			if firstErr != nil {
+				return fmt.Errorf("%w; sqlite store close: %v", firstErr, err)
+			}
+			firstErr = fmt.Errorf("sqlite store close: %w", err)
 		}
 	}
 	return firstErr
