@@ -4,6 +4,8 @@
   import CommandPalette from './lib/CommandPalette.svelte';
   import TopBar from './lib/TopBar.svelte';
   import WorkspaceManager from './lib/WorkspaceManager.svelte';
+  import UsersManager from './lib/UsersManager.svelte';
+  import KeysManager from './lib/KeysManager.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -42,6 +44,8 @@
   let currentWorkspace = $state('default');
   let userRole = $state('');
   let workspaceManagerOpen = $state(false);
+  let usersManagerOpen = $state(false);
+  let keysManagerOpen = $state(false);
 
   function pagePath(name) {
     const ws = encodeURIComponent(currentWorkspace);
@@ -60,6 +64,10 @@
       switchWorkspace(item.slug);
     } else if (item.type === 'open-workspace-manager') {
       workspaceManagerOpen = true;
+    } else if (item.type === 'open-users-manager') {
+      usersManagerOpen = true;
+    } else if (item.type === 'open-keys-manager') {
+      keysManagerOpen = true;
     }
   }
 
@@ -466,6 +474,9 @@
   currentWorkspace={currentWorkspace}
   onChanged={loadWorkspaces}
 />
+
+<UsersManager bind:open={usersManagerOpen} />
+<KeysManager bind:open={keysManagerOpen} />
 
 <style>
   /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).

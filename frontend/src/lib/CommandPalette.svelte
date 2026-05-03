@@ -90,6 +90,20 @@
         hint: 'Admin',
         invoke: () => onSelect?.({ type: 'open-workspace-manager' }),
       });
+      commands.push({
+        kind: 'command',
+        id: 'cmd:users.manage',
+        label: 'Manage users',
+        hint: 'Admin',
+        invoke: () => onSelect?.({ type: 'open-users-manager' }),
+      });
+      commands.push({
+        kind: 'command',
+        id: 'cmd:keys.manage',
+        label: 'Manage API keys',
+        hint: 'Admin',
+        invoke: () => onSelect?.({ type: 'open-keys-manager' }),
+      });
     }
     return [...matches, ...wsCommands, ...commands];
   }

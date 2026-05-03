@@ -39,6 +39,10 @@ export async function startPhronesis(options: {
   const { port, pagesDir, extra = {} } = options;
   const blobDir = path.join(pagesDir, 'blobs');
   const auditLog = path.join(pagesDir, 'audit.log');
+  // user-mgmt-mcp Stage 1a: each worker gets its own SQLite store so
+  // admin endpoints (users / keys / requests) resolve against an
+  // isolated DB instead of returning 503 / sharing state across runs.
+  const storePath = path.join(pagesDir, 'phronesis.db');
   fs.mkdirSync(blobDir, { recursive: true });
 
   const proc = cp.spawn(BINARY, [], {
@@ -48,6 +52,7 @@ export async function startPhronesis(options: {
       PHRONESIS_PAGES_DIR: pagesDir,
       PHRONESIS_BLOB_DIR: blobDir,
       PHRONESIS_AUDIT_LOG: auditLog,
+      PHRONESIS_STORE_PATH: storePath,
       PHRONESIS_ADMIN_USER: 'admin',
       PHRONESIS_ADMIN_PASSWORD: 'admin123',
       ...extra,
