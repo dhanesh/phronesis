@@ -129,27 +129,91 @@ func TestAdminKeyRequestsDenyAlreadyDecidedReturns404(t *testing.T) {
 	}
 }
 
-// @constraint TN7 / S1 — approve returns 501 in Stage 1b. Stage 2 ships
-// real Argon2id-hashed key minting.
-func TestAdminKeyRequestApproveReturns501Stub(t *testing.T) {
+// @constraint TN7 / S1 — approve mints a real key (Stage 2a).
+// The plaintext is returned ONCE; the row carries Argon2id hash.
+func TestAdminKeyRequestApproveMintsRealKey(t *testing.T) {
 	s := newAdminTestServer(t)
 	uid := seedUser(t, s, "sub-a", "a@example.com", "A", "user", "active")
-	rid := seedKeyRequest(t, s, uid, "default", "write", "test")
+	rid := seedKeyRequest(t, s, uid, "default", "write", "claude-code")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/keys/requests/"+itoa(rid)+"/approve", nil)
 	w := httptest.NewRecorder()
 	s.handleAdminKeys(w, req)
-	if w.Code != http.StatusNotImplemented {
-		t.Fatalf("expected 501, got %d (%s)", w.Code, w.Body.String())
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d (%s)", w.Code, w.Body.String())
 	}
-	if !strings.Contains(w.Body.String(), "Stage 2") {
-		t.Errorf("error body should mention Stage 2: %s", w.Body.String())
+
+	var resp struct {
+		Key struct {
+			ID        int64  `json:"id"`
+			Prefix    string `json:"prefix"`
+			Plaintext string `json:"plaintext"`
+			Workspace string `json:"workspace"`
+			Scope     string `json:"scope"`
+			Label     string `json:"label"`
+		} `json:"key"`
+		Warning string `json:"warning"`
 	}
-	// Approve must NOT have decided the request.
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if !strings.HasPrefix(resp.Key.Plaintext, "phr_live_") {
+		t.Errorf("plaintext should be phr_live_-prefixed: %q", resp.Key.Plaintext)
+	}
+	if !strings.HasPrefix(resp.Key.Plaintext, resp.Key.Prefix+"_") {
+		t.Errorf("plaintext (%q) must extend prefix+_ (%q)", resp.Key.Plaintext, resp.Key.Prefix+"_")
+	}
+	if resp.Key.Workspace != "default" || resp.Key.Scope != "write" || resp.Key.Label != "claude-code" {
+		t.Errorf("threaded fields wrong: %+v", resp.Key)
+	}
+	if !strings.Contains(resp.Warning, "ONCE") {
+		t.Errorf("warning should mention ONCE: %q", resp.Warning)
+	}
+
+	// Request row now decided=approved with resulting_key_id set.
 	var decision string
-	_ = s.store.DB().QueryRow(`SELECT COALESCE(decision,'') FROM key_requests WHERE id=?`, rid).Scan(&decision)
-	if decision != "" {
-		t.Errorf("approve stub should not decide the request, but decision=%q", decision)
+	var resultingKeyID int64
+	err := s.store.DB().QueryRow(
+		`SELECT decision, COALESCE(resulting_key_id, 0) FROM key_requests WHERE id=?`, rid,
+	).Scan(&decision, &resultingKeyID)
+	if err != nil {
+		t.Fatalf("read request row: %v", err)
+	}
+	if decision != "approved" {
+		t.Errorf("expected decision=approved, got %q", decision)
+	}
+	if resultingKeyID != resp.Key.ID {
+		t.Errorf("resulting_key_id=%d should equal returned key.id=%d", resultingKeyID, resp.Key.ID)
+	}
+
+	// DB never holds the plaintext.
+	var hash []byte
+	_ = s.store.DB().QueryRow(`SELECT key_hash FROM api_keys WHERE id=?`, resp.Key.ID).Scan(&hash)
+	if strings.Contains(string(hash), resp.Key.Plaintext) {
+		t.Fatal("S1 violated: stored hash contains plaintext")
+	}
+}
+
+// @constraint TN7 — approve on already-decided request returns 409.
+func TestAdminKeyRequestApproveAlreadyDecidedReturns409(t *testing.T) {
+	s := newAdminTestServer(t)
+	uid := seedUser(t, s, "sub-d", "d@example.com", "D", "user", "active")
+	rid := seedKeyRequest(t, s, uid, "default", "read", "test")
+
+	// First deny.
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/keys/requests/"+itoa(rid)+"/deny", nil)
+	w := httptest.NewRecorder()
+	s.handleAdminKeys(w, req)
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("deny: %d", w.Code)
+	}
+
+	// Then approve — must conflict.
+	req = httptest.NewRequest(http.MethodPost, "/api/admin/keys/requests/"+itoa(rid)+"/approve", nil)
+	w = httptest.NewRecorder()
+	s.handleAdminKeys(w, req)
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d (%s)", w.Code, w.Body.String())
 	}
 }
 

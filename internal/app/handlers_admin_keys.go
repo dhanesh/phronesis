@@ -1,9 +1,12 @@
 package app
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/dhanesh/phronesis/internal/auth"
 )
 
 // adminKeyRow is the JSON shape returned by GET /api/admin/keys.
@@ -49,7 +52,7 @@ type adminKeyRequestRow struct {
 //	POST /api/admin/keys/{id}/revoke              -> revoke a key
 //	GET  /api/admin/keys/requests                 -> list key requests
 //	POST /api/admin/keys/requests/{id}/deny       -> deny a pending request
-//	POST /api/admin/keys/requests/{id}/approve    -> 501 (Stage 2)
+//	POST /api/admin/keys/requests/{id}/approve    -> mint key, return plaintext once
 func (s *Server) handleAdminKeys(w http.ResponseWriter, r *http.Request) {
 	if s.store == nil {
 		writeError(w, http.StatusServiceUnavailable, "key store is not configured")
@@ -186,14 +189,7 @@ func (s *Server) handleAdminKeyRequests(w http.ResponseWriter, r *http.Request, 
 	case "deny":
 		s.handleAdminKeyRequestDeny(w, r, id)
 	case "approve":
-		// Stage 2 implements full Argon2id-hashed key minting (S1).
-		// Return 501 with a structured error so the UI can render
-		// a useful message rather than generic 500.
-		writeJSON(w, http.StatusNotImplemented, map[string]any{
-			"error":      "approve flow lands in Stage 2",
-			"reason":     "key minting requires Argon2id hashing + plaintext-once delivery (S1)",
-			"workaround": "deny the request and revisit after Stage 2 ships",
-		})
+		s.handleAdminKeyRequestApprove(w, r, id)
 	default:
 		writeError(w, http.StatusNotFound, "unknown request action")
 	}
@@ -239,6 +235,92 @@ func (s *Server) handleAdminKeyRequestsList(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"requests": out})
+}
+
+// handleAdminKeyRequestApprove mints a new API key for the
+// requesting user, marks the key_request as approved, and returns
+// the plaintext exactly once.
+//
+// Satisfies: TN7 (request->approve flow end-to-end),
+//
+//	S1 (Argon2id hash; plaintext shown once),
+//	RT-3 (workspace + scope from the request row threaded
+//	      onto the resulting service-account principal).
+//
+// The plaintext is returned ONLY in this response. Subsequent
+// listings expose key_prefix as a non-secret display id.
+func (s *Server) handleAdminKeyRequestApprove(w http.ResponseWriter, r *http.Request, id int64) {
+	// Fetch the pending request.
+	var (
+		userID    int64
+		workspace string
+		scope     string
+		label     string
+		decided   sql.NullString
+	)
+	err := s.store.DB().QueryRowContext(r.Context(), `
+		SELECT user_id, workspace_slug, requested_scope, requested_label, decided_at
+		  FROM key_requests
+		 WHERE id = ?
+	`, id).Scan(&userID, &workspace, &scope, &label, &decided)
+	switch {
+	case err == sql.ErrNoRows:
+		writeError(w, http.StatusNotFound, "request not found")
+		return
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if decided.Valid {
+		writeError(w, http.StatusConflict, "request already decided")
+		return
+	}
+
+	row, err := auth.MintKey(r.Context(), s.store.DB(), userID, workspace, scope, label, nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Mark the request approved + link to the new key. If this
+	// fails after the key was minted, the key still exists but the
+	// request stays pending — admin will see two pending entries
+	// for the same user; the duplicate can be denied. Acceptable
+	// degraded mode; better than rolling back the mint and losing
+	// the plaintext (which the user has now seen).
+	if _, err := s.store.DB().ExecContext(r.Context(), `
+		UPDATE key_requests
+		   SET decided_at       = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+		       decision         = 'approved',
+		       resulting_key_id = ?
+		 WHERE id = ? AND decided_at IS NULL
+	`, row.ID, id); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.auditEnqueue("key.request.approve", r, "", map[string]string{
+		"request_id": strconv.FormatInt(id, 10),
+		"key_id":     strconv.FormatInt(row.ID, 10),
+		"key_prefix": row.Prefix,
+		"workspace":  workspace,
+		"scope":      scope,
+	})
+
+	// 201 Created — the response body carries the plaintext
+	// exactly once. Document this clearly on the wire so a
+	// well-behaved client knows to capture it.
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"key": map[string]any{
+			"id":        row.ID,
+			"prefix":    row.Prefix,
+			"plaintext": row.Plaintext,
+			"workspace": workspace,
+			"scope":     scope,
+			"label":     label,
+		},
+		"warning": "plaintext is shown ONCE; copy it now or revoke and re-issue",
+	})
 }
 
 func (s *Server) handleAdminKeyRequestDeny(w http.ResponseWriter, r *http.Request, id int64) {

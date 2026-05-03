@@ -107,13 +107,19 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 // principalFromRequest resolves the request's credentials to a Principal.
 // Returns (Principal{}, false) if no valid credential is present.
 //
-// Satisfies: RT-5 (canonical Principal over multiple auth planes), INT-2
+// Satisfies: RT-5 (canonical Principal over multiple auth planes), INT-2,
 //
-// V1 resolution order:
+//	RT-3 (bearer-key path resolves to a workspace-scoped
+//	      service-account principal — Stage 2a).
+//
+// Resolution order (first match wins):
 //  1. Cookie session from auth.Manager  -> user principal (admin of default workspace)
-//  2. API-KEY header (if PHRONESIS_API_KEY configured) -> service_account principal (editor)
+//  2. Authorization: Bearer phr_live_<...> against the SQLite api_keys
+//     table -> workspace-scoped service-account principal (RT-3, S3 scope tier)
+//  3. API-KEY header (legacy single-key, if PHRONESIS_API_KEY configured)
+//     -> service_account principal (editor on default workspace)
 //
-// Both paths converge on principal.Principal, so downstream authz is identical
+// All three paths converge on principal.Principal, so downstream authz is identical
 // regardless of auth mechanism.
 func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, bool) {
 	if resolved, ok := s.auth.Resolve(r); ok {
@@ -147,6 +153,28 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 			Claims:      claims,
 		}, true
 	}
+	// RT-3 / Stage 2a: Authorization: Bearer phr_live_... against
+	// the SQLite api_keys table. Only attempted when the SQLite
+	// store is configured (s.store non-nil) — otherwise fall
+	// through to the legacy single-key path.
+	if s.store != nil {
+		if authz := r.Header.Get("Authorization"); strings.HasPrefix(authz, "Bearer ") {
+			plaintext := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+			if plaintext != "" && strings.HasPrefix(plaintext, "phr_live_") {
+				p, err := auth.ResolveBearerKey(r.Context(), s.store.DB(), plaintext)
+				if err == nil && p != nil {
+					return *p, true
+				}
+				// Resolution failed (key not found / revoked / expired /
+				// invalid). Do NOT fall through to other auth paths —
+				// presenting a wrong bearer token MUST NOT silently
+				// downgrade to legacy auth. Return false so withAuth
+				// returns 401.
+				return principal.Principal{}, false
+			}
+		}
+	}
+
 	if s.cfg.APIKey != "" {
 		if key := r.Header.Get("API-KEY"); key != "" && key == s.cfg.APIKey {
 			return principal.Principal{
