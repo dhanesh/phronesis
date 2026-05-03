@@ -109,6 +109,35 @@ By default the server listens on `:8080`. Binaries built without
 `-tags=prod` (such as `go run` or plain `go build`) serve a dev-stub
 frontend and log a startup warning.
 
+### Local evaluation (stub OIDC mode)
+
+The bundled OIDC adapter ships with an HMAC-stub verifier that lets you
+exercise sign-in flows without configuring an external IdP. Stub mode is
+intended for local development and evaluation only; production
+deployments configure a real OIDC issuer (Auth0, Okta, Keycloak,
+Dex, etc).
+
+| Mode  | Trigger | Behaviour |
+|-------|---------|-----------|
+| Stub  | `PHRONESIS_OIDC_ENABLED=1` with `PHRONESIS_OIDC_SECRET=<any>` | HMAC-signed tokens are accepted. The server logs `OIDC adapter is using the HMAC-stub verifier` at startup. |
+| Real  | Set `PHRONESIS_OIDC_ISSUER=<https://your-idp/...>` (and `_AUDIENCE` / `_SECRET`) | Adapter swaps to the configured verifier. Stub-mode warning is suppressed. |
+| Disabled | `PHRONESIS_OIDC_ENABLED` unset or empty | OIDC route returns 404; server falls back to cookie-session admin auth. |
+
+Stub mode emits a loud `slog.Warn` at startup mirroring the dev-frontend
+warning — if you see `oidc=stub` in your logs, do not point a real
+client at the server until you've configured a production verifier.
+
+### Break-glass admin (optional)
+
+When the OIDC IdP is unreachable (planned outage, misconfiguration on
+first deploy, expired credentials), set `PHRONESIS_BREAKGLASS=<phc>` —
+the value must be an Argon2id PHC string of the desired admin secret.
+With this set, `POST /admin/break-glass` accepts the secret in the
+`X-Breakglass-Secret` header and returns `200 ok`. Every successful use
+emits `severity=high event=breakglass.use` in the audit log so abuse is
+post-hoc detectable. Default state: unset → the route does not exist
+(returns 404, not 401).
+
 ### Build the Frontend
 
 ```bash

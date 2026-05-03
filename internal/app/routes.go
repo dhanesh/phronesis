@@ -41,6 +41,15 @@ func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 	mux.HandleFunc("/api/workspaces/", s.withAuth(s.handleWorkspaceRoutes))
 	mux.HandleFunc("/api/admin/workspaces", s.withAuth(s.withAdmin(s.handleAdminWorkspaces)))
 	mux.HandleFunc("/api/admin/workspaces/", s.withAuth(s.withAdmin(s.handleAdminWorkspaces)))
+
+	// user-mgmt-mcp Stage 1b: admin Users + Keys + Key-Request surfaces
+	// (RT-9 server side). Backed by the SQLite store (RT-8); endpoints
+	// return 503 when StorePath is unset.
+	mux.HandleFunc("/api/admin/users", s.withAuth(s.withAdmin(s.handleAdminUsers)))
+	mux.HandleFunc("/api/admin/users/", s.withAuth(s.withAdmin(s.handleAdminUsers)))
+	mux.HandleFunc("/api/admin/keys", s.withAuth(s.withAdmin(s.handleAdminKeys)))
+	mux.HandleFunc("/api/admin/keys/", s.withAuth(s.withAdmin(s.handleAdminKeys)))
+
 	mux.HandleFunc("/w/", s.withAuth(s.handleWikiPage))
 
 	// INT-3: mount /media routes BEFORE the catch-all so the ServeMux's
