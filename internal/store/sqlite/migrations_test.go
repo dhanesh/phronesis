@@ -31,7 +31,7 @@ func TestOpenAppliesMigrationsAndIsIdempotent(t *testing.T) {
 	}
 	defer store2.Close()
 
-	expected := []string{"users", "api_keys", "key_requests", "audit_events", "schema_version"}
+	expected := []string{"users", "api_keys", "key_requests", "audit_events", "audit_aggregates", "schema_version"}
 	for _, table := range expected {
 		var name string
 		err := store2.DB().QueryRow(
