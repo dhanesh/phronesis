@@ -5,7 +5,7 @@
   "phase": "VERIFIED",
   "domain": "software",
   "created": "2026-04-19T15:15:00Z",
-  "updated": "2026-05-03T20:55:00Z",
+  "updated": "2026-05-04T02:15:00Z",
   "constraints": {
     "business": [
       {
@@ -1419,6 +1419,42 @@
         "new_budget": 10,
         "rationale": "Sibling-manifold additions reflect real surface growth, not noise."
       }
+    },
+    {
+      "number": 12,
+      "phase": "verify",
+      "timestamp": "2026-05-04T02:00:00Z",
+      "result": "Re-verify after user-mgmt-mcp Stage 1a + 1b churn. 3 of 16 hashed files drifted (go.mod, cmd/phronesis/main.go, internal/app/server.go). T5 budget still holds (8.7s warm vs 30s) but cold-cache first compile widened to 28.7s due to the modernc.org/sqlite v1.50 package size -- worth watching on slower CI runners. T7 staticcheck v0.6.1 still works under the bumped Go 1.25.0 floor. 1 new non-blocking documentation gap (G8): Makefile header comment 'module's Go floor at 1.24.5' is stale. All other constraints preserved.",
+      "drift_summary": {
+        "files_with_changed_hashes": 3,
+        "files": [
+          "go.mod",
+          "cmd/phronesis/main.go",
+          "internal/app/server.go"
+        ],
+        "invalidating_changes": 0,
+        "documentation_drift": 1
+      },
+      "new_gaps": [
+        "G8 (Makefile Go-floor comment stale)"
+      ],
+      "preserved_gaps": [
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6"
+      ]
+    },
+    {
+      "number": 13,
+      "phase": "amend",
+      "timestamp": "2026-05-04T02:15:00Z",
+      "result": "Closed G8: Makefile header comments refreshed for the Go 1.24.5 -> 1.25.0 floor bump. Two-line cosmetic edit (lines 16-23). Help-output surface unchanged at 10 targets so U1 still SATISFIED. make lint passes; make help renders correctly.",
+      "gaps_resolved": [
+        "G8"
+      ]
     }
   ],
   "convergence": {

@@ -1,0 +1,597 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
+  "schema_version": 3,
+  "feature": "user-mgmt-mcp",
+  "hashes_updated_at": "2026-05-03T07:17:49.226Z",
+  "file_hashes": {
+    "internal/redact/redact.go": "c74a69badd012369a64d840d29c0f1e2558339d46e3ad0e8bf307d79bede515f",
+    "internal/redact/redact_test.go": "0a6fb7d4adae3a4e13a495f23683214919e6cf67f668ceb2420fbe6a01b2f280",
+    "internal/redact/sloghandler.go": "881e0b38264c869902105f30400f867cb97dd79c123fd7942eb16e347949cd0b",
+    "internal/redact/sloghandler_test.go": "f6addfe3f6a9ec2259c32a385b43c8079a2d73d24335c04b163d24bc0ebed35e",
+    "internal/store/sqlite/store.go": "23bad663cfda94f98f72ebf6619ac6f65b0fa7f580ebd8037aaa49549ec01e0e",
+    "internal/store/sqlite/migrations.go": "201220f4c9f6d20df7d226df45a3104b52fea7ce828b477e38e7d4cf03101933",
+    "internal/store/sqlite/migrations/001_init.sql": "b44f746689478c29f93168b6582492b8c52a29f8cf721863aa54f6cf78765119",
+    "internal/store/sqlite/migrations_test.go": "438d33d6e9b927ee7795e6a72de45fdaf7d5de518398352333e0bc3739f22868",
+    "internal/auth/breakglass.go": "8b23d1cb899db5de412f7a1afb48169891f56dbd2c2f28d837df2c30304a59ae",
+    "internal/auth/breakglass_test.go": "bb0dd3940e4f6fc3bdb0cff1c3911d40efed2c6717718cb277b3895ff5739f0a",
+    "internal/app/server.go": "d17a23adea4078921224f578b99ce73e790c5dc3946aa6404d0a5501ba10fec2",
+    "cmd/phronesis/main.go": "53e49ceece0a1dfa285a3b4be897d1ee130746963c95dea901413fcaff03ecce",
+    "go.mod": "e7c887dbbc6b90400da6168c605c9ecddc03a24d11b80d7a693c9c67c032cff0",
+    "go.sum": "16fe1d29abb951b84c38462a5552394a4928fbeb57d33dc61d471ff6fa527443",
+    "internal/auth/oidc/projection.go": "43fe92c1f0f7fde5483441b7d6824b1899cb18b8d21efbdddc8a0b88e5bf35ef",
+    "internal/auth/oidc/projection_test.go": "b2bef1f0a59e173501d09d372c8b05fe5156f8f54ed841b6d1f68b8608e5b4c6",
+    "internal/app/handlers_admin_users.go": "dadd8f25dd31aef7cc76cd593334ca37fac47a098e50db300a5b7dff87c8692e",
+    "internal/app/handlers_admin_users_test.go": "595c7a9bd1cff6d4c658e034285c8fd7817658b8c7e95b94c1730435f6458a0f",
+    "internal/app/handlers_admin_keys.go": "33306050c63f971f0e8c6f54fb6555c33f0f30d5da10f013962a8ff21544bd31",
+    "internal/app/handlers_admin_keys_test.go": "0be45879cbf21071512d7a7a7e8c2ad8544559fcb0ce8165daeeec870bdce3ef",
+    "internal/app/routes.go": "61707da6efc9724773f7a9a65a9c6ee513cbf0b64ec7d07497480ef5f92d175c",
+    "README.md": "314c3223a32d8d55a99eef335b4876e7772663df5f7d893a81a60343eb47f699"
+  },
+  "verification": {
+    "timestamp": "2026-05-04T01:45:00Z",
+    "result": "PARTIAL",
+    "strict": false,
+    "stage": "1a + 1b (binding substrate + OIDC projection + admin server-side)",
+    "artifacts_on_disk": 22,
+    "artifacts_declared": 23,
+    "artifacts_missing": 0,
+    "matrix": [
+      {
+        "constraint": "B1",
+        "type": "invariant",
+        "code": "partial",
+        "test": "partial",
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "001_init.sql audit_events",
+          "handlers_admin_users.go auditEnqueue",
+          "handlers_admin_keys.go auditEnqueue"
+        ],
+        "gap": "Admin mutating handlers now call auditEnqueue, but the central middleware enforcing audit on EVERY authenticated handler still doesn't exist. Stage 2 lands the middleware.",
+        "deferred_to": "Stage 2 (universal audit middleware on every authenticated handler)"
+      },
+      {
+        "constraint": "B2",
+        "type": "goal",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 1c + 2 (depends on Svelte UI for the request-approve flow + Stage 2 key minting)"
+      },
+      {
+        "constraint": "B3",
+        "type": "boundary",
+        "code": "partial",
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "001_init.sql"
+        ],
+        "gap": "Schema scales to ceiling; load test deferred.",
+        "deferred_to": "Stage 3 (load test with full system live)"
+      },
+      {
+        "constraint": "T1",
+        "type": "invariant",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 3 (RT-2 OAuth handlers); RT-6 redaction substrate is in place (TN8 build-order honoured)"
+      },
+      {
+        "constraint": "T2",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": false,
+        "status": "SATISFIED",
+        "addressed_by": [
+          "projection.go",
+          "projection_test.go (idempotency, suspended-status preservation, role validation)"
+        ],
+        "note": "ProjectClaims keys on oidc_sub UNIQUE; suspended-status preserved on re-login; role tier validated against schema CHECK constraint."
+      },
+      {
+        "constraint": "T3",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": false,
+        "status": "SATISFIED",
+        "addressed_by": [
+          "store.go",
+          "migrations.go",
+          "migrations_test.go"
+        ],
+        "note": "Driver works on Go 1.25 across all platforms; verified by full test suite."
+      },
+      {
+        "constraint": "T4",
+        "type": "boundary",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "convergence_risk": "challenger: assumption — confirm budget includes cache-invalidation overhead before Stage 2 ships",
+        "deferred_to": "Stage 2 (auth cache + microbench)"
+      },
+      {
+        "constraint": "T5",
+        "type": "invariant",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 3 (MCP tool framework)"
+      },
+      {
+        "constraint": "T6",
+        "type": "invariant",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 3 (MCP sub-handler)"
+      },
+      {
+        "constraint": "T7",
+        "type": "invariant",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 3 (MCP server + Claude Code smoke test in CI)"
+      },
+      {
+        "constraint": "T8",
+        "type": "invariant",
+        "code": "partial",
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "projection.go (no IdP call yet so no timeout to test)"
+        ],
+        "gap": "JWKS cache deferred to Stage 1c per user scope choice. Projection layer is in place but the verify path that JWKS would protect doesn't exist yet (HMAC stub has no JWKS).",
+        "deferred_to": "Stage 1c (real RS256 verifier + JWKS cache)"
+      },
+      {
+        "constraint": "U1",
+        "type": "goal",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 3 (MCP onboarding UX)"
+      },
+      {
+        "constraint": "U2",
+        "type": "invariant",
+        "code": "partial",
+        "test": "partial",
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "handlers_admin_users.go",
+          "handlers_admin_users_test.go"
+        ],
+        "gap": "Server side TESTED (list with key+request counts; suspend/reactivate/delete green). Svelte Users.svelte page deferred to Stage 1c.",
+        "deferred_to": "Stage 1c (frontend/src/lib/admin/Users.svelte + e2e)"
+      },
+      {
+        "constraint": "U3",
+        "type": "invariant",
+        "code": "partial",
+        "test": "partial",
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "handlers_admin_keys.go",
+          "handlers_admin_keys_test.go"
+        ],
+        "gap": "Server side TESTED (list keys + list/deny pending requests + revoke; approve returns 501 stub for Stage 2). Svelte Keys.svelte page deferred to Stage 1c.",
+        "deferred_to": "Stage 1c (frontend/src/lib/admin/Keys.svelte + e2e)"
+      },
+      {
+        "constraint": "U4",
+        "type": "goal",
+        "code": true,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "SATISFIED",
+        "addressed_by": [
+          "server.go OIDC stub-mode warning",
+          "README 'Local evaluation' + 'Break-glass admin' sections"
+        ],
+        "note": "Stub mode emits loud startup warning; README documents the eval path + break-glass + the Local-evaluation section. RT-12 fully closed."
+      },
+      {
+        "constraint": "S1",
+        "type": "invariant",
+        "code": "partial",
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "001_init.sql api_keys.key_hash BLOB"
+        ],
+        "gap": "Schema enforces hash-only; minting code that would Argon2id-hash a plaintext key still doesn't exist. Approve handler returns 501 Stage-2 stub explicitly.",
+        "deferred_to": "Stage 2 (key minting + Argon2id)"
+      },
+      {
+        "constraint": "S2",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": false,
+        "status": "SATISFIED",
+        "addressed_by": [
+          "redact.go",
+          "redact_test.go",
+          "sloghandler.go",
+          "sloghandler_test.go",
+          "main.go default-handler wiring"
+        ]
+      },
+      {
+        "constraint": "S3",
+        "type": "invariant",
+        "code": "partial",
+        "test": "partial",
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "routes.go (admin routes gated by withAdmin)",
+          "projection.go (role tier validated)"
+        ],
+        "gap": "Admin endpoints enforce admin role. Per-key scope enforcement (read/write/admin tiers checked at request boundary) deferred to Stage 2 (key auth pipeline).",
+        "deferred_to": "Stage 2 (per-key scope check middleware)"
+      },
+      {
+        "constraint": "S4",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": "partial",
+        "status": "SATISFIED",
+        "addressed_by": [
+          "breakglass.go",
+          "breakglass_test.go",
+          "README documentation"
+        ],
+        "note": "README now documents the break-glass path; PHC env var + audit semantics + 404-when-disabled all visible."
+      },
+      {
+        "constraint": "S5",
+        "type": "invariant",
+        "code": "partial",
+        "test": "partial",
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "projection.go (TestProjectClaimsPreservesSuspendedStatus asserts re-login does NOT auto-reactivate)",
+          "handlers_admin_users.go (suspend endpoint)"
+        ],
+        "gap": "One leaf of S5 (suspended status persists across re-login) is now TESTED. The other leaf (60s revocation propagation in cache) is Stage 2 — no cache exists yet.",
+        "deferred_to": "Stage 2 (cache + invalidation channel)"
+      },
+      {
+        "constraint": "S6",
+        "type": "invariant",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 2 (per-key rate-limit middleware extension)"
+      },
+      {
+        "constraint": "O1",
+        "type": "invariant",
+        "code": "partial",
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "PARTIAL",
+        "addressed_by": [
+          "001_init.sql audit_events"
+        ],
+        "gap": "Schema exists; compactor + retention ticker deferred to Stage 2.",
+        "deferred_to": "Stage 2 (audit drainer + compactor)"
+      },
+      {
+        "constraint": "O2",
+        "type": "boundary",
+        "code": false,
+        "test": false,
+        "docs": true,
+        "ops": false,
+        "status": "DEFERRED",
+        "deferred_to": "Stage 2 or 3 (Prometheus /metrics endpoint)"
+      },
+      {
+        "constraint": "O3",
+        "type": "invariant",
+        "code": true,
+        "test": true,
+        "docs": true,
+        "ops": false,
+        "status": "SATISFIED",
+        "addressed_by": [
+          "migrations.go",
+          "migrations_test.go",
+          "server.go fail-closed-on-migration-failure"
+        ],
+        "note": "NewServer propagates sqlite.Open errors; binary refuses to bind a port on migration failure. Forward-only contract holds."
+      }
+    ],
+    "coverage": {
+      "invariants": {
+        "satisfied": 5,
+        "partial": 8,
+        "deferred": 5,
+        "total": 18,
+        "percentage_satisfied": 28
+      },
+      "goals": {
+        "satisfied": 1,
+        "partial": 0,
+        "deferred": 2,
+        "total": 3,
+        "percentage_satisfied": 33
+      },
+      "boundaries": {
+        "satisfied": 0,
+        "partial": 1,
+        "deferred": 2,
+        "total": 3,
+        "percentage_satisfied": 0
+      },
+      "overall": {
+        "satisfied": 6,
+        "partial": 9,
+        "deferred": 9,
+        "total": 24,
+        "percentage_satisfied": 25
+      }
+    },
+    "binding_constraint_check": {
+      "required_truth_id": "RT-6",
+      "stage_1b_status": "PARTIAL (TESTED for the package; cross-cutting wiring incremental)",
+      "closed": false,
+      "rationale": "Same as Stage 1a. Stage 1b's admin handlers don't introduce new egress points (they use writeJSON + writeError which serialize structured payloads, not raw user input). Verification pass G7 still pending — should land before any Stage 2 OAuth/key code.",
+      "evidence_status": {
+        "E12 file_exists": "VERIFIED",
+        "E13 test_passes (panic-with-bearer)": "VERIFIED",
+        "E14 content_match (pattern set)": "VERIFIED"
+      },
+      "incremental_acceptance": "Until cross-cutting wiring lands, treat new auth-touching code as required to demonstrate redact integration in PR review."
+    },
+    "genealogy_verification": {
+      "assumption_invariants_at_risk": [
+        {
+          "id": "T4",
+          "type": "boundary",
+          "challenger": "assumption",
+          "status": "DEFERRED",
+          "risk": "Perf budget unconfirmed; surfaced as G3."
+        },
+        {
+          "id": "O3",
+          "type": "invariant",
+          "source": "assumption",
+          "status": "SATISFIED",
+          "risk": "RESOLVED in Stage 1a; reaffirmed in Stage 1b through server.go's fail-closed Open call."
+        }
+      ],
+      "regulation_constraints_preserved": [
+        {
+          "id": "T1",
+          "preserved": true,
+          "note": "OAuth 2.1 spec compliance preserved; build-order via RT-6 honoured."
+        },
+        {
+          "id": "S1",
+          "preserved": true,
+          "note": "Argon2id hash-only storage enforced at schema level."
+        },
+        {
+          "id": "S2",
+          "preserved": true,
+          "note": "Redact pkg covers spec-mandated leakage patterns."
+        },
+        {
+          "id": "S3",
+          "preserved": true,
+          "note": "Admin RBAC enforced via withAdmin middleware on all admin/* routes; per-key scope enforcement Stage 2."
+        },
+        {
+          "id": "S5",
+          "preserved": true,
+          "note": "Suspended-on-re-login leaf TESTED; revocation-cache leaf Stage 2."
+        }
+      ]
+    },
+    "tension_preservation_check": {
+      "checked": 8,
+      "reopened": 0,
+      "confirmed": 8,
+      "note": "Stage 1b artifacts honour all 8 tension resolutions: TN1 (stub OIDC documented, real OIDC opt-in via env), TN3 (break-glass remains its own package, no shared middleware), TN6 (admin handlers use existing async audit drainer), TN7 (request->approve flow scaffolded with Stage-2 marker on approve), TN8 (no OAuth handlers shipped — RT-6 substrate continues to lead). TN2/TN4/TN5 not exercised yet; preserved without modification."
+    },
+    "reversibility_check": {
+      "total_actions": 11,
+      "one_way_count": 0,
+      "reversible_with_cost_count": 3,
+      "two_way_count": 8,
+      "all_acknowledged": true,
+      "note": "Stage 1b added 5 entries (steps 7-11); none ONE_WAY. New REVERSIBLE_WITH_COST: Server.store + StorePath wiring (data-export cost post-release). Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 8 TWO_WAY."
+    },
+    "required_truth_status": {
+      "RT-1": {
+        "status": "NOT_SATISFIED",
+        "level": "DOCUMENTED",
+        "stage": "deferred to Stage 2"
+      },
+      "RT-2": {
+        "status": "NOT_SATISFIED",
+        "level": "DOCUMENTED",
+        "stage": "deferred to Stage 3"
+      },
+      "RT-3": {
+        "status": "PARTIAL",
+        "level": "IMPLEMENTED",
+        "stage": "schema substrate; resolver code deferred to Stage 2"
+      },
+      "RT-4": {
+        "status": "NOT_SATISFIED",
+        "level": "DOCUMENTED",
+        "stage": "deferred to Stage 2"
+      },
+      "RT-5": {
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "stage": "ProjectClaims + tests green; JWKS cache deferred to Stage 1c"
+      },
+      "RT-6": {
+        "status": "PARTIAL",
+        "level": "TESTED",
+        "stage": "redact pkg + slog handler default; cross-cutting wiring incremental (G7 carry-over)"
+      },
+      "RT-7": {
+        "status": "PARTIAL",
+        "level": "IMPLEMENTED",
+        "stage": "per-IP middleware exists; per-key extension deferred to Stage 2"
+      },
+      "RT-8": {
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "stage": "store + migrations green; Server.store wired in NewServer"
+      },
+      "RT-9": {
+        "status": "PARTIAL",
+        "level": "TESTED",
+        "stage": "server-side TESTED (handlers + tests); Svelte UI deferred to Stage 1c"
+      },
+      "RT-10": {
+        "status": "PARTIAL",
+        "level": "IMPLEMENTED",
+        "stage": "audit_events table exists; drainer + compactor deferred to Stage 2"
+      },
+      "RT-11": {
+        "status": "NOT_SATISFIED",
+        "level": "DOCUMENTED",
+        "stage": "deferred to Stage 3"
+      },
+      "RT-12": {
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "stage": "stub warning + README sections both in place; G4 closed"
+      },
+      "RT-13": {
+        "status": "SATISFIED",
+        "level": "TESTED",
+        "stage": "breakglass package + 3 tests green + README documented"
+      },
+      "RT-14": {
+        "status": "NOT_SATISFIED",
+        "level": "DOCUMENTED",
+        "stage": "deferred to Stage 3"
+      }
+    },
+    "gaps": [
+      {
+        "id": "G1",
+        "constraint": "B1",
+        "rt": "RT-1",
+        "severity": "deferred-by-design",
+        "issue": "Audit-on-every-authenticated-action middleware doesn't exist yet. Admin handlers call s.auditEnqueue but pages handlers and OIDC callbacks do not yet route through a central middleware.",
+        "action": "Stage 2: add a server.audit middleware; iterate every authenticated handler in routes.go to confirm coverage."
+      },
+      {
+        "id": "G2",
+        "constraint": "T1",
+        "rt": "RT-2",
+        "severity": "deferred-by-design",
+        "issue": "OAuth 2.1 + PKCE handlers do not exist; MCP server does not exist.",
+        "action": "Stage 3 — entire MCP transport + OAuth substrate. Build order honoured: RT-6 redaction is now in place (TN8 contract met)."
+      },
+      {
+        "id": "G3",
+        "constraint": "T4",
+        "rt": "T4",
+        "severity": "convergence-risk",
+        "issue": "T4 is `challenger: assumption` — perf budget (≤5ms cached / ≤50ms cold) was a guess in m1.",
+        "action": "Before Stage 2 cache lands, run a microbench against the actual key/principal lookup path INCLUDING the event-driven invalidation overhead from RT-4. Either confirm or relax T4."
+      },
+      {
+        "id": "G5",
+        "constraint": "U2",
+        "rt": "RT-9",
+        "severity": "deferred-by-design",
+        "issue": "Admin Users Svelte page does not exist (frontend/src/lib/admin/Users.svelte); server-side handlers exist and are TESTED.",
+        "action": "Stage 1c: create Users.svelte mirroring the WorkspaceManager pattern; bind to GET /api/admin/users; add e2e test."
+      },
+      {
+        "id": "G6",
+        "constraint": "U3",
+        "rt": "RT-9",
+        "severity": "deferred-by-design",
+        "issue": "Admin Keys Svelte page + key-request approval surface (frontend) do not exist; server-side TESTED.",
+        "action": "Stage 1c: create Keys.svelte; render approve-flow's 501 stub message inline; e2e test for deny path."
+      },
+      {
+        "id": "G7",
+        "constraint": "RT-6",
+        "rt": "RT-6",
+        "severity": "binding-cross-cutting",
+        "issue": "RT-6 (binding) is at TESTED for the redact package itself, but cross-cutting wiring is incremental: every error response writer, every panic-recover middleware, every audit body writer needs to be inspected and confirmed to route through redact.",
+        "action": "Audit pass before Stage 2: grep for slog.Error / writeError / http.Error / panic recovery and confirm each call site uses slog.Default() (which now redacts) or wraps user-controlled values in redact.String."
+      },
+      {
+        "id": "G8",
+        "constraint": "RT-5",
+        "rt": "RT-5",
+        "severity": "deferred-by-design",
+        "issue": "JWKS cache (24h TTL, IdP-outage tolerance) deferred to Stage 1c per user scope choice. Projection layer SATISFIED; verify path is currently HMAC-stub-only.",
+        "action": "Stage 1c: implement RS256 verifier + JWKS cache with 24h TTL + outage-tolerance fallback. Tests against fixture JWKS."
+      }
+    ],
+    "convergence": {
+      "status": "IN_PROGRESS",
+      "criteria": {
+        "all_invariants_satisfied": false,
+        "all_required_truths_satisfied": false,
+        "no_blocking_gaps": true,
+        "binding_constraint_closed": false,
+        "all_declared_artifacts_on_disk": true
+      },
+      "stage": "1a + 1b complete; 1c/2/3 pending",
+      "next_stage_suggestion": "Stage 1c (Svelte admin pages + JWKS cache) OR Stage 2 (audit middleware + key minting). Recommended: Stage 1c since it closes RT-9 (frontend) and RT-5 (JWKS) in one focused frontend+verifier pass.",
+      "reason": "After 2 iterations, 4 RTs SATISFIED (RT-5, RT-8, RT-12, RT-13), 5 PARTIAL (RT-3 schema, RT-6 binding-incremental, RT-7 per-IP only, RT-9 server-only, RT-10 schema), 5 NOT_SATISFIED (RT-1, RT-2, RT-4, RT-11, RT-14). Binding constraint RT-6 not fully closed (cross-cutting wiring incremental). 14 of 24 constraints SATISFIED or PARTIAL with implementation in place; 10 deferred-by-design."
+    }
+  }
+}

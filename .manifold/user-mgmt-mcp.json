@@ -1,0 +1,1984 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "user-mgmt-mcp",
+  "phase": "VERIFIED",
+  "domain": "software",
+  "created": "2026-05-03T21:05:00Z",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "B2",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "statistical",
+          "success_rate": "90%",
+          "window": "first-30-days"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 2
+        }
+      },
+      {
+        "id": "B3",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "humans": "<=250",
+          "service_principals": "<=1000"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 2
+        }
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T4",
+        "type": "boundary",
+        "source": "assumption",
+        "challenger": "assumption",
+        "threshold": {
+          "kind": "statistical",
+          "p95_cached": "5ms",
+          "p95_cold": "50ms"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T5",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "threshold": {
+          "kind": "deterministic",
+          "ceiling": "10 MB",
+          "rationale": "blob-stream-by-reference above ceiling"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "T7",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "quality": {
+          "specificity": 3,
+          "measurability": 2,
+          "testability": 2
+        }
+      },
+      {
+        "id": "T8",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "threshold": {
+          "kind": "deterministic",
+          "idp_timeout": "5s",
+          "jwks_cache_ttl": "24h"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 2,
+          "measurability": 2,
+          "testability": 2
+        }
+      },
+      {
+        "id": "U2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "U3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "U4",
+        "type": "goal",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "ceiling": "15 minutes"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 2
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "S3",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "S4",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 2,
+          "testability": 3
+        }
+      },
+      {
+        "id": "S5",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "regulation",
+        "threshold": {
+          "kind": "deterministic",
+          "ceiling": "60 seconds"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "S6",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "per_key_default": "60 req/min",
+          "per_ip_ceiling": "configurable"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "stakeholder",
+        "threshold": {
+          "kind": "deterministic",
+          "raw_retention_default": "90 days",
+          "compaction": "per-day aggregates"
+        },
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "O2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      },
+      {
+        "id": "O3",
+        "type": "invariant",
+        "source": "assumption",
+        "challenger": "technical-reality",
+        "quality": {
+          "specificity": 3,
+          "measurability": 3,
+          "testability": 3
+        }
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "trade_off",
+      "between": [
+        "T1",
+        "U4"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "simplicity vs capability",
+        "match_quality": "exact",
+        "principles": [
+          "P1",
+          "P15",
+          "P35"
+        ]
+      },
+      "challenger_profile": "T1 challenger: regulation (MCP spec, cannot challenge) vs U4 challenger: stakeholder (negotiable target)",
+      "propagation_effects": [
+        {
+          "constraint_id": "T1",
+          "effect": "LOOSENED",
+          "note": "Stub OIDC path for dev/eval lets T1 remain spec-compliant in prod without blocking first-run."
+        },
+        {
+          "constraint_id": "U4",
+          "effect": "LOOSENED",
+          "note": "15-min target achievable on stub path; real-OIDC graduation is its own time budget."
+        },
+        {
+          "constraint_id": "S4",
+          "effect": "LOOSENED",
+          "note": "Stub path acts as a de-facto break-glass for dev environments; real break-glass (S4) covers prod IdP outage."
+        },
+        {
+          "constraint_id": "B2",
+          "effect": "LOOSENED",
+          "note": "First-30-day onboard easier when stub is the eval path."
+        }
+      ],
+      "validation_criteria": [
+        "`make run` boots with PHRONESIS_OIDC_MODE=stub by default; documented in README",
+        "Setting PHRONESIS_OIDC_ISSUER=<real-url> swaps to real OAuth 2.1 + PKCE without code changes",
+        "Stub mode is loud: emits a slog warning at startup mirroring the webfs dev-stub pattern"
+      ]
+    },
+    {
+      "id": "TN2",
+      "type": "trade_off",
+      "between": [
+        "B1",
+        "O1"
+      ],
+      "context": [
+        "B3"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "cost vs quality",
+        "match_quality": "exact",
+        "principles": [
+          "P1",
+          "P10",
+          "P27"
+        ]
+      },
+      "challenger_profile": "B1 challenger: stakeholder vs O1 challenger: stakeholder \u2014 both negotiable; O1's threshold is the lever",
+      "propagation_effects": [
+        {
+          "constraint_id": "B1",
+          "effect": "TIGHTENED",
+          "note": "Per-call audit at B3 scale (1000 service principals) requires the indexed (workspace_id, ts) lookup be fast enough to keep audit-list pages responsive."
+        },
+        {
+          "constraint_id": "O1",
+          "effect": "LOOSENED",
+          "note": "90-day raw is the comfortable middle ground; aggregates handle long-window queries cheaply."
+        },
+        {
+          "constraint_id": "T3",
+          "effect": "TIGHTENED",
+          "note": "SQLite schema must include the audit table with appropriate indexes; migration story applies."
+        }
+      ],
+      "validation_criteria": [
+        "Synthetic load: 1000 service principals \u00d7 100 calls/day for 90 days \u2192 raw audit table \u22645 GB",
+        "Compactor runs daily; rows older than retention window are purged after aggregate write",
+        "Audit list page renders for the latest 1000 rows in \u2264500ms p95 at B3 scale"
+      ]
+    },
+    {
+      "id": "TN3",
+      "type": "trade_off",
+      "between": [
+        "T2",
+        "S4"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "physical",
+        "parameters": "must require OIDC AND must work without OIDC",
+        "match_quality": "exact",
+        "principles": [
+          "P1",
+          "P3"
+        ]
+      },
+      "challenger_profile": "T2 challenger: stakeholder (OIDC-canonical was a chosen direction) vs S4 challenger: stakeholder (break-glass is a chosen safety) \u2014 segmentation honours both",
+      "propagation_effects": [
+        {
+          "constraint_id": "T2",
+          "effect": "TIGHTENED",
+          "note": "T2's \"OIDC canonical\" guarantee must explicitly carve out the break-glass principal type so the segmentation is a feature, not a leak."
+        },
+        {
+          "constraint_id": "S4",
+          "effect": "LOOSENED",
+          "note": "Break-glass is an entirely separate auth path \u2014 different middleware, different audit severity, different env-gate. Lowest coupling."
+        },
+        {
+          "constraint_id": "B1",
+          "effect": "TIGHTENED",
+          "note": "Break-glass actions need a distinct audit principal type so they are visually separable in audit views."
+        }
+      ],
+      "validation_criteria": [
+        "Break-glass auth path lives in its own handler; shares NO middleware with the OIDC auth path",
+        "Every break-glass use emits an audit row with severity=high and principal.type=break-glass",
+        "Default state (PHRONESIS_BREAKGLASS unset) returns 404 for /admin/break-glass \u2014 the path doesn't exist when not configured",
+        "Test: with break-glass disabled, attempting /admin/break-glass with any header returns 404, not 401"
+      ]
+    },
+    {
+      "id": "TN4",
+      "type": "trade_off",
+      "between": [
+        "T4",
+        "S5"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "speed vs correctness",
+        "match_quality": "exact",
+        "principles": [
+          "P10",
+          "P11",
+          "P25"
+        ]
+      },
+      "challenger_profile": "T4 challenger: assumption (perf budget guess, must confirm) vs S5 challenger: regulation (suspension propagation is non-negotiable) \u2014 T4 yields if needed",
+      "propagation_effects": [
+        {
+          "constraint_id": "T4",
+          "effect": "TIGHTENED",
+          "note": "Cache must be event-invalidatable, not just TTL'd \u2014 adds a small in-process pub/sub. Microbench in m4 must include invalidation overhead."
+        },
+        {
+          "constraint_id": "S5",
+          "effect": "LOOSENED",
+          "note": "Event-driven path achieves sub-second propagation in practice; 30s TTL belt covers worst case well under S5's 60s ceiling."
+        }
+      ],
+      "validation_criteria": [
+        "Revoke a key \u2192 next request using that key MUST receive 401 within 30s p99 (well under S5's 60s)",
+        "Test with cache pre-warmed: revoke is observed by all in-process consumers via the event channel without polling",
+        "Cache TTL is 30s; entries past TTL re-verify against SQLite",
+        "Cache invalidation on Argon2id verify failure (defense in depth: bad key never lingers in cache)"
+      ],
+      "cache_invalidation_subconstraints": [
+        "Invalidation on validation failure: a request whose key fails Argon2id verify triggers a cache eviction for that key prefix",
+        "Credential rotation: rotating a key (delete old + create new) invalidates the old key's cache entry across all caches",
+        "Forced invalidation: admin endpoint /admin/cache/flush exists, audit-emitting, for emergency operations"
+      ]
+    },
+    {
+      "id": "TN5",
+      "type": "resource_tension",
+      "between": [
+        "T6",
+        "T3"
+      ],
+      "context": [
+        "S6",
+        "B1"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "standardisation vs flexibility",
+        "match_quality": "exact",
+        "principles": [
+          "P1",
+          "P3",
+          "P15"
+        ]
+      },
+      "challenger_profile": "T6 challenger: technical-reality (panic isolation is a hard property) vs T3 challenger: stakeholder \u2014 share the substrate, isolate the dispatch",
+      "propagation_effects": [
+        {
+          "constraint_id": "T6",
+          "effect": "LOOSENED",
+          "note": "Dispatch-level isolation (panic-recover, request budget, metrics) is sufficient; full substrate duplication is unnecessary."
+        },
+        {
+          "constraint_id": "T3",
+          "effect": "LOOSENED",
+          "note": "One SQLite, one connection pool \u2014 normal pattern."
+        },
+        {
+          "constraint_id": "S6",
+          "effect": "LOOSENED",
+          "note": "Shared rate-limit pool with separate per-key buckets \u2014 the existing pattern in internal/ratelimit extends naturally."
+        }
+      ],
+      "validation_criteria": [
+        "MCP and HTTP API share: SQLite connection pool, audit drainer, principal resolver, rate-limit buckets",
+        "MCP isolates: panic-recover boundary, request budget, /metrics labels",
+        "Test: deliberate panic in an MCP tool handler returns 500 to the MCP client; HTTP /readyz still returns 200; no goroutine leak"
+      ]
+    },
+    {
+      "id": "TN6",
+      "type": "trade_off",
+      "between": [
+        "B1",
+        "T4"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "speed vs safety",
+        "match_quality": "exact",
+        "principles": [
+          "P10",
+          "P11",
+          "P24"
+        ]
+      },
+      "challenger_profile": "B1 challenger: stakeholder vs T4 challenger: assumption \u2014 async drainer pattern is well-established in this codebase",
+      "propagation_effects": [
+        {
+          "constraint_id": "T4",
+          "effect": "LOOSENED",
+          "note": "Audit write is non-blocking (channel send + return); request path stays under budget."
+        },
+        {
+          "constraint_id": "B1",
+          "effect": "TIGHTENED",
+          "note": "Eventual consistency window for audit; crash before drain = lost rows. Failure cascade addresses this."
+        }
+      ],
+      "validation_criteria": [
+        "Audit enqueue (channel send) is non-blocking \u2014 a full channel does NOT stall the request path; a measurable drop counter is incremented instead",
+        "Drainer flushes batches on a tick (default 1s) and on shutdown",
+        "Drop counter is exposed via /metrics (audit_drainer_drops_total)"
+      ],
+      "failure_cascade": [
+        {
+          "q": "What if the drainer can't keep up with audit volume?",
+          "a": "Channel fills \u2192 drop counter increments \u2192 alerts fire \u2192 operator scales workers OR throttles producers. The constraint is upheld in expectation; the drop is visible."
+        },
+        {
+          "q": "What if the binary crashes before the drainer flushes?",
+          "a": "Up to 1 batch interval (default 1s) of audit rows is lost. Mitigation candidate: spillover journal (parallel to internal/journal pattern). Logged as suggested_constraint O4-suggested."
+        },
+        {
+          "q": "What if disk fills and SQLite write fails?",
+          "a": "Drainer logs error and retries with backoff; /readyz fails after N retries; operator intervention. Existing pattern."
+        }
+      ]
+    },
+    {
+      "id": "TN7",
+      "type": "trade_off",
+      "between": [
+        "U3",
+        "B2"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "technical",
+        "parameters": "autonomy vs control",
+        "match_quality": "exact",
+        "principles": [
+          "P10",
+          "P15",
+          "P35"
+        ]
+      },
+      "challenger_profile": "U3 challenger: stakeholder (admin-only was a Round 2 choice) vs B2 challenger: stakeholder \u2014 both negotiable; the request-approve flow honours both",
+      "propagation_effects": [
+        {
+          "constraint_id": "U3",
+          "effect": "LOOSENED",
+          "note": "Admin still controls issuance \u2014 just via approve clicks instead of per-key form-fills."
+        },
+        {
+          "constraint_id": "B2",
+          "effect": "TIGHTENED",
+          "note": "Onboard time depends on admin response latency. Surfaces an admin-SLA risk: 90% needs admin response within hours, not days."
+        },
+        {
+          "constraint_id": "U2",
+          "effect": "TIGHTENED",
+          "note": "Users page must show pending key requests as a top-of-page badge so admins can act without polling."
+        }
+      ],
+      "validation_criteria": [
+        "User submits key request via /settings/keys/request \u2192 row inserted into key_requests with status=pending",
+        "Admin sees pending count badge on /admin/users; clicking opens the request list",
+        "One-click approve: admin clicks Approve \u2192 key is minted (S1 plaintext-once flow) \u2192 plaintext is delivered to the requesting user via in-app notification + email (if email configured)",
+        "Approval audit row links request_id, admin principal, and resulting key_id"
+      ]
+    },
+    {
+      "id": "TN8",
+      "type": "hidden_dependency",
+      "between": [
+        "T1",
+        "S2"
+      ],
+      "status": "resolved",
+      "triz": {
+        "contradiction": "none",
+        "match_quality": "no match",
+        "note": "Not a contradiction \u2014 supportive dependency; T1's bearer tokens are exactly the secrets S2 forbids leaking."
+      },
+      "challenger_profile": "T1 challenger: regulation (spec) needs S2 challenger: regulation (compliance) implemented first \u2014 build order matters",
+      "propagation_effects": [
+        {
+          "constraint_id": "S2",
+          "effect": "TIGHTENED",
+          "note": "S2 must cover OAuth bearer tokens, refresh tokens, and PKCE code_verifier on top of API keys."
+        }
+      ],
+      "validation_criteria": [
+        "S2's redaction layer is implemented and unit-tested BEFORE T1's OAuth handlers ship",
+        "Redaction patterns include: Authorization header, ?code=, ?state=, ?token=, refresh_token, code_verifier, phr_live_*",
+        "Test: deliberately panic with a bearer token in the request \u2014 panic stack trace, error response, and audit row contain none of it"
+      ]
+    }
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "NOT_SATISFIED",
+        "maps_to": [
+          "B1",
+          "S3",
+          "T6"
+        ],
+        "evidence": [
+          {
+            "id": "E1",
+            "type": "content_match",
+            "path": "internal/audit/audit.go",
+            "pattern": "Enqueue",
+            "status": "PENDING"
+          },
+          {
+            "id": "E2",
+            "type": "test_passes",
+            "path": "internal/app/audit_attribution_test.go",
+            "test_name": "every_authenticated_handler_writes_audit",
+            "status": "PENDING",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "NOT_SATISFIED",
+        "maps_to": [
+          "T1",
+          "T7"
+        ],
+        "evidence": [
+          {
+            "id": "E3",
+            "type": "file_exists",
+            "path": "internal/mcp/server.go",
+            "status": "PENDING"
+          },
+          {
+            "id": "E4",
+            "type": "content_match",
+            "path": "internal/mcp/oauth.go",
+            "pattern": "PKCE|code_verifier|code_challenge",
+            "status": "PENDING"
+          },
+          {
+            "id": "E5",
+            "type": "test_passes",
+            "path": "internal/mcp/spec_smoke_test.go",
+            "test_name": "claude_code_handshake_round_trip",
+            "status": "PENDING",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "PARTIAL",
+        "maps_to": [
+          "T2",
+          "S1",
+          "S3",
+          "B3"
+        ],
+        "evidence": [
+          {
+            "id": "E6",
+            "type": "content_match",
+            "path": "internal/principal/principal.go",
+            "pattern": "(?i)service|workspace|capability",
+            "status": "PENDING"
+          },
+          {
+            "id": "E7",
+            "type": "test_passes",
+            "path": "internal/auth/keys_test.go",
+            "test_name": "key_resolves_to_workspace_pinned_service_principal",
+            "status": "PENDING",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "NOT_SATISFIED",
+        "maps_to": [
+          "S5",
+          "T4"
+        ],
+        "evidence": [
+          {
+            "id": "E8",
+            "type": "test_passes",
+            "path": "internal/auth/cache_invalidation_test.go",
+            "test_name": "revoke_propagates_within_30s_p99",
+            "status": "PENDING",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E9",
+            "type": "content_match",
+            "path": "internal/auth/cache.go",
+            "pattern": "(?i)invalidat|evict|flush",
+            "status": "PENDING"
+          }
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "SATISFIED",
+        "maps_to": [
+          "T2",
+          "T8"
+        ],
+        "evidence": [
+          {
+            "id": "E10",
+            "type": "content_match",
+            "path": "internal/auth/oidc/",
+            "pattern": "(?i)projection|claim",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E11",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/projection_test.go",
+            "test_name": "TestProjectClaimsIsIdempotent",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "PARTIAL",
+        "maps_to": [
+          "S2",
+          "T1"
+        ],
+        "evidence": [
+          {
+            "id": "E12",
+            "type": "file_exists",
+            "path": "internal/redact/redact.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E13",
+            "type": "test_passes",
+            "path": "internal/redact/redact_test.go",
+            "test_name": "TestPanicMessageWithBearerIsRedacted",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E14",
+            "type": "content_match",
+            "path": "internal/redact/redact.go",
+            "pattern": "Authorization|code_verifier|refresh_token|phr_live_",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "PARTIAL",
+        "maps_to": [
+          "S6"
+        ],
+        "evidence": [
+          {
+            "id": "E15",
+            "type": "file_exists",
+            "path": "internal/ratelimit/ratelimit.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E16",
+            "type": "test_passes",
+            "path": "internal/ratelimit/per_key_test.go",
+            "test_name": "per_key_sliding_window_isolated_from_per_ip",
+            "status": "PENDING",
+            "test_tier": "unit"
+          }
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "SATISFIED",
+        "maps_to": [
+          "T3",
+          "O3"
+        ],
+        "evidence": [
+          {
+            "id": "E17",
+            "type": "file_exists",
+            "path": "internal/store/sqlite/store.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E18",
+            "type": "content_match",
+            "path": "go.mod",
+            "pattern": "modernc.org/sqlite",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E19",
+            "type": "test_passes",
+            "path": "internal/store/sqlite/migrations_test.go",
+            "test_name": "TestOpenAppliesMigrationsAndIsIdempotent",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "PARTIAL",
+        "maps_to": [
+          "U2",
+          "U3"
+        ],
+        "evidence": [
+          {
+            "id": "E20",
+            "type": "file_exists",
+            "path": "internal/app/handlers_admin_users.go",
+            "status": "VERIFIED",
+            "note": "Server-side surface only in Stage 1b; Svelte pages deferred to Stage 1c."
+          },
+          {
+            "id": "E21",
+            "type": "file_exists",
+            "path": "internal/app/handlers_admin_keys.go",
+            "status": "VERIFIED",
+            "note": "Server-side surface only in Stage 1b; Svelte pages deferred to Stage 1c."
+          },
+          {
+            "id": "E22",
+            "type": "test_passes",
+            "path": "internal/app/handlers_admin_users_test.go",
+            "test_name": "TestAdminUsersList",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E22a",
+            "type": "test_passes",
+            "path": "internal/app/handlers_admin_keys_test.go",
+            "test_name": "TestAdminKeyRequestsListAndDeny",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "PARTIAL",
+        "maps_to": [
+          "B1",
+          "O1"
+        ],
+        "evidence": [
+          {
+            "id": "E23",
+            "type": "content_match",
+            "path": "internal/audit/",
+            "pattern": "(?i)drainer|enqueue|buffer",
+            "status": "PENDING"
+          },
+          {
+            "id": "E24",
+            "type": "test_passes",
+            "path": "internal/audit/retention_test.go",
+            "test_name": "compactor_purges_raw_after_aggregate_write",
+            "status": "PENDING",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-11",
+        "status": "NOT_SATISFIED",
+        "maps_to": [
+          "T6"
+        ],
+        "evidence": [
+          {
+            "id": "E25",
+            "type": "test_passes",
+            "path": "internal/mcp/isolation_test.go",
+            "test_name": "tool_handler_panic_does_not_take_down_http_api",
+            "status": "PENDING",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-12",
+        "status": "SATISFIED",
+        "maps_to": [
+          "U4",
+          "T1"
+        ],
+        "evidence": [
+          {
+            "id": "E26",
+            "type": "content_match",
+            "path": "internal/auth/oidc/stub.go",
+            "pattern": "(?i)stub|hmac",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E27",
+            "type": "manual_review",
+            "path": "README.md",
+            "reason": "Stub-mode + break-glass sections added in Stage 1b README pass; visual review completes evidence",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E27a",
+            "type": "content_match",
+            "path": "internal/app/server.go",
+            "pattern": "OIDC adapter is using the HMAC-stub",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E27b",
+            "type": "content_match",
+            "path": "README.md",
+            "pattern": "Local evaluation \\(stub OIDC mode\\)",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      {
+        "id": "RT-13",
+        "status": "SATISFIED",
+        "maps_to": [
+          "S4"
+        ],
+        "evidence": [
+          {
+            "id": "E28",
+            "type": "file_exists",
+            "path": "internal/auth/breakglass.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E29",
+            "type": "test_passes",
+            "path": "internal/auth/breakglass_test.go",
+            "test_name": "TestBreakGlassDisabledByDefault",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E30",
+            "type": "test_passes",
+            "path": "internal/auth/breakglass_test.go",
+            "test_name": "TestBreakGlassEmitsAuditOnSuccess",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          }
+        ]
+      },
+      {
+        "id": "RT-14",
+        "status": "NOT_SATISFIED",
+        "maps_to": [
+          "T5"
+        ],
+        "evidence": [
+          {
+            "id": "E31",
+            "type": "content_match",
+            "path": "internal/mcp/tools/",
+            "pattern": "(?i)schema|validate",
+            "status": "PENDING"
+          },
+          {
+            "id": "E32",
+            "type": "test_passes",
+            "path": "internal/mcp/tools/schema_test.go",
+            "test_name": "malformed_input_400_no_side_effect",
+            "status": "PENDING",
+            "test_tier": "unit"
+          }
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-6",
+      "reason": "Bearer-token redaction is the build-order gate (TN8): T1 (OAuth handlers) cannot ship safely until S2's redaction layer covers Authorization headers, OAuth state/code_verifier/refresh_token, and phr_live_* patterns. It is cross-cutting (every log/audit/error-response writer must route through it), it is not present in the codebase today, and a single missed egress point is a credential-leak incident. Closing it unlocks RT-2 (OAuth), which in turn unlocks RT-1 (audit), RT-3 (principals), and the rest. Single mistake = security incident; hardest to verify completeness.",
+      "dependency_chain": [
+        "RT-2",
+        "RT-1",
+        "RT-3",
+        "RT-7",
+        "RT-9"
+      ]
+    },
+    "tension_validation": [
+      {
+        "tension_id": "TN1",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-12 explicitly carries the stub-OIDC dev path."
+      },
+      {
+        "tension_id": "TN2",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-10 carries the 90d-raw + per-day-aggregate retention."
+      },
+      {
+        "tension_id": "TN3",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-13 carries the segmented break-glass path; default 404 when disabled."
+      },
+      {
+        "tension_id": "TN4",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-4 carries event-driven invalidation + 30s TTL belt."
+      },
+      {
+        "tension_id": "TN5",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-11 carries MCP sub-handler panic isolation."
+      },
+      {
+        "tension_id": "TN6",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-10 carries async drainer with bounded loss-on-crash."
+      },
+      {
+        "tension_id": "TN7",
+        "status": "CONFIRMED",
+        "by_option": "A,B",
+        "reopened_by": "C",
+        "note": "Option C drops the Web UI; the request-approve flow would need a CLI-only equivalent. Surface as REOPENED in C."
+      },
+      {
+        "tension_id": "TN8",
+        "status": "CONFIRMED",
+        "by_option": "all",
+        "note": "RT-6 is the binding constraint; build order respected by all options."
+      }
+    ],
+    "solution_options": [
+      {
+        "id": "Option A",
+        "label": "Full v1 \u2014 all 14 RTs end-to-end",
+        "satisfies": [
+          "RT-1",
+          "RT-2",
+          "RT-3",
+          "RT-4",
+          "RT-5",
+          "RT-6",
+          "RT-7",
+          "RT-8",
+          "RT-9",
+          "RT-10",
+          "RT-11",
+          "RT-12",
+          "RT-13",
+          "RT-14"
+        ],
+        "gaps": [],
+        "complexity": "High",
+        "reversibility": "REVERSIBLE_WITH_COST"
+      },
+      {
+        "id": "Option B",
+        "label": "Stage-gated rollout (recommended)",
+        "satisfies": [
+          "RT-1",
+          "RT-2",
+          "RT-3",
+          "RT-4",
+          "RT-5",
+          "RT-6",
+          "RT-7",
+          "RT-8",
+          "RT-9",
+          "RT-10",
+          "RT-11",
+          "RT-12",
+          "RT-13",
+          "RT-14"
+        ],
+        "gaps": [
+          "intermediate (each stage leaves the next stage's RTs unsatisfied)"
+        ],
+        "complexity": "Medium",
+        "reversibility": "TWO_WAY"
+      },
+      {
+        "id": "Option C",
+        "label": "MCP-first, defer admin Web UI to v1.1",
+        "satisfies": [
+          "RT-1",
+          "RT-2",
+          "RT-3",
+          "RT-4",
+          "RT-5",
+          "RT-6",
+          "RT-7",
+          "RT-8",
+          "RT-10",
+          "RT-11",
+          "RT-12",
+          "RT-13",
+          "RT-14"
+        ],
+        "gaps": [
+          "RT-9 (admin Web UI deferred; CLI only in v1)"
+        ],
+        "complexity": "Medium-High",
+        "reversibility": "TWO_WAY"
+      }
+    ],
+    "recommended_option": "Option B"
+  },
+  "iterations": [
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-05-03T21:30:00Z",
+      "result": "Discovered 24 constraints across 5 categories via interview + pre-mortem. 6 of 24 sourced from pre-mortem (T5, T7, U4, S4, S5, O1). 2 assumption-tagged constraints (T4, O3) flagged for m4 confirmation. 8 draft required truths seeded for m3.",
+      "constraints_added": 24,
+      "by_category": {
+        "business": 3,
+        "technical": 8,
+        "user_experience": 4,
+        "security": 6,
+        "operational": 3
+      },
+      "by_type": {
+        "invariant": 18,
+        "goal": 3,
+        "boundary": 3
+      },
+      "by_source": {
+        "interview": 16,
+        "assumption": 2,
+        "pre-mortem": 6
+      },
+      "by_challenger": {
+        "stakeholder": 13,
+        "regulation": 5,
+        "assumption": 1,
+        "technical-reality": 5
+      }
+    },
+    {
+      "number": 2,
+      "phase": "tension",
+      "timestamp": "2026-05-03T22:00:00Z",
+      "result": "Found 8 tensions, all resolved. 4 contested resolutions confirmed via AskUserQuestion (TN1 stub-OIDC, TN2 90d+per-day, TN4 event+30s TTL belt, TN7 request-approve flow). 4 segmentation-obvious resolutions auto-applied (TN3, TN5, TN6, TN8). 3 sub-constraints generated by tension resolution (O4-suggested journal, S9-suggested cache flush, B4-suggested admin SLA) and staged for promotion. 3 blocking dependencies recorded for m3.",
+      "tensions_found": 8,
+      "tensions_resolved": 8,
+      "by_type": {
+        "trade_off": 6,
+        "resource_tension": 1,
+        "hidden_dependency": 1
+      }
+    },
+    {
+      "number": 3,
+      "phase": "anchor",
+      "timestamp": "2026-05-03T22:30:00Z",
+      "result": "Derived 14 required truths via backward reasoning from outcome. Binding constraint: RT-6 (bearer-token redaction layer) \u2014 TN8 build-order gate, cross-cutting, not in codebase today, single mistake = security incident. 3 solution options generated. Option B (stage-gated rollout) recommended: 3 stages each ending in a coherent state, redaction layer first to honour TN8. Solution-tension validation: 7 of 8 tensions CONFIRMED in all options; TN7 REOPENED only in Option C (Web UI deferred).",
+      "required_truths": 14,
+      "by_status": {
+        "NOT_SATISFIED": 12,
+        "PARTIAL": 2
+      },
+      "solution_options": 3,
+      "selected_option": "Option B",
+      "binding_constraint": "RT-6",
+      "tensions_confirmed": 7,
+      "tensions_reopened": 1
+    },
+    {
+      "number": 4,
+      "phase": "generate",
+      "timestamp": "2026-05-03T23:45:00Z",
+      "result": "Stage 1a (binding-constraint substrate) generated. 10 new files + 4 modified files = 14 artifacts total. Coverage: RT-6 (binding), RT-8 (SQLite + forward-only migrations), RT-13 (break-glass env-gated), RT-12 (stub OIDC warning) \u2014 4 of 6 Stage 1 RTs addressed. Deferred to Stage 1b: RT-5 (OIDC projection layer), RT-9 (admin Web UI). Side-effect: Go floor bumped 1.24.5 -> 1.25.0 to admit modernc.org/sqlite v1.50.0; dist-packaging Makefile comment now stale (recorded as drift candidate). All 20 packages green on go test ./...; gofmt + vet + staticcheck clean. 5 reversibility entries recorded; zero ONE_WAY actions.",
+      "option": "B",
+      "stage": "1a",
+      "artifacts_added": 10,
+      "artifacts_modified": 4,
+      "rts_addressed": [
+        "RT-6",
+        "RT-8",
+        "RT-12",
+        "RT-13"
+      ],
+      "rts_deferred_to_stage_1b": [
+        "RT-5",
+        "RT-9"
+      ],
+      "rts_deferred_to_stage_2": [
+        "RT-1",
+        "RT-3",
+        "RT-7",
+        "RT-10"
+      ],
+      "rts_deferred_to_stage_3": [
+        "RT-2",
+        "RT-4",
+        "RT-11",
+        "RT-14"
+      ],
+      "reversibility_summary": {
+        "TWO_WAY": 3,
+        "REVERSIBLE_WITH_COST": 2,
+        "ONE_WAY": 0
+      },
+      "tests_green": true,
+      "lint_green": true,
+      "go_floor_bumped": "1.24.5 -> 1.25.0"
+    },
+    {
+      "number": 5,
+      "phase": "verify",
+      "timestamp": "2026-05-04T00:15:00Z",
+      "result": "m5-verify of Stage 1a generation. 4 of 24 constraints SATISFIED, 6 PARTIAL (substrate present, full impl deferred), 14 DEFERRED-by-design (Stages 1b/2/3). All 4 ran tests (TestPanicMessageWithBearerIsRedacted, TestOpenAppliesMigrationsAndIsIdempotent, TestBreakGlassDisabledByDefault, TestBreakGlassEmitsAuditOnSuccess) VERIFIED. Binding constraint RT-6 reaches TESTED level for the redact package itself; cross-cutting wiring is incremental from here. Tension preservation: 8/8 confirmed (none reopened by Stage 1a). Reversibility: 0 ONE_WAY, 2 REVERSIBLE_WITH_COST, 4 TWO_WAY \u2014 all acknowledged. Convergence: IN_PROGRESS (by design \u2014 Option B is multi-stage).",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 4,
+          "partial": 4,
+          "deferred": 10,
+          "total": 18,
+          "percentage_satisfied": 22
+        },
+        "goals": {
+          "satisfied": 0,
+          "partial": 1,
+          "deferred": 2,
+          "total": 3,
+          "percentage_satisfied": 0
+        },
+        "boundaries": {
+          "satisfied": 0,
+          "partial": 1,
+          "deferred": 2,
+          "total": 3,
+          "percentage_satisfied": 0
+        },
+        "overall": {
+          "satisfied": 4,
+          "partial": 6,
+          "deferred": 14,
+          "total": 24,
+          "percentage_satisfied": 17
+        }
+      },
+      "binding_closed": false,
+      "binding_status": "PARTIAL (TESTED for the package; cross-cutting wiring incremental)",
+      "tensions_reopened": 0,
+      "gaps_total": 7,
+      "gaps_blocking": 0
+    },
+    {
+      "number": 6,
+      "phase": "generate",
+      "timestamp": "2026-05-04T01:30:00Z",
+      "result": "Stage 1b (OIDC projection + admin Web UI server-side) generated. 6 new files + 3 modified = 9 artifacts. RT-5 (OIDC claim->user projection w/ idempotency, suspended-status preservation, role validation) \u2014 TESTED. RT-9 server-side (handleAdminUsers + handleAdminKeys backed by SQLite, request->approve flow with Stage-2 501 stub for approve) \u2014 TESTED. RT-12 (README documentation pass for stub-OIDC + break-glass) \u2014 closes G4 from Stage 1a verify. Server now opens a SQLite store on startup when StorePath is set; existing tests with empty Config{} unaffected. Deferred to Stage 1c: Svelte admin pages (Users.svelte, Keys.svelte), pending-request badge integration in App.svelte, e2e tests. Deferred to Stage 2: real OIDC->principal handoff (so admin handlers' decided_by_user_id stops being NULL), Argon2id key minting (approve flow). All 20 packages green; gofmt + vet + staticcheck clean. 5 reversibility entries added (one REVERSIBLE_WITH_COST: SQLite store field; all others TWO_WAY); zero ONE_WAY.",
+      "option": "B",
+      "stage": "1b",
+      "artifacts_added": 6,
+      "artifacts_modified": 3,
+      "rts_addressed": [
+        "RT-5",
+        "RT-9",
+        "RT-12"
+      ],
+      "rts_deferred_to_stage_1c": [
+        "RT-9 frontend pages"
+      ],
+      "rts_deferred_to_stage_2": [
+        "RT-1",
+        "RT-3",
+        "RT-7",
+        "RT-10"
+      ],
+      "rts_deferred_to_stage_3": [
+        "RT-2",
+        "RT-4",
+        "RT-11",
+        "RT-14"
+      ],
+      "tests_green": true,
+      "lint_green": true,
+      "g4_closed": true
+    },
+    {
+      "number": 7,
+      "phase": "verify",
+      "timestamp": "2026-05-04T01:45:00Z",
+      "result": "m5-verify of Stage 1a + 1b. 6 SATISFIED, 9 PARTIAL, 9 DEFERRED of 24. RT-5 (OIDC projection) reaches TESTED with idempotency + suspended-status preservation + role validation tests green. RT-9 reaches TESTED on the server side; Svelte UI deferred to Stage 1c. RT-12 SATISFIED \u2014 README documents stub-OIDC and break-glass; G4 closed. Binding constraint RT-6 still PARTIAL (TESTED for the package; cross-cutting wiring incremental). 8 tensions confirmed; 0 reopened. 11 reversibility actions (0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 8 TWO_WAY). G3 (T4 perf bench) still pending \u2014 should land before Stage 2 cache. Convergence: IN_PROGRESS (by design \u2014 multi-stage).",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 5,
+          "partial": 8,
+          "deferred": 5,
+          "total": 18,
+          "percentage_satisfied": 28
+        },
+        "goals": {
+          "satisfied": 1,
+          "partial": 0,
+          "deferred": 2,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "boundaries": {
+          "satisfied": 0,
+          "partial": 1,
+          "deferred": 2,
+          "total": 3,
+          "percentage_satisfied": 0
+        },
+        "overall": {
+          "satisfied": 6,
+          "partial": 9,
+          "deferred": 9,
+          "total": 24,
+          "percentage_satisfied": 25
+        }
+      },
+      "binding_closed": false,
+      "binding_status": "PARTIAL (TESTED for the package; cross-cutting incremental)",
+      "tensions_reopened": 0,
+      "gaps_total": 7,
+      "gaps_blocking": 0,
+      "g4_closed": true
+    }
+  ],
+  "convergence": {
+    "status": "NOT_STARTED"
+  },
+  "constraint_graph": {
+    "version": 1,
+    "nodes": {},
+    "edges": {
+      "dependencies": [],
+      "conflicts": [],
+      "satisfies": []
+    }
+  },
+  "updated": "2026-05-04T01:45:00Z",
+  "draft_required_truths": [
+    {
+      "id": "DRT-1",
+      "seed_from": [
+        "B1"
+      ],
+      "draft_statement": "An audit-write path exists for every authenticated request boundary (HTTP, MCP, OAuth callback) and is invoked synchronously enough that crash-before-write is bounded.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-2",
+      "seed_from": [
+        "T1"
+      ],
+      "draft_statement": "An OAuth 2.1 authorization server (PKCE-aware) is embedded or proxied; /authorize, /token, and (optionally) /register endpoints exist.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-3",
+      "seed_from": [
+        "T2",
+        "T3"
+      ],
+      "draft_statement": "OIDC claim-set normalization to local user projection has a deterministic, idempotent mapping; same claims => same row.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-4",
+      "seed_from": [
+        "T6",
+        "O3"
+      ],
+      "draft_statement": "MCP sub-handler runs with its own panic-recover and migration check; failures are isolated from the main HTTP mux.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-5",
+      "seed_from": [
+        "S1",
+        "S2"
+      ],
+      "draft_statement": "A redaction pass exists at every log/audit/error-response writer; bearer tokens, OAuth state, and key plaintext are matched and replaced before egress.",
+      "confidence": "high"
+    },
+    {
+      "id": "DRT-6",
+      "seed_from": [
+        "S4"
+      ],
+      "draft_statement": "Local break-glass admin credential is loadable without OIDC reachability and is independent of the user/key tables.",
+      "confidence": "medium"
+    },
+    {
+      "id": "DRT-7",
+      "seed_from": [
+        "S5"
+      ],
+      "draft_statement": "A revocation propagation channel notifies in-memory session/key caches within 60s of a DB-side suspension; cache TTL is short enough that even a missed signal heals.",
+      "confidence": "medium"
+    },
+    {
+      "id": "DRT-8",
+      "seed_from": [
+        "T7"
+      ],
+      "draft_statement": "A pinned MCP-spec-version smoke test runs in CI against a known-good Claude Code transport client to detect spec drift.",
+      "confidence": "medium"
+    }
+  ],
+  "gap_checklist_compliance": [
+    {
+      "gap": "GAP-03",
+      "status": "COMPLETED",
+      "note": "Core data path: OIDC login -> session -> HTTP/MCP request -> SQLite key lookup -> capability check -> audit row -> wiki/blob action. Each transition crosses a boundary (network for IdP, fsync for SQLite, etc.). Covered by T1, T2, T3, T6, B1."
+    },
+    {
+      "gap": "GAP-09",
+      "status": "COMPLETED",
+      "note": "Crypto/auth attack surface enumerated: OAuth 2.1 PKCE state replay, key brute-force, JWT alg-confusion, token leakage. Covered by T1, S1, S2, S3, S6."
+    },
+    {
+      "gap": "GAP-10",
+      "status": "COMPLETED",
+      "note": "Unauthenticated paths: /authorize, /metrics (if exposed), /readyz. Resource exhaustion bounded by T5 (10 MB response cap), S6 (per-IP ceiling)."
+    },
+    {
+      "gap": "GAP-11",
+      "status": "COMPLETED",
+      "note": "External dep is the OIDC IdP. T8 covers timeout (5s) + JWKS cache (24h) + S4 break-glass for total outage."
+    },
+    {
+      "gap": "GAP-14",
+      "status": "COMPLETED",
+      "note": "MCP tool inputs validated against per-tool JSON schema; OAuth callback params validated against state machine. Specific input-validation sub-constraints staged in suggested_constraints."
+    },
+    {
+      "gap": "GAP-17",
+      "status": "COMPLETED",
+      "note": "Concurrent MCP sessions share key/user cache (sync.RWMutex); SQLite write serialization handled by single-writer queue or BEGIN IMMEDIATE; audit drainer already buffered + async per existing pattern."
+    }
+  ],
+  "suggested_constraints": [
+    {
+      "id": "S7-suggested",
+      "type": "invariant",
+      "source_constraint": "S3",
+      "auto_generated": true,
+      "category": "security",
+      "reason": "GAP-14: MCP tool input validation against per-tool JSON schema; malformed input returns 400 with no side effect."
+    },
+    {
+      "id": "S8-suggested",
+      "type": "invariant",
+      "source_constraint": "T1",
+      "auto_generated": true,
+      "category": "security",
+      "reason": "GAP-14 + GAP-09: OAuth callback state token has cryptographic length (>=128 bits), single-use, TTL <=10 min."
+    },
+    {
+      "id": "O4-suggested",
+      "type": "invariant",
+      "source_constraint": "TN6",
+      "auto_generated": true,
+      "category": "operational",
+      "reason": "Failure cascade from TN6: bound the audit-loss window on crash. Candidate: replay-on-startup spillover journal mirroring internal/journal's pattern. Loss window \u2264 1 drainer tick (default 1s)."
+    },
+    {
+      "id": "S9-suggested",
+      "type": "invariant",
+      "source_constraint": "TN4",
+      "auto_generated": true,
+      "category": "security",
+      "reason": "GAP-16 cache invalidation: forced invalidation endpoint /admin/cache/flush exists, admin-scoped, audit-emitting, for emergency revocation when event channel is suspect."
+    },
+    {
+      "id": "B4-suggested",
+      "type": "boundary",
+      "source_constraint": "TN7",
+      "auto_generated": true,
+      "category": "business",
+      "reason": "Admin-SLA derived from TN7: admin must respond to a key request within 24 business hours for B2's 90%-onboard-<10min target to remain meetable; faster (1 business hour) for the median."
+    }
+  ],
+  "blocking_dependencies": [
+    {
+      "blocker": "S2",
+      "blocked": "T1",
+      "tension_id": "TN8",
+      "reason": "Bearer-token redaction must exist before OAuth handlers can ship safely."
+    },
+    {
+      "blocker": "S5_event_channel",
+      "blocked": "T4",
+      "tension_id": "TN4",
+      "reason": "Cache invalidation infrastructure (event channel) must exist before T4's cached-auth budget can be claimed."
+    },
+    {
+      "blocker": "S4_segmented_path",
+      "blocked": "T2",
+      "tension_id": "TN3",
+      "reason": "Break-glass segmentation must be designed alongside T2 to avoid coupling drift."
+    }
+  ],
+  "generation": {
+    "option": "B (stage-gated rollout)",
+    "stage": "1b (OIDC projection + admin Web UI server-side)",
+    "timestamp": "2026-05-04T01:30:00Z",
+    "artifacts": [
+      {
+        "path": "internal/redact/redact.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6",
+          "S2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/redact/redact_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-6",
+          "S2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/redact/sloghandler.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/redact/sloghandler_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/store/sqlite/store.go",
+        "type": "code",
+        "satisfies": [
+          "RT-8",
+          "T3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/store/sqlite/migrations.go",
+        "type": "code",
+        "satisfies": [
+          "RT-8",
+          "O3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/store/sqlite/migrations/001_init.sql",
+        "type": "code",
+        "satisfies": [
+          "RT-8",
+          "RT-3",
+          "S1",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/store/sqlite/migrations_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-8",
+          "O3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/breakglass.go",
+        "type": "code",
+        "satisfies": [
+          "RT-13",
+          "S4",
+          "TN3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/breakglass_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-13",
+          "S4"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/server.go",
+        "type": "code",
+        "satisfies": [
+          "RT-12"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "added OIDC stub-mode startup warning mirroring webfs.IsStub() pattern"
+      },
+      {
+        "path": "cmd/phronesis/main.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "wired redact.NewSlogHandler as default slog handler"
+      },
+      {
+        "path": "go.mod",
+        "type": "config",
+        "satisfies": [
+          "RT-8",
+          "RT-13"
+        ],
+        "status": "modified",
+        "artifact_class": "structural",
+        "modification_note": "added modernc.org/sqlite v1.50.0 + golang.org/x/crypto v0.50.0; bumped Go floor 1.24.5 -> 1.25.0"
+      },
+      {
+        "path": "go.sum",
+        "type": "config",
+        "satisfies": [
+          "RT-8",
+          "RT-13"
+        ],
+        "status": "modified",
+        "artifact_class": "structural",
+        "modification_note": "lockfile for added dependencies"
+      },
+      {
+        "path": "internal/auth/oidc/projection.go",
+        "type": "code",
+        "satisfies": [
+          "RT-5",
+          "T2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/projection_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-5",
+          "S5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/handlers_admin_users.go",
+        "type": "code",
+        "satisfies": [
+          "RT-9",
+          "U2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/handlers_admin_users_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-9",
+          "U2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/handlers_admin_keys.go",
+        "type": "code",
+        "satisfies": [
+          "RT-9",
+          "U3",
+          "TN7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/handlers_admin_keys_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-9",
+          "U3",
+          "TN7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/server.go",
+        "type": "code",
+        "satisfies": [
+          "RT-8",
+          "RT-9"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "added Config.StorePath, Server.store field, sqlite.Open in NewServer, store.Close in Server.Close"
+      },
+      {
+        "path": "internal/app/routes.go",
+        "type": "code",
+        "satisfies": [
+          "RT-9"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "wired /api/admin/users[...] and /api/admin/keys[...] routes behind withAuth + withAdmin"
+      },
+      {
+        "path": "README.md",
+        "type": "doc",
+        "satisfies": [
+          "RT-12",
+          "U4"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "added 'Local evaluation (stub OIDC mode)' and 'Break-glass admin' sections; closes G4 from prior verify"
+      }
+    ],
+    "coverage": {
+      "rts_addressed": [
+        "RT-12",
+        "RT-13",
+        "RT-3",
+        "RT-5",
+        "RT-6",
+        "RT-8",
+        "RT-9"
+      ],
+      "constraints_addressed": 11,
+      "rts_total_in_stage_1": [
+        "RT-5",
+        "RT-6",
+        "RT-8",
+        "RT-9",
+        "RT-12",
+        "RT-13"
+      ],
+      "rts_addressed_in_stage_1a": [
+        "RT-6",
+        "RT-8",
+        "RT-12",
+        "RT-13"
+      ],
+      "rts_deferred_to_stage_1b": [
+        "RT-5",
+        "RT-9"
+      ],
+      "constraints_total": 24,
+      "percentage": 46,
+      "constraint_ids_addressed": [
+        "B1",
+        "O3",
+        "S1",
+        "S2",
+        "S4",
+        "S5",
+        "T2",
+        "T3",
+        "U2",
+        "U3",
+        "U4"
+      ],
+      "rts_addressed_in_stage_1b": [
+        "RT-5",
+        "RT-9",
+        "RT-12"
+      ],
+      "rts_deferred_to_stage_1c_or_later": [
+        "RT-1",
+        "RT-2",
+        "RT-3",
+        "RT-4",
+        "RT-7",
+        "RT-10",
+        "RT-11",
+        "RT-14"
+      ]
+    },
+    "side_effects": [
+      {
+        "target": "dist-packaging manifold",
+        "kind": "drift_likely",
+        "note": "Makefile comment 'module's Go floor at 1.24.5' is now stale (go.mod is 1.25.0). dist-packaging T1 (deterministic builds) is unaffected (platform matrix is the threshold), but the comment should be updated in a follow-up. Suggested: amend dist-packaging in a separate /manifold:m5-verify pass once user-mgmt-mcp Stage 1a lands."
+      }
+    ]
+  },
+  "reversibility_log": [
+    {
+      "action_step": 1,
+      "description": "Add internal/redact package + wire as default slog handler in main.go",
+      "reversibility": "TWO_WAY",
+      "rationale": "Pure additive; reverting deletes the package and restores main.go's import block."
+    },
+    {
+      "action_step": 2,
+      "description": "Add internal/store/sqlite package + initial schema (001_init.sql)",
+      "reversibility": "REVERSIBLE_WITH_COST",
+      "cost": "Pre-release: free. Post-release: any data already written needs to be exported before removing the schema. Currently nothing writes here; cost is zero today."
+    },
+    {
+      "action_step": 3,
+      "description": "Add internal/auth/breakglass.go + tests",
+      "reversibility": "TWO_WAY",
+      "rationale": "Pure additive; not yet mounted by the server."
+    },
+    {
+      "action_step": 4,
+      "description": "Add OIDC stub-mode startup warning in internal/app/server.go",
+      "reversibility": "TWO_WAY",
+      "rationale": "Pure log-line addition; reverting is a one-line removal."
+    },
+    {
+      "action_step": 5,
+      "description": "Bump go.mod from go 1.24.5 -> go 1.25.0 (forced by modernc.org/sqlite v1.50.0 floor)",
+      "reversibility": "REVERSIBLE_WITH_COST",
+      "cost": "Reverting requires pinning sqlite to <=v1.34.x which is the last 1.24-compatible series; loses ~6 months of upstream fixes. Side effect: dist-packaging manifold's Makefile comment 'Go floor at 1.24.5' now stale and should be updated in a follow-up."
+    },
+    {
+      "action_step": 6,
+      "description": "Add modernc.org/sqlite v1.50.0 + golang.org/x/crypto v0.50.0 as direct deps",
+      "reversibility": "TWO_WAY",
+      "rationale": "First production direct deps for phronesis. Removing requires backing out the SQLite + Argon2 layers (which is exactly action steps 2 & 3)."
+    },
+    {
+      "action_step": 7,
+      "description": "Add internal/auth/oidc/projection.go (claim->user upsert)",
+      "reversibility": "TWO_WAY",
+      "rationale": "Pure additive; ProjectClaims is not yet wired into the OIDC login path (that lands in Stage 2 alongside cookie-OIDC handoff)."
+    },
+    {
+      "action_step": 8,
+      "description": "Add internal/app/handlers_admin_{users,keys}.go + tests",
+      "reversibility": "TWO_WAY",
+      "rationale": "Pure additive; routes mounted but only return data; mutating endpoints (suspend/delete/revoke/deny) operate on rows that don't exist until OIDC projection wires up."
+    },
+    {
+      "action_step": 9,
+      "description": "Add Server.store + StorePath config; open SQLite at startup",
+      "reversibility": "REVERSIBLE_WITH_COST",
+      "cost": "Pre-release: free. Once any production deployment writes a database, removing the field requires a data export. Currently zero such deployments."
+    },
+    {
+      "action_step": 10,
+      "description": "Mount /api/admin/users[/...] and /api/admin/keys[/...] routes",
+      "reversibility": "TWO_WAY",
+      "rationale": "Routes are admin-gated and have no public surface; removing them is a routes.go revert."
+    },
+    {
+      "action_step": 11,
+      "description": "Document stub-OIDC + break-glass in README",
+      "reversibility": "TWO_WAY",
+      "rationale": "Documentation. Reverts via git."
+    }
+  ]
+}

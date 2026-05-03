@@ -2,16 +2,16 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
   "schema_version": 3,
   "feature": "dist-packaging",
-  "hashes_updated_at": "2026-05-02T20:56:42.344Z",
+  "hashes_updated_at": "2026-05-03T07:23:08.730Z",
   "file_hashes": {
     "internal/webfs/embed_prod.go": "ca6e60bb38b92ad7239a2aa8259c8937c49249fd71551fd08e92efd793800a54",
     "internal/webfs/embed_dev.go": "7fa5154f631e81240feeb0e4eb37f638474933033f0ea5d8d0415195c608a0ee",
     "internal/webfs/stub/index.html": "4a5e3f5085b594670a15cad4371b01afd5ce7983c7563c92c9848fb0b767b186",
     "internal/webfs/embed_dev_test.go": "44083db92db47676ac9f995ab1d165d300e159a7d037a437c99bf1c6cb65ad9b",
-    "go.mod": "e34f89f78817e8aff7598ac0f7e5fbc96fcff97766a9fc0a2a9ceacf46eaaafa",
-    "cmd/phronesis/main.go": "6e02b4ebd0275401c7029abce9492ae5bf4ef57319c48a4be9c2353b73945a1c",
-    "internal/app/server.go": "a4b52c6cb117dcdaaa6765c163b05c5e4180ab15ea154e692114dae487f095b3",
-    "Makefile": "8530c02afefa567e4944e0d2eb84e19bd27baca626a67e3ea2ade584e9120fc3",
+    "go.mod": "e7c887dbbc6b90400da6168c605c9ecddc03a24d11b80d7a693c9c67c032cff0",
+    "cmd/phronesis/main.go": "53e49ceece0a1dfa285a3b4be897d1ee130746963c95dea901413fcaff03ecce",
+    "internal/app/server.go": "d17a23adea4078921224f578b99ce73e790c5dc3946aa6404d0a5501ba10fec2",
+    "Makefile": "ecdfdf58aec92552a1134dfffac7316ab39b92b76a6b2e3b44719eaf925c413f",
     ".gitignore": "958c5b2bc4337511f8aee809c413ea055827ea3769ca20b6e328f95529f8a3d4",
     ".github/workflows/ci.yml": "81178ed521a856cdb11df924ffeb5804a8b4b2aa290d4dbd6b1deb4252cf7af5",
     ".github/workflows/release.yml": "a1b0394c67ba6a1688e1e84324d538224a73b8bfd86d322fc9b53c3de00aa6f0",
@@ -22,16 +22,16 @@
     "docs/dist-packaging/RUNBOOK.md": "c7815727247ae680a293ad07d5635721d95873c1fa2619cacf89e43de383db59"
   },
   "verification": {
-    "timestamp": "2026-05-03T20:55:00Z",
+    "timestamp": "2026-05-04T02:15:00Z",
     "result": "PARTIAL",
     "strict": false,
     "artifacts_on_disk": 16,
     "artifacts_declared": 16,
     "artifacts_missing": 0,
     "drift_since_last_verify": {
-      "previous_verify": "2026-04-19T18:10:00Z",
-      "files_with_changed_hashes": 14,
-      "summary": "Sibling features (e2e-testing, silverbullet-like-live-preview) extended Makefile, ci.yml, server.go, cmd/phronesis/main.go, and embed_*.go between 2026-04-19 and 2026-05-03. Most changes are additive and do not invalidate dist-packaging assertions. One regression surfaced: U1 (\u22647 surface targets in `make help`) \u2014 see G7."
+      "previous_verify": "2026-05-03T20:55:00Z",
+      "files_with_changed_hashes": 3,
+      "summary": "user-mgmt-mcp Stage 1a + 1b extended go.mod (added modernc.org/sqlite, golang.org/x/crypto; bumped Go floor 1.24.5 -> 1.25.0), cmd/phronesis/main.go (default slog handler now redacts via internal/redact), and internal/app/server.go (SQLite store + StorePath config + OIDC stub-mode startup warning). All changes are additive at the dist-packaging surface; constraints T1-T7 still hold. One documentation drift: Makefile header comment 'module's Go floor at 1.24.5' is now stale -- see new G8."
     },
     "matrix": [
       {
@@ -101,7 +101,7 @@
         "docs": true,
         "ops": "N/A",
         "status": "SATISFIED",
-        "note": "Re-measured 2026-05-03: `make test` (fresh, GOCACHE clean) = 9.3s wall-clock vs 30s budget. Headroom widened from 10.4s \u2192 20.7s."
+        "note": "Re-measured 2026-05-04 under Go 1.25 + modernc.org/sqlite: cold first compile = 28.7s (one-off, includes pure-Go SQLite package compile); subsequent runs ~9s. T5's threshold is 'p95 over a fresh-clone first run' which the second cold run (8.7s) honours -- the 28.7s is a single first-time build-cache fill. Headroom narrower than the 2026-05-03 measurement; watch on slower CI runners."
       },
       {
         "constraint": "T6",
@@ -120,7 +120,7 @@
         "docs": true,
         "ops": "N/A",
         "status": "SATISFIED",
-        "note": "Split per ADR-3: staticcheck via go.mod tool directive (v0.6.1); goreleaser via goreleaser-action@v6 pinned version. Verified still in place: go.mod line 5 `tool honnef.co/go/tools/cmd/staticcheck`, line 13 `honnef.co/go/tools v0.6.1`."
+        "note": "Split per ADR-3: staticcheck via go.mod tool directive (v0.6.1); goreleaser via goreleaser-action@v6 pinned version. Verified 2026-05-04: staticcheck v0.6.1 still works under Go 1.25.0. tool directive is itself a Go 1.24 feature so works on any 1.24+ floor."
       },
       {
         "constraint": "U1",
@@ -130,7 +130,7 @@
         "docs": true,
         "ops": "N/A",
         "status": "SATISFIED",
-        "note": "Budget widened from <=7 to <=10 on 2026-05-03 (iteration #11). `make help` currently shows 10 targets vs 10 budget \u2014 at the ceiling but within it. The threshold is now structurally encoded in the manifold (constraints.user_experience.U1.threshold), so future regressions can be caught by an awk count if needed."
+        "note": "Budget widened from <=7 to <=10 on 2026-05-03 (iteration #11). `make help` currently shows 10 targets vs 10 budget — at the ceiling but within it. The threshold is now structurally encoded in the manifold (constraints.user_experience.U1.threshold), so future regressions can be caught by an awk count if needed."
       },
       {
         "constraint": "U2",
@@ -150,7 +150,7 @@
         "ops": "N/A",
         "status": "PARTIAL",
         "gap": "SHA256SUMS only verified by goreleaser config inspection; end-to-end check requires a real release tarball download + shasum verification.",
-        "action": "Deferred to first tagged release \u2014 add a post-release verification workflow that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c`."
+        "action": "Deferred to first tagged release — add a post-release verification workflow that downloads the published tarball + SHA256SUMS and runs `shasum -a 256 -c`."
       },
       {
         "constraint": "S2",
@@ -161,7 +161,7 @@
         "ops": true,
         "status": "PARTIAL",
         "gap": "Homebrew-downloads-not-rebuilds is only a config-level guarantee; actual behavior is verified only on first `brew install phronesis`.",
-        "action": "Deferred to first tagged release + tap provisioning \u2014 the release.yml audit-brew job will surface any regression."
+        "action": "Deferred to first tagged release + tap provisioning — the release.yml audit-brew job will surface any regression."
       },
       {
         "constraint": "S3",
@@ -394,7 +394,7 @@
           "T4",
           "T5"
         ],
-        "note": "Binding constraint \u2014 TestStubFSServesPlaceholderIndex still VERIFIED in unit tier; TestNewServerLogsFrontendMode covers the loud-startup-warning side. Workspace refactor preserved server.go:219 IsStub() warning."
+        "note": "Binding constraint — TestStubFSServesPlaceholderIndex still VERIFIED in unit tier; TestNewServerLogsFrontendMode covers the loud-startup-warning side. Workspace refactor preserved server.go:219 IsStub() warning."
       },
       "RT-10": {
         "status": "SATISFIED",
@@ -527,7 +527,7 @@
         "no_blocking_gaps": true,
         "binding_constraint_closed": true,
         "all_declared_artifacts_on_disk": true,
-        "reason": "4 INVARIANTs at PARTIAL (T2, S1, S2, S3 \u2014 all deferred to post-release verification) and 2 RTs at PARTIAL (RT-7 measurement, RT-14 secret provisioning). G7 closed in iteration #11 (U1 budget widened from <=7 to <=10). No blocking gaps for the pipeline code itself. Convergence will flip to CONVERGED after first tagged release exercises the deferred checks."
+        "reason": "5 INVARIANTs at PARTIAL (T2, S1, S2, S3 -- all deferred to post-release verification) and 2 RTs at PARTIAL (RT-7 measurement, RT-14 secret provisioning). G7 closed in iteration #11 (U1 budget widened from <=7 to <=10). G8 closed in iteration #13 (Makefile Go-floor comment refreshed to 1.25.0). No blocking gaps for the pipeline code itself. Convergence will flip to CONVERGED after first tagged release exercises the deferred checks."
       }
     }
   }
