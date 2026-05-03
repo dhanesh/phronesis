@@ -6,6 +6,7 @@
   import WorkspaceManager from './lib/WorkspaceManager.svelte';
   import UsersManager from './lib/UsersManager.svelte';
   import KeysManager from './lib/KeysManager.svelte';
+  import MCPSetupPanel from './lib/MCPSetupPanel.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -46,6 +47,7 @@
   let workspaceManagerOpen = $state(false);
   let usersManagerOpen = $state(false);
   let keysManagerOpen = $state(false);
+  let mcpSetupOpen = $state(false);
 
   function pagePath(name) {
     const ws = encodeURIComponent(currentWorkspace);
@@ -68,6 +70,8 @@
       usersManagerOpen = true;
     } else if (item.type === 'open-keys-manager') {
       keysManagerOpen = true;
+    } else if (item.type === 'open-mcp-setup') {
+      mcpSetupOpen = true;
     }
   }
 
@@ -477,6 +481,7 @@
 
 <UsersManager bind:open={usersManagerOpen} />
 <KeysManager bind:open={keysManagerOpen} />
+<MCPSetupPanel bind:open={mcpSetupOpen} />
 
 <style>
   /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).

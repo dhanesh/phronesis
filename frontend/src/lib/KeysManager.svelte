@@ -5,15 +5,20 @@
     POST   /api/admin/keys/:id/revoke
     GET    /api/admin/keys/requests
     POST   /api/admin/keys/requests/:id/deny
-    POST   /api/admin/keys/requests/:id/approve  (501 in Stage 1b)
+    POST   /api/admin/keys/requests/:id/approve
 
   Satisfies: U3 (Admin Keys page lists keys with one-click revoke +
                   pending key-request approval surface),
              RT-9 (admin Web UI surface — Stage 1c frontend),
-             TN7 (request->approve flow surfaced in UI; approve
-                   inlines a Stage-2 stub message).
+             TN7 (request->approve flow surfaced in UI),
+             admin-ui RT-3 (approve form: scope / label / expires_at)
+             admin-ui RT-1 (mounts PlaintextModal on success)
+             admin-ui RT-2 (uses mintApiKey typed wrapper).
 -->
 <script>
+  import PlaintextModal from './PlaintextModal.svelte';
+  import { mintApiKey } from './api/mintKey.ts';
+
   let {
     open = $bindable(false),
     onChanged,
@@ -25,6 +30,23 @@
   let info = $state('');
   let busy = $state(false);
   let loaded = $state(false);
+
+  // admin-ui RT-3: per-request approve-form state. Keyed on the
+  // request id of the row currently being configured. Empty = no
+  // form open.
+  let approveFormForId = $state(null);
+  let approveScope = $state('read');
+  let approveLabel = $state('');
+  let approveExpiresAt = $state('');
+  let approveError = $state('');
+
+  // admin-ui RT-1: plaintext modal state. Owns the bound plaintext
+  // for the duration of the modal session. Cleared on dismiss so
+  // the value does not survive in component state past acknowledgment.
+  let plaintextOpen = $state(false);
+  let plaintextValue = $state('');
+  let plaintextPrefix = $state('');
+  let plaintextWarning = $state('');
 
   $effect(() => {
     if (open) {
@@ -96,28 +118,78 @@
     }
   }
 
-  async function approveRequest(req) {
+  // admin-ui RT-3: opening the approve form pre-fills with the
+  // request's stated scope + label so the admin can either accept
+  // or override.
+  function openApproveForm(req) {
+    approveFormForId = req.id;
+    approveScope = req.requested_scope || 'read';
+    approveLabel = req.requested_label || '';
+    approveExpiresAt = '';
+    approveError = '';
+  }
+
+  function cancelApproveForm() {
+    approveFormForId = null;
+    approveError = '';
+  }
+
+  // admin-ui RT-2 + RT-1: submit the approve form via the typed
+  // wrapper. On success, mount the plaintext modal with the
+  // returned key. The wrapper's discriminated-union return forces
+  // exhaustive handling so a future maintainer cannot accidentally
+  // read `plaintext` on an error result.
+  async function submitApprove(req) {
+    if (approveLabel.trim() === '') {
+      approveError = 'Label is required.';
+      return;
+    }
+    if (!['read', 'write', 'admin'].includes(approveScope)) {
+      approveError = 'Invalid scope.';
+      return;
+    }
+    if (approveExpiresAt && isNaN(Date.parse(approveExpiresAt))) {
+      approveError = 'Expires-at must be a valid ISO-8601 timestamp.';
+      return;
+    }
     busy = true;
-    error = '';
+    approveError = '';
     info = '';
     try {
-      const res = await fetch(`/api/admin/keys/requests/${req.id}/approve`, { method: 'POST' });
-      if (res.status === 501) {
-        // Stage 2 lands real Argon2id minting; surface the structured
-        // message inline rather than as a generic error.
-        const d = await res.json().catch(() => ({}));
-        info = `${d.error || 'Approve flow not implemented yet.'} ${d.workaround || ''}`.trim();
-        return;
+      const result = await mintApiKey(req.id, {
+        scope: approveScope,
+        label: approveLabel.trim(),
+        expiresAt: approveExpiresAt || undefined,
+      });
+      if (result.ok) {
+        // RT-1: hand the plaintext to the modal. The wrapper
+        // discarded the response object; only the typed string
+        // crosses this boundary. The modal owns the lifetime; on
+        // its dismiss we clear our copy.
+        plaintextValue = result.plaintext;
+        plaintextPrefix = result.prefix;
+        plaintextWarning = result.warning ?? '';
+        plaintextOpen = true;
+        approveFormForId = null;
+        await refresh();
+      } else {
+        // RT-2 / TN3: error path renders only the wrapper's filtered
+        // message string. Never the raw response.
+        approveError = result.message || `Approve failed (${result.status})`;
       }
-      if (!res.ok && res.status !== 204) {
-        const d = await res.json().catch(() => ({}));
-        error = d.error || `Approve failed (${res.status})`;
-        return;
-      }
-      await refresh();
     } finally {
       busy = false;
     }
+  }
+
+  function onPlaintextDismissed() {
+    // RT-1 + S1: clear the bound plaintext as soon as the modal
+    // closes. The component itself also resets its local state on
+    // unmount, but defending here keeps this manager free of any
+    // residual reference to the value.
+    plaintextValue = '';
+    plaintextPrefix = '';
+    plaintextWarning = '';
   }
 
   function formatTime(iso) {
@@ -182,14 +254,64 @@
                   <td>{r.requested_label}</td>
                   <td class="keys-time">{formatTime(r.requested_at)}</td>
                   <td class="keys-actions">
-                    <button class="keys-btn primary" disabled={busy}
-                      onclick={() => approveRequest(r)}
-                      data-testid="keys-approve">Approve</button>
+                    <button class="keys-btn primary" disabled={busy || approveFormForId === r.id}
+                      onclick={() => openApproveForm(r)}
+                      data-testid="keys-approve">Approve…</button>
                     <button class="keys-btn ghost" disabled={busy}
                       onclick={() => denyRequest(r)}
                       data-testid="keys-deny">Deny</button>
                   </td>
                 </tr>
+                {#if approveFormForId === r.id}
+                  <tr class="keys-form-row" data-testid="keys-approve-form">
+                    <td colspan="6">
+                      <div class="keys-form">
+                        <label>
+                          Scope
+                          <select bind:value={approveScope} data-testid="keys-form-scope">
+                            <option value="read">read</option>
+                            <option value="write">write</option>
+                            <option value="admin">admin</option>
+                          </select>
+                        </label>
+                        <label>
+                          Label
+                          <input
+                            type="text"
+                            bind:value={approveLabel}
+                            placeholder="e.g. claude-code on my-laptop"
+                            data-testid="keys-form-label"
+                          />
+                        </label>
+                        <label>
+                          Expires (optional)
+                          <input
+                            type="datetime-local"
+                            bind:value={approveExpiresAt}
+                            data-testid="keys-form-expires"
+                          />
+                        </label>
+                        {#if approveError}
+                          <p class="keys-error keys-form-error" data-testid="keys-form-error">{approveError}</p>
+                        {/if}
+                        <div class="keys-form-actions">
+                          <button
+                            class="keys-btn primary"
+                            disabled={busy}
+                            onclick={() => submitApprove(r)}
+                            data-testid="keys-form-submit"
+                          >Mint key</button>
+                          <button
+                            class="keys-btn ghost"
+                            disabled={busy}
+                            onclick={cancelApproveForm}
+                            data-testid="keys-form-cancel"
+                          >Cancel</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {/if}
               {/each}
             </tbody>
           </table>
@@ -253,6 +375,17 @@
     </div>
   </div>
 {/if}
+
+<!-- admin-ui RT-1: plaintext modal mounts whenever a key is freshly
+     minted. The KeysManager modal stays open behind it so the admin
+     returns to the keys list after acknowledging. -->
+<PlaintextModal
+  bind:open={plaintextOpen}
+  plaintext={plaintextValue}
+  prefix={plaintextPrefix}
+  warning={plaintextWarning}
+  onDismiss={onPlaintextDismissed}
+/>
 
 <style>
   .keys-backdrop {
@@ -407,6 +540,46 @@
   .keys-btn.primary { color: var(--accent); border-color: var(--accent); }
   .keys-btn.primary:hover:not(:disabled) { background: var(--accent-bg); }
   .keys-btn.danger { color: var(--danger); }
+
+  /* admin-ui RT-3: per-row approve form. Inline expansion under the
+     pending-request row keeps the table flow without spawning a
+     nested modal. */
+  .keys-form-row td {
+    background: var(--bg-control);
+    padding: 0.7rem 1rem;
+  }
+  .keys-form {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .keys-form label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    gap: 0.2rem;
+  }
+  .keys-form input[type="text"],
+  .keys-form input[type="datetime-local"],
+  .keys-form select {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.86rem;
+    color: var(--text-primary);
+  }
+  .keys-form-error {
+    flex-basis: 100%;
+    margin: 0;
+  }
+  .keys-form-actions {
+    display: flex;
+    gap: 0.4rem;
+    align-self: flex-end;
+  }
   .keys-btn.danger:hover:not(:disabled) {
     background: color-mix(in oklab, var(--danger) 14%, transparent);
   }

@@ -16,11 +16,20 @@
   let error = $state('');
   let busy = $state(false);
 
+  // admin-ui RT-4: inline rename. Tracks which row's display name is
+  // currently being edited (slug — keyed on the workspace identifier).
+  // Empty = no edit in progress. The slug itself is intentionally
+  // NOT editable (B3: renaming a slug would orphan every page URL
+  // and external bookmark).
+  let renameForSlug = $state('');
+  let renameValue = $state('');
+
   $effect(() => {
     if (open) {
       slug = '';
       name = '';
       error = '';
+      renameForSlug = '';
     }
   });
 
@@ -52,6 +61,48 @@
       }
       slug = '';
       name = '';
+      await refresh();
+    } finally {
+      busy = false;
+    }
+  }
+
+  function startRename(target) {
+    renameForSlug = target.slug;
+    renameValue = target.name || target.slug;
+    error = '';
+  }
+
+  function cancelRename() {
+    renameForSlug = '';
+    renameValue = '';
+    error = '';
+  }
+
+  // admin-ui RT-4: PATCH /api/admin/workspaces/{slug} with { name }.
+  // Slug NEVER changes — B3 enforced soft via the UI not exposing
+  // a slug input.
+  async function saveRename(target) {
+    const trimmed = renameValue.trim();
+    if (trimmed === '') {
+      error = 'Name cannot be empty.';
+      return;
+    }
+    busy = true;
+    error = '';
+    try {
+      const res = await fetch(`/api/admin/workspaces/${encodeURIComponent(target.slug)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => ({}));
+        error = data.error || `Rename failed (${res.status})`;
+        return;
+      }
+      renameForSlug = '';
+      renameValue = '';
       await refresh();
     } finally {
       busy = false;
@@ -100,16 +151,55 @@
 
       <ul class="ws-list">
         {#each workspaces as w (w.slug)}
-          <li class="ws-row">
-            <div class="ws-meta">
-              <span class="ws-slug">{w.slug}</span>
-              {#if w.name && w.name !== w.slug}<span class="ws-name">{w.name}</span>{/if}
-              {#if w.slug === currentWorkspace}<span class="ws-current">active</span>{/if}
-            </div>
-            {#if w.slug !== 'default'}
-              <button class="ws-delete" disabled={busy} onclick={() => remove(w.slug)}>Delete</button>
+          <li class="ws-row" data-testid="ws-row">
+            {#if renameForSlug === w.slug}
+              <!-- admin-ui RT-4 / B3: rename edits display-name only.
+                   Slug is read-only (rendered alongside as immutable). -->
+              <div class="ws-rename">
+                <span class="ws-slug ws-slug-locked" data-testid="ws-slug-locked">{w.slug}</span>
+                <input
+                  type="text"
+                  bind:value={renameValue}
+                  placeholder="Display name"
+                  data-testid="ws-rename-input"
+                  disabled={busy}
+                />
+                <button
+                  class="ws-action"
+                  disabled={busy}
+                  onclick={() => saveRename(w)}
+                  data-testid="ws-rename-save"
+                >Save</button>
+                <button
+                  class="ws-action ghost"
+                  disabled={busy}
+                  onclick={cancelRename}
+                  data-testid="ws-rename-cancel"
+                >Cancel</button>
+              </div>
             {:else}
-              <span class="ws-locked" title="Default workspace cannot be deleted">locked</span>
+              <div class="ws-meta">
+                <span class="ws-slug">{w.slug}</span>
+                {#if w.name && w.name !== w.slug}<span class="ws-name">{w.name}</span>{/if}
+                {#if w.slug === currentWorkspace}<span class="ws-current">active</span>{/if}
+              </div>
+              <div class="ws-actions">
+                <button
+                  class="ws-action"
+                  disabled={busy}
+                  onclick={() => startRename(w)}
+                  data-testid="ws-rename"
+                >Rename</button>
+                {#if w.slug !== 'default'}
+                  <button
+                    class="ws-delete"
+                    disabled={busy}
+                    onclick={() => remove(w.slug)}
+                  >Delete</button>
+                {:else}
+                  <span class="ws-locked" title="Default workspace cannot be deleted">locked</span>
+                {/if}
+              </div>
             {/if}
           </li>
         {/each}
@@ -272,4 +362,44 @@
   }
   .ws-form button:disabled { opacity: 0.6; cursor: not-allowed; }
   .ws-error { color: var(--danger); margin: 0; font-size: 0.86rem; }
+
+  /* admin-ui RT-4: inline rename. The display-name field is editable,
+     the slug is rendered as locked alongside it (B3). */
+  .ws-rename {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex: 1 1 auto;
+  }
+  .ws-rename input[type="text"] {
+    flex: 1 1 auto;
+    background: var(--bg-surface, var(--bg-elevated, #fff));
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.86rem;
+    color: var(--text-primary);
+  }
+  .ws-slug-locked {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+    font-size: 0.82rem;
+  }
+  .ws-actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .ws-action {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.2rem 0.55rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .ws-action:hover:not(:disabled) { background: var(--bg-hover); }
+  .ws-action:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ws-action.ghost { color: var(--text-secondary); }
 </style>

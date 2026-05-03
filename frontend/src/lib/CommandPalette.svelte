@@ -104,6 +104,17 @@
         hint: 'Admin',
         invoke: () => onSelect?.({ type: 'open-keys-manager' }),
       });
+      // admin-ui RT-5 / RT-6: MCP setup panel surfaces the discovery
+      // + JWKS URLs an admin pastes into Claude Code or other MCP
+      // clients. Lives behind the same isAdmin gate as the other
+      // admin entries.
+      commands.push({
+        kind: 'command',
+        id: 'cmd:mcp.setup',
+        label: 'Connect an MCP client',
+        hint: 'Admin',
+        invoke: () => onSelect?.({ type: 'open-mcp-setup' }),
+      });
     }
     return [...matches, ...wsCommands, ...commands];
   }

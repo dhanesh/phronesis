@@ -116,3 +116,209 @@ test.describe('admin Users + Keys modals via Cmd-K', () => {
     await expect(page.getByText(/No keys issued yet/i)).toBeVisible();
   });
 });
+
+// ----------------------------------------------------------------------
+// admin-ui Stage: plaintext modal + approve form + storage cleanliness.
+// These walk the UI flow with synthetic /api/admin/keys/* responses so
+// we can drive the approve flow without seeding real DB rows.
+// ----------------------------------------------------------------------
+
+const SYNTHETIC_REQUEST = {
+  id: 7,
+  user_id: 42,
+  owner_name: 'alice',
+  owner_email: 'alice@example.com',
+  workspace_slug: 'default',
+  requested_scope: 'write',
+  requested_label: 'claude-code on alice-laptop',
+  requested_at: '2026-05-04T08:00:00Z',
+};
+
+const SYNTHETIC_PLAINTEXT = 'phr_live_abcd1234efgh_zyxwvutsrqponmlkjihgfedcba012345';
+const SYNTHETIC_PREFIX = 'phr_live_abcd1234efgh';
+
+async function openKeysModalWithSyntheticRequest(page) {
+  // Mock the keys-list (empty) and the requests-list (one pending).
+  await page.route('**/api/admin/keys', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ keys: [] }) }),
+  );
+  await page.route('**/api/admin/keys/requests', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ requests: [SYNTHETIC_REQUEST] }) }),
+  );
+
+  await page.goto('/');
+  await expect(page.locator('.top-bar')).toBeVisible({ timeout: 10000 });
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
+  await page.keyboard.type('api keys');
+  const item = page.getByText(/manage api keys/i).first();
+  await expect(item).toBeVisible();
+  await item.click();
+  await expect(page.locator('[aria-label="Manage API keys"]')).toBeVisible({ timeout: 5000 });
+  // Synthetic request appears.
+  await expect(page.getByTestId('keys-request-row')).toBeVisible();
+}
+
+test.describe('admin-ui: approve form + plaintext modal', () => {
+  // @constraint U1 — plaintext modal with blur/reveal + acknowledgment gate
+  // @constraint S1 — no client storage of plaintext
+  // @constraint admin-ui:RT-1 — binding
+  test('approve flow: form fields, plaintext modal lifecycle, ack-gate, on-dismiss clear', async ({ page }) => {
+    await openKeysModalWithSyntheticRequest(page);
+
+    // Snapshot client storage BEFORE the flow so we can assert no
+    // residue after (RT-10 / S1).
+    const before = await page.evaluate(() => ({
+      ls: { ...localStorage },
+      ss: { ...sessionStorage },
+    }));
+
+    // Open the approve form (admin-ui RT-3).
+    await page.getByTestId('keys-approve').click();
+    await expect(page.getByTestId('keys-approve-form')).toBeVisible();
+
+    // Form pre-fills from the request.
+    await expect(page.getByTestId('keys-form-scope')).toHaveValue('write');
+    await expect(page.getByTestId('keys-form-label')).toHaveValue(SYNTHETIC_REQUEST.requested_label);
+
+    // Override scope; leave label as-is.
+    await page.getByTestId('keys-form-scope').selectOption('read');
+
+    // Mock the approve endpoint to return the synthetic plaintext.
+    await page.route('**/api/admin/keys/requests/7/approve', (route) =>
+      route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 99,
+          key_prefix: SYNTHETIC_PREFIX,
+          key_plaintext: SYNTHETIC_PLAINTEXT,
+          warning: 'plaintext is shown ONCE; copy it now or revoke and re-issue',
+        }),
+      }),
+    );
+
+    await page.getByTestId('keys-form-submit').click();
+
+    // Plaintext modal mounts.
+    const modal = page.locator('[aria-labelledby="pt-title"]');
+    await expect(modal).toBeVisible({ timeout: 5000 });
+
+    // Token is rendered blurred by default (TN2 resolution).
+    const token = page.getByTestId('plaintext-token');
+    await expect(token).toHaveAttribute('data-revealed', 'false');
+    // CSS class assertion — the blurred class is what applies the filter.
+    await expect(token).toHaveClass(/pt-token-blurred/);
+
+    // Reveal toggles the blur off.
+    await page.getByTestId('plaintext-reveal').click();
+    await expect(token).toHaveAttribute('data-revealed', 'true');
+    await expect(token).not.toHaveClass(/pt-token-blurred/);
+
+    // Dismiss button is disabled until the ack checkbox is checked.
+    const dismiss = page.getByTestId('plaintext-dismiss');
+    await expect(dismiss).toBeDisabled();
+
+    // Clipboard copy returns the unobscured value regardless of blur.
+    await page.evaluate(() => {
+      // Stub clipboard so we can capture the writeText call.
+      navigator.clipboard.writeText = async (s) => {
+        (window as any).__lastCopied = s;
+      };
+    });
+    await page.getByTestId('plaintext-copy').click();
+    const copied = await page.evaluate(() => (window as any).__lastCopied);
+    expect(copied).toBe(SYNTHETIC_PLAINTEXT);
+
+    // Tick the ack checkbox; dismiss enables.
+    await page.getByTestId('plaintext-ack').check();
+    await expect(dismiss).toBeEnabled();
+    await dismiss.click();
+    await expect(modal).not.toBeVisible();
+
+    // RT-10 / S1: storage is unchanged (plaintext never persisted).
+    const after = await page.evaluate(() => ({
+      ls: { ...localStorage },
+      ss: { ...sessionStorage },
+    }));
+    expect(after).toEqual(before);
+
+    // Ensure the plaintext is also not lingering anywhere in the DOM.
+    const html = await page.content();
+    expect(html).not.toContain(SYNTHETIC_PLAINTEXT);
+  });
+
+  // @constraint U1 — Escape suppression until acked
+  test('plaintext modal: Escape key is suppressed until ack', async ({ page }) => {
+    await openKeysModalWithSyntheticRequest(page);
+
+    await page.route('**/api/admin/keys/requests/7/approve', (route) =>
+      route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 99,
+          key_prefix: SYNTHETIC_PREFIX,
+          key_plaintext: SYNTHETIC_PLAINTEXT,
+        }),
+      }),
+    );
+
+    await page.getByTestId('keys-approve').click();
+    await page.getByTestId('keys-form-submit').click();
+    const modal = page.locator('[aria-labelledby="pt-title"]');
+    await expect(modal).toBeVisible();
+
+    // Pre-ack: Escape is a no-op.
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeVisible();
+
+    // Post-ack: Escape dismisses.
+    await page.getByTestId('plaintext-ack').check();
+    await page.keyboard.press('Escape');
+    await expect(modal).not.toBeVisible();
+  });
+
+  // @constraint S3 — no plaintext in console; @constraint admin-ui:TN3
+  test('approve flow: error path renders structured message; no plaintext in console', async ({ page }) => {
+    const consoleMessages: string[] = [];
+    page.on('console', (msg) => consoleMessages.push(msg.text()));
+
+    await openKeysModalWithSyntheticRequest(page);
+
+    // Synthetic 500 from approve. The error body has no plaintext, so
+    // this exercises the negative case + the console-silence assertion.
+    await page.route('**/api/admin/keys/requests/7/approve', (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'database constraint violation' }),
+      }),
+    );
+
+    await page.getByTestId('keys-approve').click();
+    await page.getByTestId('keys-form-submit').click();
+
+    // Form-error rendered; no plaintext modal.
+    await expect(page.getByTestId('keys-form-error')).toContainText(/database constraint violation/i);
+    await expect(page.locator('[aria-labelledby="pt-title"]')).not.toBeVisible();
+
+    // Console capture: nothing logged with phr_live_ prefix during the
+    // failed flow.
+    for (const msg of consoleMessages) {
+      expect(msg).not.toContain('phr_live_');
+    }
+  });
+
+  // @constraint admin-ui:RT-3 — client-side validation
+  test('approve form: rejects empty label client-side', async ({ page }) => {
+    await openKeysModalWithSyntheticRequest(page);
+
+    await page.getByTestId('keys-approve').click();
+    await page.getByTestId('keys-form-label').fill('   '); // whitespace-only
+    await page.getByTestId('keys-form-submit').click();
+
+    await expect(page.getByTestId('keys-form-error')).toContainText(/label/i);
+    // Approve endpoint is NOT called.
+    await expect(page.locator('[aria-labelledby="pt-title"]')).not.toBeVisible();
+  });
+});
