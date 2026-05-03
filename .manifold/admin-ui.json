@@ -1,0 +1,487 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-structure.schema.json",
+  "schema_version": 3,
+  "feature": "admin-ui",
+  "phase": "VERIFIED",
+  "domain": "software",
+  "created": "2026-05-03T18:28:57Z",
+  "updated": "2026-05-04T18:30:00Z",
+  "constraints": {
+    "business": [
+      {
+        "id": "B1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "B2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3},
+        "threshold": {"kind": "deterministic", "ceiling": "2s"}
+      },
+      {
+        "id": "B3",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "technical": [
+      {
+        "id": "T1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "T2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "T3",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3},
+        "threshold": {"kind": "deterministic", "ceiling": "30 KB gzipped"}
+      }
+    ],
+    "user_experience": [
+      {
+        "id": "U1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U3",
+        "type": "goal",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U4",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "U5",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "security": [
+      {
+        "id": "S1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "regulation",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "S2",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "S3",
+        "type": "invariant",
+        "source": "pre-mortem",
+        "challenger": "regulation",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      }
+    ],
+    "operational": [
+      {
+        "id": "O1",
+        "type": "invariant",
+        "source": "interview",
+        "challenger": "stakeholder",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3}
+      },
+      {
+        "id": "O2",
+        "type": "boundary",
+        "source": "interview",
+        "challenger": "technical-reality",
+        "quality": {"specificity": 3, "measurability": 3, "testability": 3},
+        "threshold": {"kind": "deterministic", "ceiling": "30 KB gzipped"}
+      }
+    ]
+  },
+  "tensions": [
+    {
+      "id": "TN1",
+      "type": "resource_tension",
+      "between": ["B1", "T3"],
+      "status": "resolved",
+      "triz": {
+        "type": "technical",
+        "parameters": "Cost vs Quality",
+        "principles": ["P1 Segmentation", "P10 Prior action"]
+      },
+      "validation_criteria": [
+        "make bundle-size shows delta < 30 KB after the slice merges",
+        "git diff frontend/package.json is empty after the slice",
+        "no shared Modal primitive extracted (each manager owns its modal)"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "T3", "effect": "TIGHTENED", "note": "Reaffirmed as the load-bearing budget; incremental measurement after each component"},
+        {"constraint_id": "B1", "effect": "TIGHTENED", "note": "B1 may need scope cuts if budget tightens; least-essential surface first (likely MCP setup panel)"}
+      ],
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "id": "TN2",
+      "type": "trade_off",
+      "between": ["U1", "S1"],
+      "status": "resolved",
+      "source": "pre-mortem",
+      "triz": {
+        "type": "physical",
+        "parameters": "Privacy vs Usability",
+        "principles": ["P10 Prior action", "P15 Dynamization"]
+      },
+      "validation_criteria": [
+        "After modal mount, the plaintext element has CSS filter: blur(...) via a CSS class",
+        "Click on the plaintext or the Reveal button toggles the blur class off",
+        "Copy-to-clipboard returns the unobscured plaintext regardless of blur state (Playwright assertion)",
+        "After modal unmount, the bound plaintext state is empty and not retained anywhere in the component tree"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "S1", "effect": "LOOSENED", "note": "Additional protection layer beyond no-storage"},
+        {"constraint_id": "U1", "effect": "LOOSENED", "note": "Acknowledgment-gate semantics preserved; blur is orthogonal"}
+      ],
+      "failure_cascade": "If click-to-reveal handler fails, blurred plaintext is still copyable via the Copy button (independent of reveal state). Worst case: admin can't read the value but can still copy/paste. Acceptable degradation.",
+      "reversibility": "TWO_WAY"
+    },
+    {
+      "id": "TN3",
+      "type": "trade_off",
+      "between": ["U4", "S3"],
+      "status": "resolved",
+      "triz": {
+        "type": "technical",
+        "parameters": "Privacy vs Usability",
+        "principles": ["P1 Segmentation", "P10 Prior action", "P24 Intermediary"]
+      },
+      "validation_criteria": [
+        "Approve handler accesses response.json() on at most one code path (the success branch)",
+        "Error rendering renders only HTTP status + trimmed error.message; never the raw response",
+        "e2e test: synthetic 500 from approve does not produce 'phr_live_' substring in DOM",
+        "e2e test: synthetic 201 from approve does not invoke console.* with the plaintext (Playwright console capture)"
+      ],
+      "propagation_effects": [
+        {"constraint_id": "U4", "effect": "TIGHTENED", "note": "Error rendering for credential-bearing endpoints must use the structured wrapper, not raw response"},
+        {"constraint_id": "S3", "effect": "LOOSENED", "note": "Explicit code-path discipline localised to a typed wrapper helper"}
+      ],
+      "reversibility": "TWO_WAY"
+    }
+  ],
+  "anchors": {
+    "required_truths": [
+      {
+        "id": "RT-1",
+        "status": "PARTIAL",
+        "maps_to": ["U1", "S1"],
+        "evidence": [
+          {"id": "E1", "type": "file_exists", "path": "frontend/src/lib/PlaintextModal.svelte", "status": "PENDING"},
+          {"id": "E2", "type": "content_match", "path": "frontend/src/lib/PlaintextModal.svelte", "pattern": "filter: blur|filter:blur", "status": "PENDING"},
+          {"id": "E3", "type": "content_match", "path": "frontend/src/lib/PlaintextModal.svelte", "pattern": "acknowledged|acked|copyConfirmed", "status": "PENDING"},
+          {"id": "E4", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "plaintext modal ack-gate prevents dismiss", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-2",
+        "status": "PARTIAL",
+        "maps_to": ["S3", "U4"],
+        "evidence": [
+          {"id": "E5", "type": "file_exists", "path": "frontend/src/lib/api/mintKey.ts", "status": "PENDING"},
+          {"id": "E6", "type": "content_match", "path": "frontend/src/lib/api/mintKey.ts", "pattern": "response\\.json|response\\.ok", "status": "PENDING"},
+          {"id": "E7", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "approve error never echoes plaintext", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-3",
+        "status": "PARTIAL",
+        "maps_to": ["B1"],
+        "evidence": [
+          {"id": "E8", "type": "content_match", "path": "frontend/src/lib/KeysManager.svelte", "pattern": "scope|expires_at|requested_label", "status": "PENDING"},
+          {"id": "E9", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "approve form collects scope and label", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-4",
+        "status": "PARTIAL",
+        "maps_to": ["B1", "B3"],
+        "evidence": [
+          {"id": "E10", "type": "content_match", "path": "frontend/src/lib/WorkspaceManager.svelte", "pattern": "PATCH|method:.*'PATCH'", "status": "PENDING"},
+          {"id": "E11", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "workspace rename updates display name; slug stays read-only", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-5",
+        "status": "PARTIAL",
+        "maps_to": ["U3", "B1"],
+        "evidence": [
+          {"id": "E12", "type": "file_exists", "path": "frontend/src/lib/MCPSetupPanel.svelte", "status": "PENDING"},
+          {"id": "E13", "type": "content_match", "path": "frontend/src/lib/MCPSetupPanel.svelte", "pattern": "well-known|jwks|oauth-authorization-server", "status": "PENDING"},
+          {"id": "E14", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "MCP setup copy buttons fire clipboard with expected URLs", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-6",
+        "status": "PARTIAL",
+        "maps_to": ["U5", "S2"],
+        "evidence": [
+          {"id": "E15", "type": "content_match", "path": "frontend/src/lib/CommandPalette.svelte", "pattern": "open-mcp-setup|cmd:mcp", "status": "PENDING"},
+          {"id": "E16", "type": "content_match", "path": "frontend/src/App.svelte", "pattern": "mcpSetupOpen|MCPSetupPanel", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-7",
+        "status": "PARTIAL",
+        "maps_to": ["O1", "S3"],
+        "evidence": [
+          {"id": "E17", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "plaintext modal full lifecycle (mount, blur, reveal, copy, ack, unmount-clear)", "status": "PENDING", "test_tier": "e2e"},
+          {"id": "E18", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "approve flow console capture detects no phr_live_ leak", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      },
+      {
+        "id": "RT-8",
+        "status": "PARTIAL",
+        "maps_to": ["T3", "O2"],
+        "evidence": [
+          {"id": "E19", "type": "manual_review", "path": "scripts/check-bundle-size.sh", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-9",
+        "status": "PARTIAL",
+        "maps_to": ["T1"],
+        "evidence": [
+          {"id": "E20", "type": "manual_review", "path": "frontend/package.json", "status": "PENDING"}
+        ]
+      },
+      {
+        "id": "RT-10",
+        "status": "PARTIAL",
+        "maps_to": ["S1"],
+        "evidence": [
+          {"id": "E21", "type": "test_passes", "path": "frontend/tests/e2e/admin/users-keys.spec.ts", "test_name": "approve flow leaves localStorage / sessionStorage / IndexedDB unchanged", "status": "PENDING", "test_tier": "e2e"}
+        ]
+      }
+    ],
+    "binding_constraint": {
+      "required_truth_id": "RT-1",
+      "reason": "Binds three regulation-tagged constraints (U1, S1, plus the on-unmount clear that downstream supports S3) and the cross-cutting TN2 resolution. Most complex single artifact; if it ships wrong the whole feature is unsafe regardless of how clean the other surfaces look. Verification difficulty highest: on-unmount state-clear and storage-leak assertions are structural properties that can't be eyeballed.",
+      "dependency_chain": ["RT-2", "RT-3", "RT-7", "RT-10"]
+    },
+    "recommended_option": "A",
+    "tension_validation": [
+      {"tension_id": "TN1", "status": "CONFIRMED", "by_option": "A", "note": "Option A reuses existing manager modal patterns; no shared primitive. Bundle delta estimated ~10-15 KB << 30 KB."},
+      {"tension_id": "TN2", "status": "CONFIRMED", "by_option": "A", "note": "RT-1 codifies the blur + reveal toggle and acknowledgment gate."},
+      {"tension_id": "TN3", "status": "CONFIRMED", "by_option": "A", "note": "RT-2 codifies the mintApiKey() typed wrapper with single-response-read discipline."}
+    ]
+  },
+  "draft_required_truths": [
+    {"id": "DRT-1", "seed_from": ["U1", "S1", "S3"], "draft_statement": "A blocking modal component exists that gates dismiss on an explicit acknowledgment checkbox AND clears its plaintext-bound state on unmount.", "confidence": "high"},
+    {"id": "DRT-2", "seed_from": ["B1", "B3"], "draft_statement": "The workspace surface exposes display-name editing via PATCH but no slug-edit affordance.", "confidence": "high"},
+    {"id": "DRT-3", "seed_from": ["U3"], "draft_statement": "An MCP setup panel exists, populated from /api/session or a new /api/oauth/discovery endpoint that surfaces the issuer + JWKS URLs.", "confidence": "medium"},
+    {"id": "DRT-4", "seed_from": ["T3", "O2"], "draft_statement": "Bundle-size CI gate runs on every change; baseline is updated only when explicitly justified.", "confidence": "high"},
+    {"id": "DRT-5", "seed_from": ["O1"], "draft_statement": "Playwright e2e covers plaintext modal acknowledgment gate, approve-form fields, workspace rename, and MCP setup copy-button feedback.", "confidence": "high"}
+  ],
+  "gap_checklist_compliance": [
+    {"gap": "GAP-03", "status": "COMPLETED", "note": "Core data path: admin click -> /api/admin/* -> response -> refetch -> render. Each transition crosses the HTTP boundary; integration tests live at the API layer (Stage 1-3 coverage) and the UX layer (this manifold's O1)."},
+    {"gap": "GAP-09", "status": "COMPLETED", "note": "S1 + S3 cover the auth attack surface for the once-shown plaintext: storage exfil, console leak. Server-side crypto attack matrix already covered by user-mgmt-mcp Stage 1c."},
+    {"gap": "GAP-10", "status": "SKIPPED", "skip_reason": "No new unauthenticated endpoints; admin UI sits behind cookie session + withAdmin gate."},
+    {"gap": "GAP-11", "status": "SKIPPED", "skip_reason": "No new external HTTP dependencies."},
+    {"gap": "GAP-14", "status": "COMPLETED", "note": "Approve-form input (scope, label, expires_at) validates client-side as well as server-side. Workspace name input trimmed + non-empty checked."},
+    {"gap": "GAP-17", "status": "SKIPPED", "skip_reason": "No new shared mutable state introduced. Each modal owns its own component-scoped state."}
+  ],
+  "iterations": [
+    {
+      "number": 1,
+      "phase": "constrain",
+      "timestamp": "2026-05-04T08:00:00Z",
+      "result": "Discovered 16 constraints across 5 categories. Scope ratified: four concrete gaps from m6-style codebase audit (plaintext modal, workspace rename display-name only, OAuth/MCP discovery URLs, approve-form fields). Speculative additions deferred. Pre-mortem surfaced B3 (workspace slug immutable) and S3 (plaintext-never-in-console).",
+      "constraints_added": 16,
+      "by_category": {
+        "business": 3,
+        "technical": 3,
+        "user_experience": 5,
+        "security": 3,
+        "operational": 2
+      },
+      "by_type": {
+        "invariant": 13,
+        "goal": 1,
+        "boundary": 2
+      },
+      "by_source": {
+        "interview": 14,
+        "pre-mortem": 2
+      }
+    },
+    {
+      "number": 2,
+      "phase": "tension",
+      "timestamp": "2026-05-04T08:30:00Z",
+      "result": "Found 3 tensions, all resolved. TN1 (B1 × T3): bundle-budget pressure resolved by reusing existing manager modal patterns + incremental bundle-size measurement after each component (no shared Modal primitive — abstraction would cost more than it saves at 3 instances). TN2 (U1 × S1): shoulder-surfing exposure resolved by click-to-reveal blur (industry convention: 1Password / AWS / GitHub PATs); preserves U1's acknowledgment-gate while limiting ambient exposure. TN3 (U4 × S3): error-surface plaintext-leak risk resolved via P1+P10+P24 — typed mintApiKey() wrapper localises the discipline so future maintainers can't accidentally regress.",
+      "tensions_found": 3,
+      "tensions_resolved": 3,
+      "by_type": {
+        "trade_offs": 2,
+        "resource_tensions": 1,
+        "hidden_dependencies": 0
+      }
+    },
+    {
+      "number": 3,
+      "phase": "anchor",
+      "timestamp": "2026-05-04T09:00:00Z",
+      "result": "Derived 10 required truths covering 5 component artifacts (RT-1 plaintext modal, RT-2 mintKey wrapper, RT-3 approve form, RT-4 workspace rename, RT-5 MCP setup panel), 1 routing wire (RT-6 palette + App.svelte), 1 e2e contract (RT-7), 2 CI gates (RT-8 bundle, RT-9 deps), and 1 storage-cleanliness assertion (RT-10). Binding constraint: RT-1 (the plaintext modal — binds 3 regulation-tagged constraints + TN2 resolution, and is the structurally hardest verification surface). Recommended Option A (surgical patch, ~10-15 KB bundle delta, TWO_WAY); Option B (shared Modal primitive) would REOPEN TN1; Option C (admin-as-SPA) would VIOLATE TN1 and TN3 — DO NOT PURSUE. All 3 m2 tensions CONFIRMED under Option A.",
+      "required_truths": 10,
+      "by_status": {
+        "SATISFIED": 0,
+        "PARTIAL": 0,
+        "NOT_SATISFIED": 10,
+        "SPECIFICATION_READY": 0
+      },
+      "solution_options": 3,
+      "selected_option": "A",
+      "binding_constraint_id": "RT-1",
+      "tensions_confirmed": 3,
+      "tensions_reopened": 0
+    },
+    {
+      "number": 4,
+      "phase": "generate",
+      "timestamp": "2026-05-04T17:00:00Z",
+      "result": "m4-generate Option A (surgical patch). Binding-RT-first generation: PlaintextModal.svelte (RT-1, 226 lines) + mintKey.ts (RT-2, 106 lines) → KeysManager.svelte edits (form fields RT-3 + modal mount RT-1 + wrapper use RT-2) → WorkspaceManager.svelte inline rename (RT-4 + B3 slug-locked) → MCPSetupPanel.svelte (RT-5, 286 lines) → CommandPalette.svelte + App.svelte routing (RT-6) → e2e specs (RT-7). Bundle delta gzipped: +3.73 KB (203.05 → 206.78), well under T3's 30 KB ceiling. Hand-rolled — zero new npm deps (RT-9). 4 new files, 4 modified, 3 new test files.",
+      "scope": "admin-ui-option-a",
+      "files_added": [
+        "frontend/src/lib/PlaintextModal.svelte",
+        "frontend/src/lib/api/mintKey.ts",
+        "frontend/src/lib/MCPSetupPanel.svelte",
+        "frontend/tests/e2e/admin/mcp-setup.spec.ts",
+        "frontend/tests/e2e/admin/workspace-rename.spec.ts"
+      ],
+      "files_modified": [
+        "frontend/src/lib/KeysManager.svelte",
+        "frontend/src/lib/WorkspaceManager.svelte",
+        "frontend/src/lib/CommandPalette.svelte",
+        "frontend/src/App.svelte",
+        "frontend/tests/e2e/admin/users-keys.spec.ts"
+      ],
+      "satisfies": [
+        "RT-1 (binding — plaintext modal with blur/reveal + ack gate)",
+        "RT-2 (mintApiKey typed wrapper)",
+        "RT-3 (approve form: scope/label/expires_at)",
+        "RT-4 (workspace rename — display-name only)",
+        "RT-5 (MCPSetupPanel with copy buttons)",
+        "RT-6 (Cmd-K palette entry + App.svelte routing)",
+        "RT-7 (e2e: plaintext modal lifecycle + console-silence + workspace rename + MCP copy)",
+        "RT-8 (bundle delta verified +3.73 KB << 30 KB)",
+        "RT-9 (no frontend/package.json diff)",
+        "RT-10 (storage-cleanliness assertion in e2e)"
+      ],
+      "tests_added": [
+        "approve flow: form fields, plaintext modal lifecycle, ack-gate, on-dismiss clear",
+        "plaintext modal: Escape key is suppressed until ack",
+        "approve flow: error path renders structured message; no plaintext in console",
+        "approve form: rejects empty label client-side",
+        "discovery + JWKS URLs render with copy buttons; copy fires clipboard with the right value",
+        "OAuth not configured: panel shows the env-var helper instead of broken URLs",
+        "default workspace can be renamed; slug stays read-only",
+        "cancel rename leaves the workspace untouched"
+      ],
+      "bundle_delta_gzipped_kb": 3.73,
+      "tests_green": "pending m5"
+    },
+    {
+      "number": 5,
+      "phase": "verify",
+      "timestamp": "2026-05-04T18:00:00Z",
+      "result": "m5-verify pass with bg e2e completed. 19 of 21 admin/ tests green; 2 failing in workspace-rename.spec.ts on a palette-typing race (helper skips await-placeholder-visible before keyboard.type). 13 SATISFIED, 3 PARTIAL, 0 DEFERRED of 16. Binding RT-1 SATISFIED at TESTED — plaintext modal lifecycle + Escape-suppression + storage-cleanliness all green. RT-4 + B1 + B3 + O1 stuck at PARTIAL because the 2 workspace-rename tests can't reach their assertions. 3 tensions confirmed; 0 reopened. Bundle delta +3.73 KB << 30 KB.",
+      "matrix_summary": {
+        "invariants": {"satisfied": 8, "partial": 3, "deferred": 0, "total": 11},
+        "goals": {"satisfied": 1, "partial": 0, "deferred": 0, "total": 1},
+        "boundaries": {"satisfied": 4, "partial": 0, "deferred": 0, "total": 4},
+        "overall": {"satisfied": 13, "partial": 3, "deferred": 0, "total": 16, "percentage_satisfied": 81}
+      },
+      "binding_implemented": true,
+      "binding_tested": true,
+      "tensions_reopened": 0,
+      "tensions_confirmed": 3,
+      "gaps_total": 1,
+      "gaps_blocking": 1,
+      "convergence_status": "IN_PROGRESS",
+      "convergence_blocked_on": "G1: workspace-rename palette race — 2 e2e tests failing"
+    },
+    {
+      "number": 6,
+      "phase": "verify",
+      "timestamp": "2026-05-04T18:30:00Z",
+      "result": "Post-G1 fix: 21/21 admin/ tests green in 5.2s. Two test-helper edits closed G1 — (a) await-placeholder-visible defensive addition, (b) the actual root cause: scope palette-item locator to .palette-item to disambiguate from the TopBar workspace-switcher's hidden <option>Manage workspaces…</option>. The text collision was specific to 'Manage workspaces' (workspace switcher option) — 'Manage users' and 'Connect an MCP client' have no <option> twins. Manifold CONVERGED: 16/16 constraints SATISFIED, 10/10 RTs at TESTED, binding RT-1 closed, 0 gaps. 3 tensions confirmed; 0 reopened. Bundle delta +3.73 KB << 30 KB.",
+      "matrix_summary": {
+        "invariants": {"satisfied": 11, "partial": 0, "deferred": 0, "total": 11, "percentage_satisfied": 100},
+        "goals": {"satisfied": 1, "partial": 0, "deferred": 0, "total": 1, "percentage_satisfied": 100},
+        "boundaries": {"satisfied": 4, "partial": 0, "deferred": 0, "total": 4, "percentage_satisfied": 100},
+        "overall": {"satisfied": 16, "partial": 0, "deferred": 0, "total": 16, "percentage_satisfied": 100}
+      },
+      "binding_implemented": true,
+      "binding_tested": true,
+      "tensions_reopened": 0,
+      "tensions_confirmed": 3,
+      "gaps_total": 0,
+      "gaps_blocking": 0,
+      "g1_closed": true,
+      "convergence_status": "CONVERGED"
+    }
+  ],
+  "convergence": {
+    "status": "CONVERGED",
+    "criteria": {
+      "all_invariants_satisfied": true,
+      "all_required_truths_satisfied": true,
+      "no_blocking_gaps": true,
+      "binding_constraint_closed": true,
+      "all_declared_artifacts_on_disk": true
+    },
+    "iterations_to_convergence": 6
+  },
+  "constraint_graph": {
+    "version": 1,
+    "nodes": {},
+    "edges": {
+      "dependencies": [],
+      "conflicts": [],
+      "satisfies": []
+    }
+  }
+}
