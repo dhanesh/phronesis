@@ -49,23 +49,10 @@ import (
 	"github.com/dhanesh/phronesis/internal/store/sqlite"
 )
 
-// Production Argon2id parameters per OWASP Password Storage Cheat
-// Sheet (2023 recommendation for Argon2id):
-//
-//	m = 64 MiB (memory)
-//	t = 3      (iterations)
-//	p = 4      (parallelism)
-//
-// These are the params Stage 2's key-mint flow is expected to use.
-// The breakglass.go test helper deliberately uses lower params
-// (64 MiB, t=2, p=1) for fast unit tests — those are NOT the prod
-// params and are not benchmarked here.
-const (
-	prodArgon2Memory      uint32 = 64 * 1024
-	prodArgon2Iterations  uint32 = 3
-	prodArgon2Parallelism uint8  = 4
-	prodArgon2KeyLen      uint32 = 32
-)
+// Production Argon2id parameters are now centralised in keys.go
+// (Stage 2a) so MintKey + ResolveBearerKey + this bench all hash
+// with identical costs. The bench imports nothing extra; it just
+// references the package-private constants from keys.go.
 
 // BenchmarkArgon2idVerify_Production times a single Argon2id verify
 // at production parameters. This is the dominant cold-path cost.
