@@ -2607,6 +2607,83 @@
       "gaps_total": 1,
       "gaps_blocking": 0,
       "convergence_status": "CONVERGED"
+    },
+    {
+      "number": 31,
+      "phase": "integrate",
+      "timestamp": "2026-05-04T15:50:00Z",
+      "result": "m6-integrate sweep on a CONVERGED manifold. All 18 invariant-mapped artifacts have live wires into the running server. 1 stale evidence pointer reconciled (RT-2 E5: internal/mcp/spec_smoke_test.go -> smoke_test.go, PENDING -> VERIFIED). 3 informational integration-polish gaps surfaced (Cleanup goroutines for OAuth state, MCP sessions, ratelimit Limiter buckets). All gaps are non-blocking: TTL-on-lookup masks user-facing behavior; memory bound is traffic-volume-proportional, not unbounded. Convergence status preserved.",
+      "integration_points": 12,
+      "completed": 12,
+      "pending": 0,
+      "auto_wireable": 0,
+      "manual_required": 0,
+      "checklist": [
+        {"id": "INT-1", "source": "internal/auth/oidc/signer.go", "target": "internal/app/server.go (buildOAuthSubstrate)", "status": "completed", "satisfies": ["RT-2"]},
+        {"id": "INT-2", "source": "internal/auth/oauth/state.go", "target": "internal/app/server.go (oauthHandlers.store)", "status": "completed", "satisfies": ["RT-2"]},
+        {"id": "INT-3", "source": "internal/auth/oauth/verifier.go", "target": "internal/app/handlers_auth.go (principalFromRequest Bearer-JWT branch)", "status": "completed", "satisfies": ["RT-2"]},
+        {"id": "INT-4", "source": "internal/app/handlers_oauth.go", "target": "internal/app/routes.go (/oauth/{authorize,token,register})", "status": "completed", "satisfies": ["RT-2", "T1"]},
+        {"id": "INT-5", "source": "internal/app/handlers_oauth_discovery.go", "target": "internal/app/routes.go (.well-known/{oauth-authorization-server,jwks.json})", "status": "completed", "satisfies": ["RT-2"]},
+        {"id": "INT-6", "source": "internal/mcp/server.go", "target": "internal/app/routes.go (/mcp via mcp.RecoverMiddleware)", "status": "completed", "satisfies": ["RT-2", "RT-11", "T6"]},
+        {"id": "INT-7", "source": "internal/mcp/recover.go", "target": "internal/app/routes.go (wraps /mcp)", "status": "completed", "satisfies": ["RT-11", "T6"]},
+        {"id": "INT-8", "source": "internal/mcp/echo.go", "target": "internal/app/server.go (mcp.Tools.Register on NewServer)", "status": "completed", "satisfies": ["RT-14"]},
+        {"id": "INT-9", "source": "internal/auth/cache.go", "target": "internal/auth/keys.go (ResolveBearerKey 4th arg) + admin handlers (revoke/suspend Invalidate)", "status": "completed", "satisfies": ["RT-4", "S5"]},
+        {"id": "INT-10", "source": "internal/ratelimit/perkey.go", "target": "internal/app/routes.go (PerKeyMiddleware after attachPrincipal)", "status": "completed", "satisfies": ["RT-7", "S6"]},
+        {"id": "INT-11", "source": "internal/ratelimit/concurrency.go", "target": "internal/app/routes.go (PerKeyConcurrencyMiddleware after PerKeyMiddleware)", "status": "completed", "satisfies": ["S6"]},
+        {"id": "INT-12", "source": "internal/audit/{spillover,compactor}.go", "target": "internal/app/server.go (Replay + Compactor.Start in NewServer)", "status": "completed", "satisfies": ["RT-10", "B1", "O1"]}
+      ],
+      "informational_polish_gaps": [
+        {
+          "id": "INT-P1",
+          "issue": "internal/auth/oauth.Store.Cleanup() exists but no goroutine drives it. Abandoned authorization codes accumulate in memory until process restart.",
+          "impact": "Bounded by traffic volume + 10-minute code TTL + 30-day refresh-token TTL. TTL-on-lookup masks user-facing impact (expired codes return ErrUnknownCode). Production memory growth ≈ #abandoned-flows-per-day × code-TTL.",
+          "action": "Optional: spawn a periodic ticker in NewServer that calls store.Cleanup() every minute. ~5 lines."
+        },
+        {
+          "id": "INT-P2",
+          "issue": "internal/mcp.SessionStore.Cleanup() exists but no goroutine drives it. Idle MCP sessions accumulate until process restart.",
+          "impact": "Bounded by 4-hour SessionTTL + traffic volume. TTL-on-lookup masks user-facing impact. Production memory growth ≈ #abandoned-MCP-clients × SessionTTL.",
+          "action": "Optional: spawn a periodic ticker in NewServer that calls mcp.Sessions.Cleanup() every 5 minutes. ~5 lines."
+        },
+        {
+          "id": "INT-P3",
+          "issue": "internal/ratelimit.Limiter.Cleanup() exists but no goroutine drives it. Per-key buckets persist for keys that briefly appeared then disappeared.",
+          "impact": "Bounded by 1000-SA scale ceiling (B3) and key turnover rate. TTL-on-Allow trims times[] in-place but doesn't drop empty buckets. Memory growth proportional to unique-prefixes-seen-since-startup.",
+          "action": "Optional: spawn a periodic ticker that calls authRateLimiter.Cleanup + keyRateLimiter.Cleanup hourly. ~5 lines."
+        }
+      ],
+      "stale_evidence_reconciled": [
+        {"rt": "RT-2", "field": "evidence[E5]", "before": "internal/mcp/spec_smoke_test.go::claude_code_handshake_round_trip (PENDING)", "after": "internal/mcp/smoke_test.go::TestMCPSpecSmoke (VERIFIED)"}
+      ]
+    },
+    {
+      "number": 32,
+      "phase": "generate",
+      "timestamp": "2026-05-04T16:10:00Z",
+      "result": "m4-generate (post-convergence polish): close m6-integrate INT-P1/P2/P3 with a shared periodic janitor. internal/app/janitor.go: single goroutine ticks every 5min and calls Cleanup() on oauth.Store, mcp.SessionStore, and the per-key ratelimit Limiters. Lifecycle: Start in NewServer after wiring, Stop in Server.Close (idempotent, ctx-bounded). 5 unit tests cover sweep across all three stores, nil-tolerance, Start/Stop idempotence, ctx-deadline respect, and a real periodic-tick proof. 2 new files (janitor.go, janitor_test.go), 1 edit (server.go: field + Start + Stop). All tests green (-race), gofmt + staticcheck clean. Convergence preserved.",
+      "scope": "post-convergence-polish",
+      "files_added": [
+        "internal/app/janitor.go",
+        "internal/app/janitor_test.go"
+      ],
+      "files_modified": [
+        "internal/app/server.go"
+      ],
+      "satisfies": [
+        "INT-P1 (oauth.Store.Cleanup periodic)",
+        "INT-P2 (mcp.SessionStore.Cleanup periodic)",
+        "INT-P3 (ratelimit.Limiter.Cleanup periodic)"
+      ],
+      "deferred": [],
+      "tests_added": [
+        "TestJanitorSweepCleansAllStores",
+        "TestJanitorTolerantesNilStores",
+        "TestJanitorStartStopLifecycle",
+        "TestJanitorStopRespectsContextDeadline",
+        "TestJanitorPeriodicTickFiresSweep"
+      ],
+      "tests_green": true,
+      "lint_green": true
     }
   ],
   "convergence": {
@@ -2629,7 +2706,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T15:30:00Z",
+  "updated": "2026-05-04T16:10:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
