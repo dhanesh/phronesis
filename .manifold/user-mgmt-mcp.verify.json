@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
   "schema_version": 3,
   "feature": "user-mgmt-mcp",
-  "hashes_updated_at": "2026-05-03T11:19:41.452Z",
+  "hashes_updated_at": "2026-05-03T11:39:31.732Z",
   "file_hashes": {
     "internal/redact/redact.go": "c74a69badd012369a64d840d29c0f1e2558339d46e3ad0e8bf307d79bede515f",
     "internal/redact/redact_test.go": "0a6fb7d4adae3a4e13a495f23683214919e6cf67f668ceb2420fbe6a01b2f280",
@@ -11,10 +11,10 @@
     "internal/store/sqlite/store.go": "23bad663cfda94f98f72ebf6619ac6f65b0fa7f580ebd8037aaa49549ec01e0e",
     "internal/store/sqlite/migrations.go": "201220f4c9f6d20df7d226df45a3104b52fea7ce828b477e38e7d4cf03101933",
     "internal/store/sqlite/migrations/001_init.sql": "b44f746689478c29f93168b6582492b8c52a29f8cf721863aa54f6cf78765119",
-    "internal/store/sqlite/migrations_test.go": "438d33d6e9b927ee7795e6a72de45fdaf7d5de518398352333e0bc3739f22868",
+    "internal/store/sqlite/migrations_test.go": "c8f458dba035cf8bef973dc6dc0e99bae5c2b41df134ddb62b3cfab549ef3b49",
     "internal/auth/breakglass.go": "8b23d1cb899db5de412f7a1afb48169891f56dbd2c2f28d837df2c30304a59ae",
     "internal/auth/breakglass_test.go": "bb0dd3940e4f6fc3bdb0cff1c3911d40efed2c6717718cb277b3895ff5739f0a",
-    "internal/app/server.go": "2eabbf3c16d611b3fab6cb942856a6eaedfe7a4211d70237e813a51d75ce3acc",
+    "internal/app/server.go": "f0232a8dfa4732913adcc2336fdea6d3d0e38ed9d85c375ad198f94e2d7fc61e",
     "cmd/phronesis/main.go": "53e49ceece0a1dfa285a3b4be897d1ee130746963c95dea901413fcaff03ecce",
     "go.mod": "e7c887dbbc6b90400da6168c605c9ecddc03a24d11b80d7a693c9c67c032cff0",
     "go.sum": "16fe1d29abb951b84c38462a5552394a4928fbeb57d33dc61d471ff6fa527443",
@@ -45,15 +45,20 @@
     "internal/audit/sqlite_sink_test.go": "ddeffb5724be73bbfe923dfdb291050e34a5d65a9d24b1e09db1dbda819a16bc",
     "internal/app/audit_middleware.go": "6a4e7466d2c34bb73fa4c88c17ce82972a50fbcd66b85d26b5bdaedfeafd7777",
     "internal/app/audit_middleware_test.go": "b8c0332e22df3ca497e8b79726bd6a4c7db14e38e09c288850e9caa95c4fbd9f",
-    "internal/app/audit.go": "f6166f2eab91bfa17c7a6f86422cbf8a721c5f69088e59f252d57bce7a5de3e4"
+    "internal/app/audit.go": "f6166f2eab91bfa17c7a6f86422cbf8a721c5f69088e59f252d57bce7a5de3e4",
+    "internal/store/sqlite/migrations/002_audit_aggregates.sql": "0df1417a606d56ea7d08c134066c735db2c8bc2794744f3992424bed511bdda6",
+    "internal/audit/compactor.go": "47f33fc96032ab91e3070f458ea66dc2cb170e003aba52a810d7af838af0f662",
+    "internal/audit/compactor_test.go": "7666332a72eee8af35418fa7321bf6f4ce918f8ce8a129419fc8bec643abab40",
+    "internal/audit/spillover.go": "49381c0076af701ca1fecccce2ad0f01405e080639104c6f726773e4e188914c",
+    "internal/audit/spillover_test.go": "a93c6c0b193b3b611e4b64054f2ad63735a8f06ce1b52e5e7277dfa80a9540b3"
   },
   "verification": {
-    "timestamp": "2026-05-04T08:50:00Z",
+    "timestamp": "2026-05-04T09:50:00Z",
     "result": "PARTIAL",
     "strict": false,
-    "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate",
-    "artifacts_on_disk": 42,
-    "artifacts_declared": 42,
+    "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate + 2b-retention",
+    "artifacts_on_disk": 47,
+    "artifacts_declared": 49,
     "artifacts_missing": 0,
     "matrix": [
       {
@@ -63,14 +68,7 @@
         "test": true,
         "docs": true,
         "ops": false,
-        "status": "SATISFIED",
-        "addressed_by": [
-          "audit_events table",
-          "auditMiddleware (universal, default + handler-explicit semantics)",
-          "sqlite_sink.go",
-          "13 audit-related tests"
-        ],
-        "note": "Stage 2b-substrate: every authenticated request now produces an audit row (universal middleware default + handler-explicit semantic actions). Retention/compaction is O1's concern; full attribution coverage is structurally enforced here."
+        "status": "SATISFIED"
       },
       {
         "constraint": "B2",
@@ -250,7 +248,7 @@
         "ops": false,
         "status": "PARTIAL",
         "gap": "Two leaves TESTED (suspend-on-relogin + suspended-user-key-fail). 60s revocation cache leaf still Stage 2c.",
-        "deferred_to": "Stage 2c (cache + invalidation channel)"
+        "deferred_to": "Stage 2c"
       },
       {
         "constraint": "S6",
@@ -260,22 +258,23 @@
         "docs": true,
         "ops": false,
         "status": "DEFERRED",
-        "deferred_to": "Stage 2c (per-key rate limit)"
+        "deferred_to": "Stage 2c"
       },
       {
         "constraint": "O1",
         "type": "invariant",
-        "code": "partial",
-        "test": false,
+        "code": true,
+        "test": true,
         "docs": true,
         "ops": false,
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "addressed_by": [
           "audit_events table",
-          "SQLiteSink writing rows"
+          "002_audit_aggregates.sql",
+          "compactor.go",
+          "compactor_test.go"
         ],
-        "gap": "Universal middleware writes rows; compactor + 90d retention deferred to 2b-retention.",
-        "deferred_to": "Stage 2b-retention"
+        "note": "Stage 2b-retention: daily compactor folds rows older than 90 days into per-day aggregates with sum-on-conflict. 5 unit tests confirm idempotency + distinct-counts preservation. SpilloverSink bounds loss-on-crash to 1 batch. RT-10 fully closed."
       },
       {
         "constraint": "O2",
@@ -299,11 +298,11 @@
     ],
     "coverage": {
       "invariants": {
-        "satisfied": 11,
-        "partial": 2,
+        "satisfied": 12,
+        "partial": 1,
         "deferred": 5,
         "total": 18,
-        "percentage_satisfied": 61
+        "percentage_satisfied": 67
       },
       "goals": {
         "satisfied": 1,
@@ -320,24 +319,25 @@
         "percentage_satisfied": 33
       },
       "overall": {
-        "satisfied": 13,
-        "partial": 4,
+        "satisfied": 14,
+        "partial": 3,
         "deferred": 7,
         "total": 24,
-        "percentage_satisfied": 54
+        "percentage_satisfied": 58
       }
     },
     "binding_constraint_check": {
       "required_truth_id": "RT-6",
       "closed": true,
-      "rationale": "Stage 2b-substrate's audit middleware writes through the existing audit drainer + slog default handler — both already redact-wrapped at boot. The middleware's default event puts request path + status + duration in metadata; redact.SlogHandler scrubs any secret-shaped strings before they reach the inner handler. Cross-cutting property preserved end-to-end.",
+      "rationale": "Stage 2b-retention's compactor + spillover write to the audit_events / audit_aggregates tables via the SQLiteSink, which is wrapped by SpilloverSink and ultimately drained by the BufferedDrainer through the slog default — all still redact-wrapped. The compactor + spillover paths emit slog.Warn / slog.Info on tick boundaries and replay events; both go through the redact handler. Cross-cutting property preserved across the new audit-retention surface.",
       "evidence_status": {
         "redact pkg": "VERIFIED",
         "slog default-handler wrapping": "VERIFIED",
         "writeError funnel": "VERIFIED",
         "recoverMiddleware": "VERIFIED",
         "Stage 2a (key minting) preserves binding": "VERIFIED",
-        "Stage 2b-substrate (audit middleware) preserves binding": "VERIFIED"
+        "Stage 2b-substrate (audit middleware) preserves binding": "VERIFIED",
+        "Stage 2b-retention (compactor + spillover) preserves binding": "VERIFIED"
       }
     },
     "genealogy_verification": {
@@ -347,26 +347,26 @@
           "type": "boundary",
           "challenger": "stakeholder",
           "status": "SATISFIED",
-          "risk": "RESOLVED 2026-05-04 (G3 microbench + Stage 2a constants centralisation)."
+          "risk": "RESOLVED via G3 microbench + Stage 2a constants centralisation."
         },
         {
           "id": "O3",
           "type": "invariant",
           "source": "assumption",
           "status": "SATISFIED",
-          "risk": "RESOLVED in Stage 1a; reaffirmed by server.go fail-closed Open."
+          "risk": "RESOLVED in Stage 1a; reaffirmed by Stage 2b-retention's 002 migration applying cleanly under the forward-only contract."
         }
       ],
       "regulation_constraints_preserved": [
         {
           "id": "T1",
           "preserved": true,
-          "note": "OAuth 2.1 spec compliance preserved; build-order via RT-6 honoured."
+          "note": "OAuth 2.1 spec compliance preserved."
         },
         {
           "id": "S1",
           "preserved": true,
-          "note": "Argon2id hash-only at OWASP-2023 prod params + plaintext-once + defence-in-depth assertion."
+          "note": "Argon2id hash-only at OWASP-2023 prod params + plaintext-once."
         },
         {
           "id": "S2",
@@ -389,21 +389,20 @@
       "checked": 8,
       "reopened": 0,
       "confirmed": 8,
-      "note": "Stage 2b-substrate honours all 8 tension resolutions: TN6 (async audit drainer) — middleware uses existing auditDrainer.Enqueue non-blocking; no request-thread blocking. TN8 (build-order) — RT-6 redaction wraps slog default + writeError funnel + recoverMiddleware; audit middleware writes through the drainer which uses the redact-wrapped slog. Other tensions unchanged."
+      "note": "Stage 2b-retention closes TN6's failure cascade explicitly: 'crash before drain -> bounded to 1 batch interval' is now structurally enforced via SpilloverSink (fsync'd JSONL journal + replay-on-startup). Other tensions unchanged. TN8 (build-order) preserved — RT-6 redaction wraps everything the audit substrate emits."
     },
     "reversibility_check": {
-      "total_actions": 23,
+      "total_actions": 28,
       "one_way_count": 0,
       "reversible_with_cost_count": 3,
-      "two_way_count": 20,
+      "two_way_count": 25,
       "all_acknowledged": true,
-      "note": "Stage 2b-substrate added 4 entries (steps 20-23). All TWO_WAY. Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 20 TWO_WAY across 23 actions."
+      "note": "Stage 2b-retention added 5 entries (steps 24-28). All TWO_WAY in pre-release scope. Migration 002 is the FIRST exercise of the forward-only contract (RT-8/O3) — pre-release scope means no live audit data; rolling back is removing the migration file before tagging. Once shipped + audit table accumulates rows, the aggregate schema becomes REVERSIBLE_WITH_COST (column changes need 003 etc). Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 25 TWO_WAY."
     },
     "required_truth_status": {
       "RT-1": {
         "status": "SATISFIED",
-        "level": "TESTED",
-        "stage": "auditMiddleware + SQLiteSink end-to-end; 6 integration tests; default action emission + handler-explicit skip both verified"
+        "level": "TESTED"
       },
       "RT-2": {
         "status": "NOT_SATISFIED",
@@ -417,7 +416,7 @@
       "RT-4": {
         "status": "NOT_SATISFIED",
         "level": "DOCUMENTED",
-        "stage": "Stage 2c (cache + invalidation channel)"
+        "stage": "Stage 2c"
       },
       "RT-5": {
         "status": "SATISFIED",
@@ -441,9 +440,9 @@
         "level": "TESTED"
       },
       "RT-10": {
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "level": "TESTED",
-        "stage": "SQLite sink + middleware TESTED; compactor + retention deferred to 2b-retention"
+        "stage": "compactor + spillover + sink all wired in NewServer; full closure"
       },
       "RT-11": {
         "status": "NOT_SATISFIED",
@@ -486,16 +485,8 @@
         "constraint": "B1",
         "rt": "B1",
         "severity": "informational",
-        "issue": "Universal audit middleware emits a row per authenticated request, but doesn't yet UPDATE api_keys.last_used_at on key resolves. The audit_events row attributes the action to the key prefix, but the api_keys row doesn't reflect activity.",
-        "action": "Optional Stage 2b-retention enhancement: in auditMiddleware, when principal type is service_account and ID matches phr_live_*, fire-and-forget UPDATE api_keys SET last_used_at = ? WHERE key_prefix = ?. Or move it to an explicit hook in ResolveBearerKey itself."
-      },
-      {
-        "id": "G12",
-        "constraint": "O1",
-        "rt": "RT-10",
-        "severity": "non-blocking",
-        "issue": "Audit retention compactor + bounded loss-on-crash spillover journal not yet implemented. SQLite sink writes rows but they accumulate indefinitely until 2b-retention ships.",
-        "action": "Stage 2b-retention: add internal/audit/compactor.go (daily compaction of >90d rows into per-day aggregates); add spillover journal hook for crash recovery; expose audit_drainer_drops_total via /metrics (when /metrics endpoint lands)."
+        "issue": "Universal audit middleware emits a row per authenticated request, but doesn't yet UPDATE api_keys.last_used_at on key resolves.",
+        "action": "Optional polish: add a per-resolve UPDATE in auditMiddleware OR in ResolveBearerKey itself."
       }
     ],
     "convergence": {
@@ -507,9 +498,9 @@
         "binding_constraint_closed": true,
         "all_declared_artifacts_on_disk": true
       },
-      "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate complete; 2b-retention + 2c + Stage 3 pending",
-      "next_stage_suggestion": "Stage 2b-retention (compactor + spillover journal) closes G12 + drives RT-10 to TESTED-fully. Smaller than Stage 2b-substrate; ~3-4 files. OR Stage 2c (per-key rate limit) which closes RT-7 + S6 and unblocks the S5 cache leaf.",
-      "reason": "After Stage 2b-substrate: 13 SATISFIED, 4 PARTIAL, 7 DEFERRED of 24. RT-1 SATISFIED at TESTED; B1 promoted to SATISFIED (universal middleware structurally enforces every-action attribution). RT-10 reaches PARTIAL/TESTED (sink + middleware TESTED; compactor pending). Binding RT-6 stays VERIFIED — middleware preserves the cross-cutting redaction property."
+      "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate + 2b-retention complete; 2c + Stage 3 pending",
+      "next_stage_suggestion": "Stage 2c (per-key rate limit + cache + invalidation channel): closes RT-7, S6, S5 cache leaf G10, RT-4. ~5-6 files. After 2c: only Stage 3 (MCP transport + OAuth) remains.",
+      "reason": "After Stage 2b-retention: 14 SATISFIED, 3 PARTIAL, 7 DEFERRED of 24. RT-10 SATISFIED at TESTED — compactor + spillover + sink all in place. O1 (audit retention) SATISFIED. TN6 failure cascade closed via spillover. Binding RT-6 stays VERIFIED."
     }
   }
 }

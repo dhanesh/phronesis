@@ -1092,7 +1092,7 @@
       },
       {
         "id": "RT-10",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": [
           "B1",
           "O1"
@@ -1112,6 +1112,24 @@
             "status": "VERIFIED"
           },
           {
+            "id": "E23b",
+            "type": "file_exists",
+            "path": "internal/audit/compactor.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E23c",
+            "type": "file_exists",
+            "path": "internal/audit/spillover.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E23d",
+            "type": "file_exists",
+            "path": "internal/store/sqlite/migrations/002_audit_aggregates.sql",
+            "status": "VERIFIED"
+          },
+          {
             "id": "E24",
             "type": "test_passes",
             "path": "internal/audit/sqlite_sink_test.go",
@@ -1122,17 +1140,26 @@
           {
             "id": "E24a",
             "type": "test_passes",
-            "path": "internal/audit/sqlite_sink_test.go",
-            "test_name": "TestSQLiteSinkMapsServiceAccountToService",
+            "path": "internal/audit/compactor_test.go",
+            "test_name": "TestCompactorFoldsOldRowsAndDeletesRaw",
             "status": "VERIFIED",
             "test_tier": "unit"
           },
           {
             "id": "E24b",
-            "type": "manual_review",
-            "path": ".manifold/user-mgmt-mcp.md",
-            "reason": "Compactor + retention policy land in 2b-retention pass; SQLiteSink + universal middleware are the substrate.",
-            "status": "PENDING"
+            "type": "test_passes",
+            "path": "internal/audit/compactor_test.go",
+            "test_name": "TestCompactorIsIdempotentUnderRetry",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E24c",
+            "type": "test_passes",
+            "path": "internal/audit/spillover_test.go",
+            "test_name": "TestSpilloverInnerFailureRetainsBatchInJournal",
+            "status": "VERIFIED",
+            "test_tier": "unit"
           }
         ]
       },
@@ -1826,6 +1853,67 @@
       "tensions_reopened": 0,
       "gaps_total": 4,
       "gaps_blocking": 0
+    },
+    {
+      "number": 17,
+      "phase": "generate",
+      "timestamp": "2026-05-04T09:30:00Z",
+      "result": "Stage 2b-retention generated. 5 new files + 2 modified = 7 artifacts. 002_audit_aggregates.sql adds the per-day aggregate table (UNIQUE(day, workspace_slug, action, severity); CHECK severity IN info|high). compactor.go: Compactor type with Start/Stop scheduler + CompactNow one-shot. Sweeps audit_events older than Retention (90d default), groups by (date(ts), workspace, action, severity), UPSERTs into audit_aggregates with sum-on-conflict (idempotent under retry), then deletes raw rows. Single tx per sweep so partial state is impossible. 5 unit tests cover happy path, idempotency, empty-db noop, distinct-counts preservation, Start/Stop cleanliness. spillover.go: SpilloverSink wraps inner Sink with fsync'd JSONL journal. Append-batch -> inner-Write -> truncate-on-success. ReplaySpillover drains any pending journal into sink at NewServer startup, then removes the file. 5 unit tests cover happy path, inner-failure-retains-batch, no-file-noop, empty-file-removed, empty-batch-noop, clean-close-retains-file. server.go: NewServer prefers SpilloverSink wrapping SQLiteSink; replays pending spillover before serving; spawns Compactor; both stopped in Close. migrations_test.go: expected-tables list updated with audit_aggregates. 21 packages green; lint clean. RT-10 reaches SATISFIED at TESTED. O1 (audit retention) reaches SATISFIED at TESTED. TN6 failure cascade (crash before drain) closed via spillover.",
+      "option": "B",
+      "stage": "2b-retention",
+      "artifacts_added": 5,
+      "artifacts_modified": 2,
+      "rts_addressed": [
+        "RT-10"
+      ],
+      "tensions_addressed": [
+        "TN6"
+      ],
+      "tests_green": true,
+      "lint_green": true
+    },
+    {
+      "number": 18,
+      "phase": "verify",
+      "timestamp": "2026-05-04T09:50:00Z",
+      "result": "m5-verify after Stage 2b-retention. 14 SATISFIED, 3 PARTIAL, 7 DEFERRED of 24. RT-10 promoted PARTIAL/TESTED -> SATISFIED/TESTED via compactor.go (5 tests) + spillover.go (6 tests) + 002_audit_aggregates.sql migration. O1 (audit retention) promoted PARTIAL -> SATISFIED. TN6 failure cascade ('crash before drain') closed via SpilloverSink + ReplaySpillover at NewServer startup. Binding RT-6 stays VERIFIED \u2014 compactor + spillover paths emit through the redact-wrapped slog. 8 tensions confirmed; 0 reopened.",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 12,
+          "partial": 1,
+          "deferred": 5,
+          "total": 18,
+          "percentage_satisfied": 67
+        },
+        "goals": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "boundaries": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "overall": {
+          "satisfied": 14,
+          "partial": 3,
+          "deferred": 7,
+          "total": 24,
+          "percentage_satisfied": 58
+        }
+      },
+      "binding_closed": true,
+      "tensions_reopened": 0,
+      "tensions_explicitly_closed": [
+        "TN6 failure cascade"
+      ],
+      "gaps_total": 3,
+      "gaps_blocking": 0
     }
   ],
   "convergence": {
@@ -1840,7 +1928,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T08:50:00Z",
+  "updated": "2026-05-04T09:50:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
@@ -2006,8 +2094,8 @@
   ],
   "generation": {
     "option": "B (stage-gated rollout)",
-    "stage": "1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate",
-    "timestamp": "2026-05-04T08:30:00Z",
+    "stage": "1c + JWKS + G3/G7/G8/G9 + 2a + 2b-substrate + 2b-retention",
+    "timestamp": "2026-05-04T09:30:00Z",
     "artifacts": [
       {
         "path": "internal/redact/redact.go",
@@ -2527,6 +2615,78 @@
         "status": "modified",
         "artifact_class": "substantive",
         "modification_note": "wired auditMiddleware into chain between attachPrincipal and recoverMiddleware"
+      },
+      {
+        "path": "internal/store/sqlite/migrations/002_audit_aggregates.sql",
+        "type": "code",
+        "satisfies": [
+          "O1",
+          "RT-10"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/compactor.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10",
+          "O1",
+          "B1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/compactor_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-10",
+          "O1"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/spillover.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10",
+          "TN6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/audit/spillover_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-10",
+          "TN6"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/store/sqlite/migrations_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-8",
+          "O3"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "expected-tables list extended with audit_aggregates"
+      },
+      {
+        "path": "internal/app/server.go",
+        "type": "code",
+        "satisfies": [
+          "RT-10"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "wraps SQLiteSink with SpilloverSink (replaying any pending journal at startup); spawns daily audit Compactor; both stopped in Server.Close"
       }
     ],
     "coverage": {
