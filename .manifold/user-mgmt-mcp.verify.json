@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/dhanesh/manifold/main/install/manifold-verify.schema.json",
   "schema_version": 3,
   "feature": "user-mgmt-mcp",
-  "hashes_updated_at": "2026-05-03T12:09:50.388Z",
+  "hashes_updated_at": "2026-05-04T15:30:00.000Z",
   "file_hashes": {
     "internal/redact/redact.go": "c74a69badd012369a64d840d29c0f1e2558339d46e3ad0e8bf307d79bede515f",
     "internal/redact/redact_test.go": "0a6fb7d4adae3a4e13a495f23683214919e6cf67f668ceb2420fbe6a01b2f280",
@@ -14,7 +14,7 @@
     "internal/store/sqlite/migrations_test.go": "c8f458dba035cf8bef973dc6dc0e99bae5c2b41df134ddb62b3cfab549ef3b49",
     "internal/auth/breakglass.go": "8b23d1cb899db5de412f7a1afb48169891f56dbd2c2f28d837df2c30304a59ae",
     "internal/auth/breakglass_test.go": "bb0dd3940e4f6fc3bdb0cff1c3911d40efed2c6717718cb277b3895ff5739f0a",
-    "internal/app/server.go": "c48507a7b97b6121db47449a9dbabd144a2fa044e0572646511981276a24109e",
+    "internal/app/server.go": "d00d3aa069efe63089d62fa7b9ad575c1383f69f2172348507367e2844da068e",
     "cmd/phronesis/main.go": "53e49ceece0a1dfa285a3b4be897d1ee130746963c95dea901413fcaff03ecce",
     "go.mod": "e7c887dbbc6b90400da6168c605c9ecddc03a24d11b80d7a693c9c67c032cff0",
     "go.sum": "16fe1d29abb951b84c38462a5552394a4928fbeb57d33dc61d471ff6fa527443",
@@ -24,7 +24,7 @@
     "internal/app/handlers_admin_users_test.go": "595c7a9bd1cff6d4c658e034285c8fd7817658b8c7e95b94c1730435f6458a0f",
     "internal/app/handlers_admin_keys.go": "4ef42870f9593a3bd2f00188f8581cc85b43babe31a929bcb02d4b4f8ddd22ec",
     "internal/app/handlers_admin_keys_test.go": "648ef166880321eaed4d12b6060d028c9b5bbdec87ace09195a409dbd24ade90",
-    "internal/app/routes.go": "b143f9dfbd724ce65ce4a6ce7a56efb97e95951086b7c196979eb7dc27554347",
+    "internal/app/routes.go": "cacea62d699e7ce0d7ea4960694013be93f2eb88da8178460e5c91a35bb9d79b",
     "README.md": "314c3223a32d8d55a99eef335b4876e7772663df5f7d893a81a60343eb47f699",
     "frontend/src/lib/UsersManager.svelte": "cbb43e992e18481faec3a3712a5e49fd05f13f6104e9e99cd28d4fca6e4dbe7b",
     "frontend/src/lib/KeysManager.svelte": "83fb6af2653c6d1f4f748a7bad8dadea8e78d36ee49e616cc7da96ac0d53c25d",
@@ -39,7 +39,7 @@
     "internal/app/httpio.go": "a9b645f2488dcab87359328c823548917e1f1e4cd4e4521fbbd28e451d089bc0",
     "internal/auth/keys.go": "6e6442873c8503c28663ebf9a12c3810e07b103db1023ca6b864220a272fd04b",
     "internal/auth/keys_test.go": "cc2ae423089cfef6a74b3007f3bd4c9698f1b1a6febd41179038075398d1b707",
-    "internal/app/handlers_auth.go": "696c8fe578a6176b6d9172c9f863af7df8da3e1d6860d378710e6803e908fc8f",
+    "internal/app/handlers_auth.go": "b3d309f4abfa23fa9f3561401a61ab03acb94486c5ad720277f3dce473ea0976",
     "internal/auth/keyverify_bench_test.go": "c9c92490a399f8f0c32c0cd10ca23e9ce5af875617115548d60dff32e5eb5108",
     "internal/audit/sqlite_sink.go": "194725ccf936413782d59ed8158c3ea171234e86d4f2d2217e0754c821b70fe7",
     "internal/audit/sqlite_sink_test.go": "ddeffb5724be73bbfe923dfdb291050e34a5d65a9d24b1e09db1dbda819a16bc",
@@ -54,266 +54,49 @@
     "internal/auth/cache.go": "d71449be2fae72023c63a84b6c84ad5eb77843c2cb0558ba396022711e68bcfd",
     "internal/auth/cache_test.go": "b328238af79401dd3275e709aa0e1c563baefc0d5a0b42b611f254fd3e5d78ea",
     "internal/ratelimit/perkey.go": "95b3f2c8da40de2429845b70da32e9c2779ce4ede5db43417245baea6e20eace",
-    "internal/ratelimit/perkey_test.go": "b8388930bfacb73e8132f1a823a7b933a8bee62358e097ececb7cf157a55e50a"
+    "internal/ratelimit/perkey_test.go": "b8388930bfacb73e8132f1a823a7b933a8bee62358e097ececb7cf157a55e50a",
+    "internal/auth/oidc/signer.go": "8d8e1ec7567fcdda49381497bbc0cb39756cb6b6877cf897c26a8a208a8e9350",
+    "internal/auth/oidc/signer_test.go": "374d0152cffe57afe9649aca3b0143a521134538b44d5abc74ae62cb50cb00a4",
+    "internal/auth/oauth/state.go": "abf37a269bdaa47a5d908564edc1d042b1eb9c727e924471876a76e5492bd285",
+    "internal/auth/oauth/state_test.go": "8103043d93a97a36cbfb03972e17c5ec73e20991022f2c9199d446bf9225a2ae",
+    "internal/app/handlers_oauth.go": "8d18c6999b272ecc69c76c328a9b58aa4fb0836ecbbf6a94c26e0b9e692137b8",
+    "internal/app/handlers_oauth_test.go": "09edabfbc871d3e0def1a8c3495c21f75aefb63dfb0bd06ee9a594c3055c957c",
+    "internal/app/handlers_oauth_discovery.go": "0e62f37c2863b73670aed0504d11b7985a3e310372442bb3f4f36e873a0331d2",
+    "internal/app/handlers_oauth_discovery_test.go": "06443d074ec86229bb157df1e0fe259c09e3e7f0d89e951ee0ddd4968b449e5e",
+    "internal/auth/oauth/verifier.go": "031687d31fbb11fb119d26ffd1744307d25f56ff6c0a15787f57526062349e4f",
+    "internal/auth/oauth/verifier_test.go": "39ded5c853ae60c62d7123fe832b87347a126605e6043dd8a74d0590fe7023a4",
+    "internal/mcp/jsonrpc.go": "2b07a51710f55f2c66d16bd17f5b1ce1eac64c03af60711d867b4389b6b8ce0b",
+    "internal/mcp/jsonrpc_test.go": "321d6f1d5336f264247554f8b2c912e931e6e7fc23b4da502fce291a84a22541",
+    "internal/mcp/session.go": "ef511f6c07a6dda12e583e1e9f8dc708de7311743bbd024868e9f2360ffec4c5",
+    "internal/mcp/session_test.go": "ae670ce340f15c0560604bce09c888bcae27bb9bf6002e1400ab9b815e7f40ff",
+    "internal/mcp/server.go": "f4b94fc2fae24fa1862e9e1dd86c5ff6088dfdb5681ae044f41a8b4c4ce7100e",
+    "internal/mcp/server_test.go": "5ff2f3176ad0ea7611315ca9491d0ff65682931ec7881b8a9b681d5cf6a67319",
+    "internal/mcp/recover.go": "b483a964ef8c6ba636f01c3d028aae71f3b7b8f2a41934e6ec4c35f4db9ca172",
+    "internal/mcp/recover_test.go": "05626baf42276c74f19cefe2888a1f869c81c744435d2a8b8599cc8f46237bb9",
+    "internal/mcp/tools.go": "aa92e829e6b9c85b54ca021033a6dc73b3ab8786d02dc9dc318fc8d18ff3e813",
+    "internal/mcp/tools_test.go": "679264e1cb6666e48f85af104b4c284c8a47a26ba8d3f5801ad31883cb6af464",
+    "internal/mcp/echo.go": "7c0fb62776118c172297bf80856e2ed6a82c3e1ce226d20553db51e2069ddae5",
+    "internal/mcp/echo_test.go": "9b132e2fb3b8ff3d8948ebc3bde20d8633d04f76ab60a196340b956f3b483a00",
+    "internal/mcp/smoke_test.go": "5b86edae223148f1ecc54b312c8089c2015cc5ff2a2f3e2dbef6f0d24b7e0916",
+    "internal/ratelimit/concurrency.go": "d5d01680684ce2f8334274b611a026b03114ad48adf970fb19aa246c32394e5b",
+    "internal/ratelimit/concurrency_test.go": "e23b8919af24457f9dcd015b7494d5f2a862019e08a86e2d689aae5028423d57"
   },
   "verification": {
-    "timestamp": "2026-05-04T11:50:00Z",
-    "result": "PARTIAL",
+    "timestamp": "2026-05-04T15:30:00Z",
+    "result": "CONVERGED",
     "strict": false,
-    "stage": "1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b + 2c-cache + 2c-ratelimit",
-    "artifacts_on_disk": 49,
-    "artifacts_declared": 57,
+    "stage": "Full Option B build-out converged: 1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b + 2c-cache + 2c-ratelimit + 3a-oauth + 3b-mcp + 3c-tools + 3d-concurrency-cap",
+    "artifacts_on_disk": 75,
+    "artifacts_declared": 75,
     "artifacts_missing": 0,
-    "matrix": [
-      {
-        "constraint": "B1",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "B2",
-        "type": "goal",
-        "code": true,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "PARTIAL",
-        "deferred_to": "first real-user trial"
-      },
-      {
-        "constraint": "B3",
-        "type": "boundary",
-        "code": "partial",
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "PARTIAL",
-        "deferred_to": "Stage 3 load test"
-      },
-      {
-        "constraint": "T1",
-        "type": "invariant",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 3"
-      },
-      {
-        "constraint": "T2",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "T3",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "T4",
-        "type": "boundary",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED",
-        "note": "Cached path (1µs avg, 100k Gets <100ms) verified by TestCacheGetIsFastPath; 4 orders of magnitude under T4's 5ms budget. Cold-path (49.1ms M1, ~80-90ms CI) under 100ms ceiling."
-      },
-      {
-        "constraint": "T5",
-        "type": "invariant",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 3"
-      },
-      {
-        "constraint": "T6",
-        "type": "invariant",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 3"
-      },
-      {
-        "constraint": "T7",
-        "type": "invariant",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 3"
-      },
-      {
-        "constraint": "T8",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "U1",
-        "type": "goal",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 3"
-      },
-      {
-        "constraint": "U2",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "U3",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "U4",
-        "type": "goal",
-        "code": true,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "S1",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "S2",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "S3",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "S4",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": "partial",
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "S5",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED",
-        "addressed_by": [
-          "projection.go suspended-preservation",
-          "keys.go owner-suspension propagates",
-          "cache.go Invalidate + InvalidateByUser",
-          "handlers_admin_keys.go revoke wires Invalidate",
-          "handlers_admin_users.go suspend wires InvalidateByUser"
-        ],
-        "note": "All three leaves TESTED: (1) suspend-on-relogin via projection.go, (2) suspended-user-key-fail via keys.go owner-status check, (3) revocation cache propagation via Invalidate (sub-30s in practice; ≤30s worst-case via TTL belt; well under S5's 60s ceiling)."
-      },
-      {
-        "constraint": "S6",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "PARTIAL",
-        "evidence": [
-          "internal/ratelimit/perkey.go: PerKeyMiddleware keys on Principal.ID (bearer prefix); only TypeServiceAccount is gated",
-          "internal/ratelimit/perkey_test.go: 7 unit tests (limits SA, isolates prefixes, skips users, OnDeny fires, disabled-limiter pass, panic-without-limiter)",
-          "internal/app/routes.go: PerKeyMiddleware mounted after attachPrincipal; OnDeny -> slog warn",
-          "internal/app/server.go: KeyRateLimitWindow=1m / KeyRateLimitMax=60 defaults"
-        ],
-        "deferred_remainder": "Per-key concurrency cap (semaphore default 5 in-flight) — separate slice; sliding-window half is closed.",
-        "note": "S6's rate-limit half is now SATISFIED at TESTED. The concurrency-cap half remains DEFERRED. Splitting it lets RT-7 close on the dominant pressure (rate-limit) and tracks the remaining work explicitly."
-      },
-      {
-        "constraint": "O1",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      },
-      {
-        "constraint": "O2",
-        "type": "boundary",
-        "code": false,
-        "test": false,
-        "docs": true,
-        "ops": false,
-        "status": "DEFERRED",
-        "deferred_to": "Stage 2 or 3 (Prometheus /metrics)"
-      },
-      {
-        "constraint": "O3",
-        "type": "invariant",
-        "code": true,
-        "test": true,
-        "docs": true,
-        "ops": false,
-        "status": "SATISFIED"
-      }
-    ],
+    "matrix_summary": "All 18 invariants SATISFIED. All 14 required truths SATISFIED at TESTED. Goals + Boundaries that remain DEFERRED are out-of-scope for code generation (B2 first-trial, B3 load test, O2 Prometheus /metrics).",
     "coverage": {
       "invariants": {
-        "satisfied": 13,
-        "partial": 1,
-        "deferred": 4,
+        "satisfied": 18,
+        "partial": 0,
+        "deferred": 0,
         "total": 18,
-        "percentage_satisfied": 72
+        "percentage_satisfied": 100
       },
       "goals": {
         "satisfied": 1,
@@ -330,187 +113,73 @@
         "percentage_satisfied": 33
       },
       "overall": {
-        "satisfied": 15,
-        "partial": 3,
-        "deferred": 6,
+        "satisfied": 20,
+        "partial": 2,
+        "deferred": 2,
         "total": 24,
-        "percentage_satisfied": 62
+        "percentage_satisfied": 83
       }
     },
     "binding_constraint_check": {
       "required_truth_id": "RT-6",
       "closed": true,
-      "rationale": "Stage 2c-cache caches resolved Principal values (Type, ID, WorkspaceID, Role, Claims). None of these fields carry secret material — Principal.Claims includes 'key_prefix' (non-secret display id), 'auth_method' (constant string), 'owner_oidc_sub' (canonical identifier), 'key_id' (numeric). No bearer-token plaintext or hash crosses the cache boundary. The cache lookup path emits no logs containing secret values. Cross-cutting redaction property preserved end-to-end.",
+      "rationale": "Bearer-token redaction at every egress preserved across 30 iterations. Every new surface (OAuth handlers, MCP transport, MCP recover, tool dispatch, concurrency cap) routes through the redact-wrapped slog handler + writeError funnel. Access-token claims contain only iss/sub/aud/client_id/workspace/scope/iat/exp — no secret material. OnDeny callbacks log key_prefix only.",
       "evidence_status": {
         "redact pkg": "VERIFIED",
         "slog default-handler wrapping": "VERIFIED",
         "writeError funnel": "VERIFIED",
         "recoverMiddleware": "VERIFIED",
-        "Stage 2a (key minting) preserves binding": "VERIFIED",
-        "Stage 2b-substrate (audit middleware) preserves binding": "VERIFIED",
-        "Stage 2b-retention (compactor + spillover) preserves binding": "VERIFIED",
-        "Stage 2c-cache preserves binding": "VERIFIED (cache stores Principal struct only; no secret material)"
+        "MCP RecoverMiddleware": "VERIFIED",
+        "OAuth handlers": "VERIFIED",
+        "Tool dispatch + 10MB ceiling": "VERIFIED",
+        "Per-key sliding window + concurrency cap": "VERIFIED"
       }
     },
-    "genealogy_verification": {
-      "assumption_invariants_at_risk": [
-        {
-          "id": "T4",
-          "type": "boundary",
-          "challenger": "stakeholder",
-          "status": "SATISFIED",
-          "risk": "RESOLVED — cached path now TESTED at 1µs avg via cache.go; cold path TESTED at 49.1ms via G3 microbench."
-        },
-        {
-          "id": "O3",
-          "type": "invariant",
-          "source": "assumption",
-          "status": "SATISFIED"
-        }
-      ],
-      "regulation_constraints_preserved": [
-        {
-          "id": "T1",
-          "preserved": true,
-          "note": "OAuth 2.1 spec compliance preserved."
-        },
-        {
-          "id": "S1",
-          "preserved": true,
-          "note": "Argon2id hash-only at OWASP-2023 + plaintext-once."
-        },
-        {
-          "id": "S2",
-          "preserved": true,
-          "note": "redact pkg + writeError funnel + recoverMiddleware."
-        },
-        {
-          "id": "S3",
-          "preserved": true,
-          "note": "withAdmin + scope-to-role at boundary; cache stores resolved Principal so authz still applies."
-        },
-        {
-          "id": "S5",
-          "preserved": true,
-          "note": "All 3 revocation leaves TESTED — suspend-on-relogin, suspended-user-key-fail, revocation cache propagation."
-        }
-      ]
+    "required_truth_status": {
+      "RT-1": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-2": {"status": "SATISFIED", "level": "TESTED", "stage": "OAuth (3a) + MCP transport (3b) + tool framework (3c) all closed"},
+      "RT-3": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-4": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-5": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-6": {"status": "SATISFIED", "level": "VERIFIED", "binding": true},
+      "RT-7": {"status": "SATISFIED", "level": "TESTED", "stage": "Sliding window (2c-ratelimit) + concurrency cap (3d) — both halves of S6"},
+      "RT-8": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-9": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-10": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-11": {"status": "SATISFIED", "level": "TESTED", "stage": "MCP sub-handler isolation (3b)"},
+      "RT-12": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-13": {"status": "SATISFIED", "level": "TESTED"},
+      "RT-14": {"status": "SATISFIED", "level": "TESTED", "stage": "Tool registry + per-tool JSON schema + 10MB ceiling (3c)"}
     },
     "tension_preservation_check": {
       "checked": 8,
       "reopened": 0,
       "confirmed": 8,
-      "note": "Stage 2c-cache explicitly closes TN4 ('event-driven cache invalidation + 30s TTL belt'): P10 prior-action via revoke/suspend Invalidate calls, P11 cushioning via 30s TTL. TN6 + TN8 preserved — cache stores redact-clean Principal values; no secret material crosses the cache boundary."
-    },
-    "reversibility_check": {
-      "total_actions": 36,
-      "one_way_count": 0,
-      "reversible_with_cost_count": 3,
-      "two_way_count": 33,
-      "all_acknowledged": true,
-      "note": "Stage 2c-cache added 8 entries (steps 29-36). All TWO_WAY in pre-release scope. Cumulative: 0 ONE_WAY, 3 REVERSIBLE_WITH_COST, 33 TWO_WAY across 36 actions."
-    },
-    "required_truth_status": {
-      "RT-1": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-2": {
-        "status": "NOT_SATISFIED",
-        "level": "DOCUMENTED",
-        "stage": "Stage 3"
-      },
-      "RT-3": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-4": {
-        "status": "SATISFIED",
-        "level": "TESTED",
-        "stage": "cache + invalidation tested end-to-end; revoke + suspend handlers wire Invalidate / InvalidateByUser; T4 fast path verified"
-      },
-      "RT-5": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-6": {
-        "status": "SATISFIED",
-        "level": "VERIFIED"
-      },
-      "RT-7": {
-        "status": "SATISFIED",
-        "level": "TESTED",
-        "stage": "per-IP existed; per-key sliding window closed Stage 2c-ratelimit (PerKeyMiddleware mounted after attachPrincipal). Concurrency cap deferred."
-      },
-      "RT-8": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-9": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-10": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-11": {
-        "status": "NOT_SATISFIED",
-        "level": "DOCUMENTED",
-        "stage": "Stage 3"
-      },
-      "RT-12": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-13": {
-        "status": "SATISFIED",
-        "level": "TESTED"
-      },
-      "RT-14": {
-        "status": "NOT_SATISFIED",
-        "level": "DOCUMENTED",
-        "stage": "Stage 3"
-      }
+      "note": "All 8 tensions preserved across 30 iterations. TN4 (cache invalidation), TN5 (MCP isolation × shared substrate), TN6 (failure cascade), TN7 (rate-limit floor), TN8 (build-order gate via RT-6) all confirmed by their respective stage closures."
     },
     "gaps": [
-      {
-        "id": "G2",
-        "constraint": "T1",
-        "rt": "RT-2",
-        "severity": "deferred-by-design",
-        "issue": "OAuth 2.1 + PKCE handlers do not exist; MCP server does not exist.",
-        "action": "Stage 3."
-      },
       {
         "id": "G11",
         "constraint": "B1",
         "rt": "B1",
         "severity": "informational",
         "issue": "Universal audit middleware emits a row per authenticated request, but doesn't yet UPDATE api_keys.last_used_at on key resolves.",
-        "action": "Optional polish: add a per-resolve UPDATE in auditMiddleware OR in ResolveBearerKey itself."
-      },
-      {
-        "id": "G13",
-        "constraint": "S6",
-        "rt": "RT-7",
-        "severity": "informational",
-        "issue": "Per-key sliding-window rate limit closed; per-key concurrency cap (semaphore) not yet implemented.",
-        "action": "Optional follow-up slice: add an in-flight semaphore keyed on bearer prefix (default 5). Not blocking Stage 3."
+        "action": "Optional polish: add a per-resolve UPDATE in auditMiddleware OR in ResolveBearerKey itself. Not blocking convergence."
       }
     ],
     "convergence": {
-      "status": "IN_PROGRESS",
+      "status": "CONVERGED",
       "criteria": {
-        "all_invariants_satisfied": false,
-        "all_required_truths_satisfied": false,
+        "all_invariants_satisfied": true,
+        "all_required_truths_satisfied": true,
         "no_blocking_gaps": true,
         "binding_constraint_closed": true,
         "all_declared_artifacts_on_disk": true
       },
-      "stage": "Stage 2 complete (1a-1c + JWKS + G3/G7/G8/G9 + 2a + 2b + 2c-cache + 2c-ratelimit); Stage 3 pending",
-      "next_stage_suggestion": "Stage 3 (MCP transport over HTTPS + OAuth 2.1 + PKCE + dynamic client registration): closes RT-2, RT-11, RT-14 — the last DOCUMENTED-only required truths. ~10-15 files. After Stage 3 the manifold should converge.",
-      "reason": "After Stage 2c-ratelimit: 15 SATISFIED, 3 PARTIAL, 6 DEFERRED of 24. RT-7 promoted PARTIAL -> SATISFIED at TESTED — PerKeyMiddleware keys on Principal.ID (bearer prefix), only gates service-account principals; user-cookie/OIDC sessions pass through. S6 split: rate-limit half SATISFIED, concurrency-cap half DEFERRED (informational gap G13). Stage 2 work done — every required truth except the Stage-3 trio (RT-2, RT-11, RT-14) is at SATISFIED/TESTED. Binding RT-6 stays VERIFIED. 8 tensions confirmed; 0 reopened."
+      "iterations_to_convergence": 30,
+      "stage": "Manifold CONVERGED: 18/18 invariants SATISFIED, 14/14 required truths SATISFIED, binding RT-6 VERIFIED.",
+      "next_stage_suggestion": "Manifold is CONVERGED for the code-generation surface. Remaining DEFERRED items need real-world data or operational deployments to validate (B2 first-user trial, B3 load test against the 250-human / 1000-SA ceiling, O2 Prometheus /metrics + ops dashboards). G11 (last_used_at polish) is a non-blocking informational follow-up.",
+      "reason": "After Stage 3d: 20 SATISFIED, 2 PARTIAL, 2 DEFERRED of 24 (83%). All 18 invariants now SATISFIED — S6 closed via Semaphore + PerKeyConcurrencyMiddleware (default 5 in-flight, panic-safe via defer-Release), pairing with the existing sliding-window limiter to bound both rate over time and parallel work at any one instant. Hand-rolled, dependency-light. Every required truth (14/14) SATISFIED at TESTED. Binding RT-6 stays VERIFIED across 30 iterations. 8 tensions confirmed; 0 reopened. Convergence criteria met."
     }
   }
 }
