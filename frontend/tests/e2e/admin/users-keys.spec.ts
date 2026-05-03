@@ -58,15 +58,14 @@ test.describe('admin users + keys API', () => {
     expect(baseURL).toBeTruthy();
   });
 
-  test('approve key request returns 501 with a structured Stage-2 message', async ({ page }) => {
-    // Arbitrary id; without a seeded request the handler returns 501
-    // BEFORE checking the row exists (the 501 is for the action, not
-    // the row). The structured body documents the workaround.
-    const res = await page.request.post('/api/admin/keys/requests/1/approve');
-    expect(res.status()).toBe(501);
-    const body = await res.json();
-    expect(body.error).toContain('Stage 2');
-    expect(body.workaround).toBeTruthy();
+  test('approve on a missing key request returns 404 (route otherwise reachable)', async ({ page }) => {
+    // Stage 2a ships real Argon2id key minting (replaces the Stage 1b
+    // 501 stub). Without a seeded key_request row, the handler now
+    // returns 404 (request not found). The full approve->mint->201
+    // path is covered by the Go integration test
+    // TestAdminKeyRequestApproveMintsRealKey.
+    const res = await page.request.post('/api/admin/keys/requests/9999/approve');
+    expect(res.status()).toBe(404);
   });
 
   test('deny on a missing key request returns 404 (route otherwise reachable)', async ({ page }) => {
