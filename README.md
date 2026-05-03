@@ -6,18 +6,20 @@ The product is positioned for individuals capturing personal notes, teams sharin
 
 ## Current Status
 
-This repository currently implements the first working phase:
+This repository implements:
 
-- file-backed Markdown pages addressed by wiki-style page names
-- built-in username/password authentication
+- file-backed Markdown pages addressed by wiki-style page names, scoped per workspace
+- built-in username/password authentication, optional OIDC sign-in, optional break-glass admin
 - a Go HTTP server that serves both API endpoints and the compiled frontend
-- autosave page editing over HTTP
-- live page updates over server-sent events
+- autosave page editing over HTTP and live page updates over server-sent events
 - derived wiki metadata for links, backlinks, tags, and task list items
-- a Svelte frontend with a single CodeMirror-based editor surface
-- inline wiki-link rendering inside the editor when the cursor is outside the link syntax
+- a Svelte frontend with a single CodeMirror-based editor surface and SilverBullet-style live preview (headings, bold/italic, inline code, lists, tables, images, fenced code, blockquotes, admonitions, frontmatter pill bar, attribute pills, hashtag chips, wiki-link chips)
+- workspace + user + API key administration backed by SQLite, with admin endpoints for workspace CRUD, user suspension/reactivation/deletion, and API key minting/revocation
+- an MCP HTTP transport at `/mcp` with OAuth 2.1 + PKCE, dynamic client registration (RFC 7591), JWKS publication, and a per-tool JSON-schema input registry — Claude Code and equivalent MCP clients can connect, complete the OAuth flow once, and use registered tools
+- per-bearer-key rate limiting (sliding window + in-flight cap), an async audit pipeline with 90-day raw retention then aggregates, periodic workspace snapshots, and a fsync'd spillover journal for bounded loss-on-crash
 
-This is still an early foundation. Git sync, MCP exposure, CLI automation, richer live preview behavior, structured work-management concepts, and production-grade collaboration are not implemented yet.
+Git sync to a remote, CLI automation, and a `/metrics` Prometheus
+endpoint are still unimplemented — see "Known Limitations" below.
 
 ## Architecture
 
@@ -63,6 +65,9 @@ The compiled frontend is emitted to `frontend/dist`, and the Go server serves th
 - Backlinks are derived by scanning pages for references to the current page.
 - `#tags` are extracted from Markdown text.
 - Markdown task list syntax such as `- [ ] item` and `- [x] item` is recognized.
+
+For the full list of supported Markdown syntax (live editor and
+server-rendered HTML), see [`docs/markdown-dialect.md`](docs/markdown-dialect.md).
 
 ### Authentication
 
@@ -170,28 +175,72 @@ npm run build       # also covered by: make build
 
 ## Configuration
 
-The backend currently reads these environment variables:
+The backend reads these environment variables. Sensible defaults are
+baked in; override only when needed. Operational tuning details
+(rate limits, retention, snapshots, OIDC, OAuth) and the admin
+workflow live in [`docs/admin-guide.md`](docs/admin-guide.md).
+
+### Server basics
 
 - `PHRONESIS_ADDR`: HTTP listen address, default `:8080`
 - `PHRONESIS_PAGES_DIR`: root directory for Markdown pages, default `./data/pages`
 - `PHRONESIS_FRONTEND_DIST`: compiled frontend directory, default `./frontend/dist`
-- `PHRONESIS_ADMIN_USER`: login username, default `admin`
-- `PHRONESIS_ADMIN_PASSWORD`: login password, default `admin123`
+
+### Auth
+
+- `PHRONESIS_ADMIN_USER`: built-in login username, default `admin`
+- `PHRONESIS_ADMIN_PASSWORD`: built-in login password, default `admin123` (a startup warning fires if this is left at the default)
+- `PHRONESIS_OIDC_ENABLED` / `PHRONESIS_OIDC_ISSUER` / `PHRONESIS_OIDC_AUDIENCE` / `PHRONESIS_OIDC_SECRET`: OIDC sign-in (stub mode when only `_ENABLED` is set)
+- `PHRONESIS_BREAKGLASS`: Argon2id PHC of a break-glass admin secret; route 404s when unset
+
+### Storage + retention
+
+- `PHRONESIS_STORE_PATH`: SQLite store for users, keys, and audit events; default `./data/phronesis.db`
+- `PHRONESIS_AUDIT_LOG`: file-sink fallback when SQLite is disabled; default `./data/audit.log`
+- `PHRONESIS_JOURNAL_PATH`: push-spillover journal path; unset disables the readyz journal check
+- `PHRONESIS_SNAPSHOT_DIR`: periodic workspace snapshot directory; unset disables. Cadence is currently hard-coded to 1h.
+- `PHRONESIS_BLOB_DIR`: directory for binary attachments; default `./data/blobs`
+
+### OAuth + MCP
+
+- `PHRONESIS_OAUTH_ENABLED`: mounts the OAuth 2.1 server + MCP transport
+- `PHRONESIS_OAUTH_ISSUER`: canonical iss URL clients can reach (required when enabled)
+- `PHRONESIS_OAUTH_KEY_PATH`: RSA signing key path; auto-generated on first start, default `./data/oauth-key.pem`
+
+### Rate limiting (code defaults, not env-tunable yet)
+
+The per-IP auth-endpoint window (`1m` / `50`), per-bearer-key sliding
+window (`1m` / `60`), and per-key in-flight cap (`5`) are
+code-defaults today. Override via `app.Config` programmatically;
+env-var plumbing is a future polish.
+
+### API auth (legacy / fallback)
+
+- `PHRONESIS_API_KEY`: opt-in single-key bearer auth; a transitional escape hatch from before the per-user API key system landed
 
 ## Known Limitations
 
-- Markdown rendering is intentionally basic and not CommonMark-complete.
-- The editor is moving toward live preview behavior, but only wiki links currently render inline in the editing surface.
-- Collaboration is session-based with simple merge logic, not operational transform or CRDT-based.
-- Authentication is suitable only for early internal use and should not be treated as production-ready security.
-- There is no git sync, no MCP server, no CLI automation layer, and no search/index service yet.
+- The server's Markdown-to-HTML rendering is intentionally basic and not CommonMark-complete; richer rendering happens in the live editor (see [`docs/markdown-dialect.md`](docs/markdown-dialect.md)).
+- Collaboration is session-based with whole-document merge logic, not operational transform or CRDT-based.
+- The MCP transport ships a tool framework + an `echo` tool; wiki-aware tools (page list, get, write, search) are not yet implemented.
+- There is no git sync to a remote, no CLI automation layer, no `/metrics` Prometheus endpoint, and no search/index service yet.
+- Workspace administration is currently API-only; the user/key admin panels exist in the Web UI, but workspace CRUD requires `curl` against `/api/admin/workspaces` for now.
 
 ## Near-Term Direction
 
 The next meaningful steps are:
 
-1. improve the editor’s live-preview behavior beyond wiki links
-2. add a stable HTTP API for document operations
-3. layer CLI and MCP interfaces on top of the same document operations
-4. add git-backed synchronization and operational visibility
-5. harden authentication, persistence, and collaboration semantics
+1. wiki-aware MCP tools (`pages/list`, `pages/get`, `pages/write`, `pages/search`)
+2. workspace CRUD in the Web UI
+3. git-backed synchronization to a configurable remote
+4. CLI automation layer on top of the same document API
+5. `/metrics` Prometheus endpoint for operational visibility
+6. richer collaboration semantics (real CRDT path; the scaffolding is composed but not yet consumed)
+
+## Documentation index
+
+- [`docs/markdown-dialect.md`](docs/markdown-dialect.md) — supported Markdown syntax with examples
+- [`docs/admin-guide.md`](docs/admin-guide.md) — operator guide for workspaces, users, API keys, OAuth + MCP
+- [`docs/silverbullet-like-live-preview/README.md`](docs/silverbullet-like-live-preview/README.md) — live-preview architecture and how to add a decoration family
+- [`docs/dist-packaging/README.md`](docs/dist-packaging/README.md) — release tooling and distribution
+- [`docs/collab-wiki/PRD.md`](docs/collab-wiki/PRD.md) — product requirements document
