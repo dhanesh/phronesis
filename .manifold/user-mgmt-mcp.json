@@ -167,7 +167,27 @@
           "specificity": 3,
           "measurability": 3,
           "testability": 3
-        }
+        },
+        "verified_by": [
+          {
+            "id": "V2",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/jwks_test.go",
+            "test_name": "TestRS256VerifierOutageToleranceWithinStaleWindow",
+            "status": "VERIFIED",
+            "test_tier": "unit",
+            "note": "Outage tolerance: cached JWKS continues to verify when IdP returns 5xx, up to StaleWindow."
+          },
+          {
+            "id": "V3",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/jwks_test.go",
+            "test_name": "TestRS256VerifierStaleWindowExceededHardFails",
+            "status": "VERIFIED",
+            "test_tier": "unit",
+            "note": "Past StaleWindow, verifier hard-fails even with kid present \u2014 long outages don't keep stale keys live forever."
+          }
+        ]
       }
     ],
     "user_experience": [
@@ -804,10 +824,15 @@
         ],
         "evidence": [
           {
-            "id": "E10",
-            "type": "content_match",
-            "path": "internal/auth/oidc/",
-            "pattern": "(?i)projection|claim",
+            "id": "E10a",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/projection.go",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E10b",
+            "type": "file_exists",
+            "path": "internal/auth/oidc/jwks.go",
             "status": "VERIFIED"
           },
           {
@@ -815,6 +840,30 @@
             "type": "test_passes",
             "path": "internal/auth/oidc/projection_test.go",
             "test_name": "TestProjectClaimsIsIdempotent",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11a",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/jwks_test.go",
+            "test_name": "TestRS256VerifierHappyPath",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11b",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/jwks_test.go",
+            "test_name": "TestRS256VerifierOutageToleranceWithinStaleWindow",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E11c",
+            "type": "test_passes",
+            "path": "internal/auth/oidc/jwks_test.go",
+            "test_name": "TestRS256VerifierHandlesKeyRotation",
             "status": "VERIFIED",
             "test_tier": "unit"
           }
@@ -847,6 +896,36 @@
             "type": "content_match",
             "path": "internal/redact/redact.go",
             "pattern": "Authorization|code_verifier|refresh_token|phr_live_",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E14a",
+            "type": "test_passes",
+            "path": "internal/app/redact_integration_test.go",
+            "test_name": "TestRecoverMiddlewareDoesNotLeakBearerInPanicStack",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E14b",
+            "type": "test_passes",
+            "path": "internal/app/redact_integration_test.go",
+            "test_name": "TestWriteErrorRedactsErrErrorString",
+            "status": "VERIFIED",
+            "test_tier": "integration"
+          },
+          {
+            "id": "E14c",
+            "type": "content_match",
+            "path": "internal/app/httpio.go",
+            "pattern": "redact\\.String",
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E14d",
+            "type": "content_match",
+            "path": "internal/app/routes.go",
+            "pattern": "recoverMiddleware",
             "status": "VERIFIED"
           }
         ]
@@ -946,8 +1025,9 @@
             "type": "test_passes",
             "path": "frontend/tests/e2e/admin/users-keys.spec.ts",
             "test_name": "admin can open the Users modal from the command palette",
-            "status": "PENDING",
-            "test_tier": "e2e"
+            "status": "VERIFIED",
+            "test_tier": "e2e",
+            "note": "Verified locally 2026-05-04 \u2014 9/9 tests pass in 2.6s. CI run will reaffirm on platform matrix."
           }
         ]
       },
@@ -1523,6 +1603,38 @@
         "sqlite_key_lookup_us": 24.5,
         "combined_cold_ms_mean": 49.1
       }
+    },
+    {
+      "number": 11,
+      "phase": "amend",
+      "timestamp": "2026-05-04T05:00:00Z",
+      "result": "Closed G8: RT-5 JWKS leaf now SATISFIED. Added internal/auth/oidc/jwks.go with: (1) JWKSCache.Refresh \u2014 fetches JWKS URI with 256KB body cap + 5s timeout, validates JWK parseability eagerly, leaves entries unchanged on failure (T8 outage tolerance); (2) RS256Verifier \u2014 implements Verifier with kid-rotation refresh + StaleWindow fallback (default 24h); (3) parseJWKToRSA \u2014 RS256-only, validates alg + non-zero modulus/exponent. 12 tests covering happy path, outage-tolerance-within-window, hard-fail-past-window, key rotation, alg confusion (HS256 rejected), unknown kid, non-2xx, corrupt JSON, missing kid, non-RSA skip, empty key set. T8 now has verified_by V2/V3 evidence; RT-5 reaches TESTED level. G8 removed from gaps.",
+      "gaps_resolved": [
+        "G8"
+      ],
+      "artifacts_added": 2,
+      "rt_evidence_updates": [
+        "RT-5"
+      ],
+      "constraint_evidence_updates": [
+        "T8 verified_by"
+      ]
+    },
+    {
+      "number": 12,
+      "phase": "amend",
+      "timestamp": "2026-05-04T05:45:00Z",
+      "result": "Closed G7 + G9. G7 (RT-6 binding cross-cutting wiring): writeError now redacts via redact.String \u2014 centralised funnel covers ~30 call sites that pass err.Error() into JSON error responses. recoverMiddleware added: catches handler panics, routes diagnostic through slog (which is redact-wrapped at boot), returns 500 with no body. redact_integration_test.go asserts the cross-cutting property end-to-end: a panic with bearer + OAuth code in scope produces ZERO leak in either log output or response body. RT-6 binding now fully VERIFIED at TESTED level. G9 (RT-9 e2e evidence): admin users-keys.spec.ts fixed (placeholder regex) and run locally \u2014 9/9 tests pass in 2.6s. RT-9 e2e evidence flips PENDING -> VERIFIED. CI run on the platform matrix will reaffirm on push.",
+      "gaps_resolved": [
+        "G7",
+        "G9"
+      ],
+      "artifacts_added": 2,
+      "artifacts_modified": 3,
+      "rt_evidence_updates": [
+        "RT-6",
+        "RT-9"
+      ]
     }
   ],
   "convergence": {
@@ -1537,7 +1649,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T04:30:00Z",
+  "updated": "2026-05-04T05:45:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
@@ -1703,8 +1815,8 @@
   ],
   "generation": {
     "option": "B (stage-gated rollout)",
-    "stage": "1c (Svelte admin pages + e2e + fixture wiring)",
-    "timestamp": "2026-05-04T03:30:00Z",
+    "stage": "1c + JWKS + G7/G9 closures",
+    "timestamp": "2026-05-04T05:45:00Z",
     "artifacts": [
       {
         "path": "internal/redact/redact.go",
@@ -2010,6 +2122,82 @@
         "status": "modified",
         "artifact_class": "substantive",
         "modification_note": "PHRONESIS_STORE_PATH set to {pagesDir}/phronesis.db so admin endpoints have an isolated SQLite store per worker"
+      },
+      {
+        "path": "internal/auth/oidc/jwks.go",
+        "type": "code",
+        "satisfies": [
+          "RT-5",
+          "T8"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/oidc/jwks_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-5",
+          "T8",
+          "S3"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/recover_middleware.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6",
+          "S2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/app/redact_integration_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-6",
+          "S2"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive",
+        "priority": "binding"
+      },
+      {
+        "path": "internal/app/httpio.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6",
+          "S2"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "writeError now passes message through redact.String \u2014 covers all ~30 writeError(w, _, err.Error()) call sites"
+      },
+      {
+        "path": "internal/app/routes.go",
+        "type": "code",
+        "satisfies": [
+          "RT-6"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "wired recoverMiddleware into the chain (innermost so handler panics route through slog/redact instead of net/http's stderr default)"
+      },
+      {
+        "path": "frontend/tests/e2e/admin/users-keys.spec.ts",
+        "type": "test",
+        "satisfies": [
+          "RT-9",
+          "U2",
+          "U3"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "fixed CommandPalette placeholder regex to match actual placeholder; all 9 tests now pass locally"
       }
     ],
     "coverage": {
