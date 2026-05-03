@@ -88,7 +88,7 @@ test.describe('admin Users + Keys modals via Cmd-K', () => {
 
     // Open command palette via shortcut.
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
-    await expect(page.getByPlaceholder(/quick open|search|⌘k/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByPlaceholder(/type a page name|page name or command/i).first()).toBeVisible({ timeout: 5000 });
 
     // Type to filter to "Manage users".
     await page.keyboard.type('users');
