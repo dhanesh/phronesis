@@ -70,13 +70,13 @@ Persistent state (users projection, api_keys, sessions, audit if we choose to mi
 > **Rationale:** The medium-scale ceiling (B3) needs indexed key/user lookups; JSON files don't index. Pure-Go avoids the cgo headache the dist-packaging manifold worked hard to avoid (T1: deterministic builds). modernc.org/sqlite is the standard "I want SQLite without cgo" choice in 2026.
 > **Quality:** 3 / 3 / 3.
 
-#### T4: API key auth verification adds ≤5ms p95 cached / ≤50ms p95 cold
+#### T4: API key auth verification adds ≤5ms p95 cached / ≤100ms p95 cold
 
-Resolving a presented bearer key to a `principal.Principal` (look up key by hash, verify Argon2id, check `active && now < expires_at`, fetch capability set) must add ≤5ms p95 to a request whose key/user is in the in-process cache, and ≤50ms p95 on a cold cache path that hits SQLite. Cache invalidation is event-driven (S5).
+Resolving a presented bearer key to a `principal.Principal` (look up key by hash, verify Argon2id at OWASP-2023 production parameters, check `active && now < expires_at`, fetch capability set) must add ≤5ms p95 to a request whose key/user is in the in-process cache, and ≤100ms p95 on a cold cache path that hits SQLite. Cache invalidation is event-driven (S5).
 
-> **Rationale:** AI agents will issue many small requests in burst; any per-call auth overhead multiplies fast. 5ms cached is a cheap-feeling ceiling; 50ms cold absorbs Argon2id verification cost (which is expensive on purpose).
-> **Quality:** 3 / 3 / 3 — measurable via Go bench.
-> **Source: assumption.** This budget is a guess based on similar systems; m4 should confirm with a microbench before committing. Tagged `challenger: assumption` so m5 surfaces it as a convergence risk.
+> **Rationale:** AI agents will issue many small requests in burst; any per-call auth overhead multiplies fast. 5ms cached is a cheap-feeling ceiling. Cold-path budget set to 100ms after empirical measurement: OWASP-2023 Argon2id (m=64MiB, t=3, p=4) takes ~43ms verify on Apple M1 and ~80-90ms on slower CI runners. 100ms accommodates production-grade hashing on commodity infrastructure with WAL contention headroom. The cache hit is the common path; cold-path cost is intentional defense-in-depth against offline cracking.
+> **Quality:** 3 / 3 / 3 — measurable via Go bench (see `internal/auth/keyverify_bench_test.go`).
+> **History:** Original budget was ≤50ms cold (m1, source=assumption). Bench in user-mgmt-mcp Stage 1c (G3 closure, 2026-05-04) measured 49.1ms mean cold-path on M1; relaxed to ≤100ms with empirical justification. Argon2id production params confirmed at OWASP-2023 baseline.
 
 #### T5: MCP tool response payload bounded by a server-enforced 10 MB ceiling
 
