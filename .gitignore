@@ -25,3 +25,8 @@ internal/webfs/dist/
 
 # goreleaser output
 dist/
+
+# Playwright artifacts (HTML reports + per-test traces/videos/screenshots)
+frontend/blob-report/
+playwright-report/
+test-results/
