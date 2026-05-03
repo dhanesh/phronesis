@@ -10,12 +10,17 @@ import (
 // routes assembles the HTTP mux + middleware chain. The middleware order is
 // (outermost -> innermost):
 //
-//	logging -> CSP (INT-13, RT-9.3) -> attachPrincipal (INT-2, RT-5) -> mux
+//	logging -> CSP -> attachPrincipal -> recover -> mux
 //
 // CSP sits between logging and principal so every response — including 401s
 // from the principal middleware — carries the Content-Security-Policy header.
 // loggingMiddleware stays outermost so its log line covers the full request,
 // not just the inner handler.
+//
+// recoverMiddleware sits closest to the mux so any handler panic is caught
+// before bubbling to net/http's default recover (which would log to stderr
+// outside the redact pipeline). Routes RT-6 (BINDING) cross-cutting wiring
+// at the panic-recover boundary — closes G7 from m5-verify.
 func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", s.handleHealth)
@@ -58,5 +63,5 @@ func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 
 	mux.HandleFunc("/", s.handleApp)
 
-	return loggingMiddleware(xssdefense.CSPMiddleware("", s.attachPrincipal(mux)))
+	return loggingMiddleware(xssdefense.CSPMiddleware("", s.attachPrincipal(recoverMiddleware(mux))))
 }
