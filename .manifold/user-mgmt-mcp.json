@@ -1017,7 +1017,7 @@
       },
       {
         "id": "RT-7",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": [
           "S6"
         ],
@@ -1029,12 +1029,41 @@
             "status": "VERIFIED"
           },
           {
+            "id": "E15.2",
+            "type": "file_exists",
+            "path": "internal/ratelimit/perkey.go",
+            "status": "VERIFIED"
+          },
+          {
             "id": "E16",
             "type": "test_passes",
-            "path": "internal/ratelimit/per_key_test.go",
-            "test_name": "per_key_sliding_window_isolated_from_per_ip",
-            "status": "PENDING",
+            "path": "internal/ratelimit/perkey_test.go",
+            "test_name": "TestPerKeyMiddlewareLimitsServiceAccount",
+            "status": "VERIFIED",
             "test_tier": "unit"
+          },
+          {
+            "id": "E16.2",
+            "type": "test_passes",
+            "path": "internal/ratelimit/perkey_test.go",
+            "test_name": "TestPerKeyMiddlewareIsolatesPrefixes",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E16.3",
+            "type": "test_passes",
+            "path": "internal/ratelimit/perkey_test.go",
+            "test_name": "TestPerKeyMiddlewareSkipsUserPrincipals",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E16.4",
+            "type": "content_match",
+            "path": "internal/app/routes.go",
+            "pattern": "PerKeyMiddleware",
+            "status": "VERIFIED"
           }
         ]
       },
@@ -2001,6 +2030,80 @@
       ],
       "gaps_total": 3,
       "gaps_blocking": 0
+    },
+    {
+      "number": 21,
+      "phase": "generate",
+      "timestamp": "2026-05-04T11:30:00Z",
+      "result": "m4-generate Stage 2c-ratelimit (Option B continued): per-bearer-key sliding-window middleware closes RT-7 + S6. Reuses existing internal/ratelimit.Limiter (per-key buckets already supported); new PerKeyMiddleware reads Principal from context, only gates service-account principals (TypeServiceAccount), 429 + Retry-After on deny, OnDeny callback feeds slog. Wired into routes after attachPrincipal so the prefix is available; user-cookie/OIDC sessions pass through (their floor is the per-IP auth-endpoint check). Defaults: window=1min, max=60. Per-key concurrency cap deferred to a later slice (S6 partial-closure noted). 2 new files (perkey.go, perkey_test.go), 2 edits (routes.go, server.go). All tests green (-race), gofmt clean, lint clean.",
+      "scope": "stage-2c-ratelimit",
+      "files_added": [
+        "internal/ratelimit/perkey.go",
+        "internal/ratelimit/perkey_test.go"
+      ],
+      "files_modified": [
+        "internal/app/routes.go",
+        "internal/app/server.go"
+      ],
+      "satisfies": [
+        "RT-7",
+        "S6"
+      ],
+      "deferred": [
+        "S6 per-key concurrency cap (semaphore) — separate slice"
+      ],
+      "tests_added": [
+        "TestPerKeyMiddlewarePassesThroughWithoutPrincipal",
+        "TestPerKeyMiddlewareSkipsUserPrincipals",
+        "TestPerKeyMiddlewareLimitsServiceAccount",
+        "TestPerKeyMiddlewareIsolatesPrefixes",
+        "TestPerKeyMiddlewareOnDenyFires",
+        "TestPerKeyMiddlewareDisabledLimiterAlwaysAllows",
+        "TestPerKeyMiddlewarePanicsWithoutLimiter"
+      ],
+      "tests_green": true,
+      "lint_green": true
+    },
+    {
+      "number": 22,
+      "phase": "verify",
+      "timestamp": "2026-05-04T11:50:00Z",
+      "result": "m5-verify after Stage 2c-ratelimit. 15 SATISFIED, 3 PARTIAL, 6 DEFERRED of 24. RT-7 promoted PARTIAL -> SATISFIED at TESTED — PerKeyMiddleware closes the per-key sliding-window half of S6. S6 itself moves DEFERRED -> PARTIAL (rate-limit half closed, concurrency cap deferred — gap G13 downgraded from deferred-by-design to informational). Binding RT-6 stays VERIFIED — middleware reads Principal.ID (display id, non-secret); OnDeny logs key_prefix only. 8 tensions confirmed; 0 reopened. Stage 2 substantively done — only RT-2 / RT-11 / RT-14 remain (Stage 3: MCP + OAuth). Coverage: invariants 13/1/4, goals 1/1/1, boundaries 1/1/1.",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 13,
+          "partial": 1,
+          "deferred": 4,
+          "total": 18,
+          "percentage_satisfied": 72
+        },
+        "goals": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "boundaries": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "overall": {
+          "satisfied": 15,
+          "partial": 3,
+          "deferred": 6,
+          "total": 24,
+          "percentage_satisfied": 62
+        }
+      },
+      "binding_closed": true,
+      "tensions_reopened": 0,
+      "tensions_explicitly_closed": [],
+      "gaps_total": 3,
+      "gaps_blocking": 0
     }
   ],
   "convergence": {
@@ -2015,7 +2118,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T10:50:00Z",
+  "updated": "2026-05-04T11:50:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
