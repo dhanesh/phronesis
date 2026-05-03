@@ -68,6 +68,14 @@ type Config struct {
 	AuthRateLimitWindow time.Duration
 	AuthRateLimitMax    int
 
+	// user-mgmt-mcp Stage 2c-ratelimit: per-bearer-key sliding-window
+	// limit (RT-7, S6). Applies to authenticated service-account
+	// requests; user-cookie/OIDC sessions are not gated by this limiter
+	// (their floor is the per-IP auth-endpoint check above).
+	// Default window=1min, max=60 — matches the S6 manifest rationale.
+	KeyRateLimitWindow time.Duration
+	KeyRateLimitMax    int
+
 	// INT-6 (Wave-3): snapshot scheduler. When SnapshotDir is non-empty,
 	// NewServer constructs a snapshot.LocalFSTarget + Scheduler that
 	// periodically backs up wiki.Store + blob.LocalFSStore.
@@ -237,6 +245,12 @@ func applyConfigDefaults(cfg Config) Config {
 	}
 	if cfg.AuthRateLimitMax == 0 {
 		cfg.AuthRateLimitMax = 50
+	}
+	if cfg.KeyRateLimitWindow == 0 {
+		cfg.KeyRateLimitWindow = time.Minute
+	}
+	if cfg.KeyRateLimitMax == 0 {
+		cfg.KeyRateLimitMax = 60
 	}
 	return cfg
 }
@@ -444,9 +458,14 @@ func NewServer(cfg Config) (*Server, error) {
 	// TN7 (server-side backstop even if reverse proxy is misconfigured).
 	authRateLimiter := ratelimit.NewLimiter(cfg.AuthRateLimitWindow, cfg.AuthRateLimitMax)
 
+	// Stage 2c-ratelimit: per-bearer-key sliding window. Applied to
+	// every authenticated service-account request after attachPrincipal
+	// resolves the prefix. Closes RT-7 / S6.
+	keyRateLimiter := ratelimit.NewLimiter(cfg.KeyRateLimitWindow, cfg.KeyRateLimitMax)
+
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           app.routes(authRateLimiter),
+		Handler:           app.routes(authRateLimiter, keyRateLimiter),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	app.http = server

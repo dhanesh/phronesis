@@ -1,27 +1,47 @@
 package app
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/dhanesh/phronesis/internal/ratelimit"
 	"github.com/dhanesh/phronesis/internal/xssdefense"
 )
 
+// slogRateDeny emits a structured warning when the per-key limiter rejects
+// a request. Kept small so route assembly stays readable.
+//
+// The prefix is the Principal.ID (key prefix display id, e.g. phr_live_…),
+// which is safe to log per RT-6 — only the secret suffix is redacted.
+func slogRateDeny(prefix, path string) {
+	slog.LogAttrs(context.Background(), slog.LevelWarn, "rate limit per-key deny",
+		slog.String("component", "phronesis"),
+		slog.String("key_prefix", prefix),
+		slog.String("path", path),
+	)
+}
+
 // routes assembles the HTTP mux + middleware chain. The middleware order is
 // (outermost -> innermost):
 //
-//	logging -> CSP -> attachPrincipal -> recover -> mux
+//	logging -> CSP -> attachPrincipal -> perKeyRateLimit -> audit -> recover -> mux
 //
 // CSP sits between logging and principal so every response — including 401s
 // from the principal middleware — carries the Content-Security-Policy header.
 // loggingMiddleware stays outermost so its log line covers the full request,
 // not just the inner handler.
 //
+// perKeyRateLimit sits after attachPrincipal because it needs the resolved
+// Principal to key on. It is a no-op for unauthenticated and user-cookie
+// requests; only service-account principals (bearer phr_live_…) are gated.
+// Closes RT-7 / S6 (Stage 2c-ratelimit).
+//
 // recoverMiddleware sits closest to the mux so any handler panic is caught
 // before bubbling to net/http's default recover (which would log to stderr
 // outside the redact pipeline). Routes RT-6 (BINDING) cross-cutting wiring
 // at the panic-recover boundary — closes G7 from m5-verify.
-func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
+func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", s.handleHealth)
 	mux.HandleFunc("/api/readyz", s.handleReadyz) // Wave-5 / RT-8
@@ -63,6 +83,13 @@ func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 
 	mux.HandleFunc("/", s.handleApp)
 
+	perKey := ratelimit.PerKeyMiddleware(ratelimit.PerKeyConfig{
+		Limiter: keyRateLimiter,
+		OnDeny: func(prefix, path string) {
+			slogRateDeny(prefix, path)
+		},
+	}, s.auditMiddleware(recoverMiddleware(mux)))
+
 	return loggingMiddleware(xssdefense.CSPMiddleware("",
-		s.attachPrincipal(s.auditMiddleware(recoverMiddleware(mux)))))
+		s.attachPrincipal(perKey)))
 }
