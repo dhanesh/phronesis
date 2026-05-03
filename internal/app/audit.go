@@ -22,6 +22,12 @@ func (s *Server) recordAudit(evt audit.Event) {
 // auditEnqueue is a hot-path-safe shorthand that derives the principal
 // fields from the request context. Use it for post-auth handlers; pre-auth
 // handlers (login/OIDC) build the Event directly and call recordAudit.
+//
+// Side effect: flips the per-request audit marker via markRequestAudited
+// so auditMiddleware (Stage 2b RT-1) skips its default `http.<method>`
+// fallback emission. Handlers that emit a semantic action (e.g.
+// "workspace.create") therefore replace — not duplicate — the
+// middleware-default row.
 func (s *Server) auditEnqueue(action string, r *http.Request, resourceID string, extra map[string]string) {
 	evt := audit.Event{
 		At:       time.Now().UTC(),
@@ -35,4 +41,5 @@ func (s *Server) auditEnqueue(action string, r *http.Request, resourceID string,
 	}
 	evt.ResourceID = resourceID
 	s.recordAudit(evt)
+	markRequestAudited(r)
 }

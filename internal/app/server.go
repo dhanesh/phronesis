@@ -111,7 +111,7 @@ type Server struct {
 	// Wave-2/3 additions (INT-3, INT-4, INT-5).
 	blobStore    blob.Store
 	media        *media.Handler
-	auditSink    *audit.FileSink
+	auditSink    audit.Sink
 	auditDrainer *audit.BufferedDrainer
 
 	// INT-1: externalizable session store (optional).
@@ -309,12 +309,24 @@ func NewServer(cfg Config) (*Server, error) {
 	// INT-3: media HTTP handler. Serves GET /media/<sha> and POST /media.
 	mediaHandler := media.NewHandler(blobStore, cfg.MaxUploadBytes)
 
-	// INT-5: audit sink + async buffered drainer. The drainer enforces S9
-	// (off-hot-path) by accepting events in O(1) Enqueue calls and flushing
-	// to the FileSink from a background goroutine.
-	auditSink, err := audit.NewFileSink(cfg.AuditLog)
-	if err != nil {
-		return nil, fmt.Errorf("open audit log: %w", err)
+	// INT-5 / RT-10: audit sink + async buffered drainer. The drainer
+	// enforces S9 (off-hot-path) by accepting events in O(1) Enqueue
+	// calls and flushing from a background goroutine.
+	//
+	// Stage 2b: prefer the SQLiteSink when a store is configured —
+	// audit_events becomes the canonical sink and the table is the
+	// source of truth for retention + compaction (a follow-up pass).
+	// Tests and configs without a StorePath fall back to the FileSink
+	// so behaviour is preserved for legacy paths.
+	var auditSink audit.Sink
+	if sqliteStore != nil {
+		auditSink = audit.NewSQLiteSink(sqliteStore.DB())
+	} else {
+		var err error
+		auditSink, err = audit.NewFileSink(cfg.AuditLog)
+		if err != nil {
+			return nil, fmt.Errorf("open audit log: %w", err)
+		}
 	}
 	auditDrainer := audit.NewBufferedDrainer(auditSink, audit.DrainerConfig{})
 

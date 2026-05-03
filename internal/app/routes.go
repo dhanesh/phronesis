@@ -63,5 +63,6 @@ func (s *Server) routes(authRateLimiter *ratelimit.Limiter) http.Handler {
 
 	mux.HandleFunc("/", s.handleApp)
 
-	return loggingMiddleware(xssdefense.CSPMiddleware("", s.attachPrincipal(recoverMiddleware(mux))))
+	return loggingMiddleware(xssdefense.CSPMiddleware("",
+		s.attachPrincipal(s.auditMiddleware(recoverMiddleware(mux)))))
 }
