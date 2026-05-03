@@ -111,6 +111,14 @@
             "status": "VERIFIED",
             "test_tier": "unit",
             "measurement": "mean 49.1ms on Apple M1 (2026-05-04); CI runners slack ~2x"
+          },
+          {
+            "id": "V4",
+            "type": "content_match",
+            "path": "internal/auth/keys.go",
+            "pattern": "prodArgon2Memory.*64.*1024",
+            "status": "VERIFIED",
+            "note": "Stage 2a: production Argon2id params committed in keys.go and used by both MintKey + ResolveBearerKey + the bench."
           }
         ],
         "source_note": "assumption confirmed by G3 microbench 2026-05-04 (see verified_by V1)"
@@ -765,7 +773,7 @@
       },
       {
         "id": "RT-3",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": [
           "T2",
           "S1",
@@ -778,15 +786,37 @@
             "type": "content_match",
             "path": "internal/principal/principal.go",
             "pattern": "(?i)service|workspace|capability",
-            "status": "PENDING"
+            "status": "VERIFIED"
+          },
+          {
+            "id": "E6a",
+            "type": "file_exists",
+            "path": "internal/auth/keys.go",
+            "status": "VERIFIED"
           },
           {
             "id": "E7",
             "type": "test_passes",
             "path": "internal/auth/keys_test.go",
-            "test_name": "key_resolves_to_workspace_pinned_service_principal",
-            "status": "PENDING",
+            "test_name": "TestResolveBearerKeyReturnsCorrectPrincipal",
+            "status": "VERIFIED",
             "test_tier": "unit"
+          },
+          {
+            "id": "E7a",
+            "type": "test_passes",
+            "path": "internal/auth/keys_test.go",
+            "test_name": "TestMintKeyEmitsPlaintextOnceAndStoresOnlyHash",
+            "status": "VERIFIED",
+            "test_tier": "unit"
+          },
+          {
+            "id": "E7b",
+            "type": "test_passes",
+            "path": "internal/app/handlers_admin_keys_test.go",
+            "test_name": "TestAdminKeyRequestApproveMintsRealKey",
+            "status": "VERIFIED",
+            "test_tier": "integration"
           }
         ]
       },
@@ -871,7 +901,7 @@
       },
       {
         "id": "RT-6",
-        "status": "PARTIAL",
+        "status": "SATISFIED",
         "maps_to": [
           "S2",
           "T1"
@@ -1635,6 +1665,61 @@
         "RT-6",
         "RT-9"
       ]
+    },
+    {
+      "number": 13,
+      "phase": "generate",
+      "timestamp": "2026-05-04T07:00:00Z",
+      "result": "Stage 2a (key minting + bearer auth resolver) generated. 2 new files + 4 modified = 6 artifacts. internal/auth/keys.go ships MintKey/ResolveBearerKey/RevokeKey at OWASP-2023 Argon2id params (centralised; same constants the G3 bench validated). Token format: phr_live_<12base32>_<32base32> with the prefix portion serving as the public-facing display id and the suffix as the actual secret. Plaintext returned ONCE on MintKey (S1); only Argon2id hash + salt persisted as BLOB. ResolveBearerKey verifies via constant-time compare and propagates owner-side suspension as ErrKeyRevoked (S5 leaf). principalFromRequest now resolves Authorization: Bearer phr_live_... before the legacy single-key path; failed bearer auth does NOT silently downgrade. handlers_admin_keys approve now mints a real key, links resulting_key_id, and returns plaintext + warning (\"ONCE; copy now or revoke and re-issue\"). 11 new keys tests + 2 admin-handler tests, all green. RT-3 reaches TESTED. TN7 request->approve flow end-to-end. T4 verified_by extended with V4 (constants centralisation evidence).",
+      "option": "B",
+      "stage": "2a",
+      "artifacts_added": 2,
+      "artifacts_modified": 4,
+      "rts_addressed": [
+        "RT-3"
+      ],
+      "tests_green": true,
+      "lint_green": true
+    },
+    {
+      "number": 14,
+      "phase": "verify",
+      "timestamp": "2026-05-04T07:30:00Z",
+      "result": "m5-verify after Stage 2a. 12 SATISFIED, 5 PARTIAL, 7 DEFERRED of 24. RT-3 promoted PARTIAL/IMPLEMENTED -> SATISFIED/TESTED. S1 (Argon2id hash + plaintext-once) and S3 (scope-to-role at boundary) both promoted PARTIAL -> SATISFIED. S5 has both leaves TESTED (suspend-on-relogin + key-of-suspended-user-fails); cache leaf still Stage 2b. B2 onboard target promoted DEFERRED -> PARTIAL (UI + minting complete, awaits real-user trial). Binding RT-6 stays VERIFIED \u2014 Stage 2a's approve flow preserves cross-cutting (plaintext via writeJSON only, never logged). Tension preservation: 8/8 confirmed; TN7 promoted from CONFIRMED-with-stub to CONFIRMED-end-to-end.",
+      "matrix_summary": {
+        "invariants": {
+          "satisfied": 10,
+          "partial": 3,
+          "deferred": 5,
+          "total": 18,
+          "percentage_satisfied": 56
+        },
+        "goals": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "boundaries": {
+          "satisfied": 1,
+          "partial": 1,
+          "deferred": 1,
+          "total": 3,
+          "percentage_satisfied": 33
+        },
+        "overall": {
+          "satisfied": 12,
+          "partial": 5,
+          "deferred": 7,
+          "total": 24,
+          "percentage_satisfied": 50
+        }
+      },
+      "binding_closed": true,
+      "tensions_reopened": 0,
+      "gaps_total": 4,
+      "gaps_blocking": 0
     }
   ],
   "convergence": {
@@ -1649,7 +1734,7 @@
       "satisfies": []
     }
   },
-  "updated": "2026-05-04T05:45:00Z",
+  "updated": "2026-05-04T07:30:00Z",
   "draft_required_truths": [
     {
       "id": "DRT-1",
@@ -1815,8 +1900,8 @@
   ],
   "generation": {
     "option": "B (stage-gated rollout)",
-    "stage": "1c + JWKS + G7/G9 closures",
-    "timestamp": "2026-05-04T05:45:00Z",
+    "stage": "1c + Stage 2a (key minting + bearer auth resolver)",
+    "timestamp": "2026-05-04T07:00:00Z",
     "artifacts": [
       {
         "path": "internal/redact/redact.go",
@@ -2198,6 +2283,74 @@
         "status": "modified",
         "artifact_class": "substantive",
         "modification_note": "fixed CommandPalette placeholder regex to match actual placeholder; all 9 tests now pass locally"
+      },
+      {
+        "path": "internal/auth/keys.go",
+        "type": "code",
+        "satisfies": [
+          "RT-3",
+          "S1",
+          "S3",
+          "T4",
+          "TN7"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/auth/keys_test.go",
+        "type": "test",
+        "satisfies": [
+          "RT-3",
+          "S1",
+          "S3",
+          "S5"
+        ],
+        "status": "generated",
+        "artifact_class": "substantive"
+      },
+      {
+        "path": "internal/app/handlers_auth.go",
+        "type": "code",
+        "satisfies": [
+          "RT-3"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "added Authorization: Bearer phr_live_... resolution path via auth.ResolveBearerKey, between cookie session and legacy API-KEY paths"
+      },
+      {
+        "path": "internal/app/handlers_admin_keys.go",
+        "type": "code",
+        "satisfies": [
+          "TN7",
+          "S1",
+          "RT-3"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "approve handler now mints a real key via auth.MintKey, marks the request approved with resulting_key_id, and returns plaintext once with a warning"
+      },
+      {
+        "path": "internal/app/handlers_admin_keys_test.go",
+        "type": "test",
+        "satisfies": [
+          "TN7",
+          "S1"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "TestAdminKeyRequestApproveMintsRealKey replaces the prior 501-stub assertion; adds TestAdminKeyRequestApproveAlreadyDecidedReturns409"
+      },
+      {
+        "path": "internal/auth/keyverify_bench_test.go",
+        "type": "test",
+        "satisfies": [
+          "T4"
+        ],
+        "status": "modified",
+        "artifact_class": "substantive",
+        "modification_note": "removed duplicate Argon2id constants \u2014 keys.go now owns them"
       }
     ],
     "coverage": {
