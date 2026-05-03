@@ -189,6 +189,12 @@ type Server struct {
 	// since MCP requires Bearer-JWT auth; without OAuth there is no
 	// way to authenticate an MCP client.
 	mcp *mcp.Server
+
+	// m6-integrate INT-P1/P2/P3: periodic janitor that calls
+	// Cleanup() on the oauth.Store, mcp.SessionStore, and ratelimit
+	// per-key buckets. Single goroutine drives all three. Always
+	// non-nil — the constructor passes whichever subset is wired.
+	janitor *janitor
 }
 
 // defaultWorkspaceID names the single implicit workspace v1 ships with.
@@ -536,6 +542,19 @@ func NewServer(cfg Config) (*Server, error) {
 	// — windowing for rate, semaphore for parallel work.
 	keyConcurrency := ratelimit.NewSemaphore(cfg.KeyConcurrencyMax)
 
+	// m6-integrate INT-P1/P2/P3: periodic Cleanup driver. Closes the
+	// memory-growth gap on stores that bound user-facing behavior via
+	// TTL-on-lookup but don't otherwise reclaim entries.
+	var oauthStore *oauth.Store
+	var mcpSessions *mcp.SessionStore
+	if oauthSubstrate != nil {
+		oauthStore = oauthSubstrate.store
+	}
+	if mcpServer != nil {
+		mcpSessions = mcpServer.Sessions
+	}
+	app.janitor = newJanitor(JanitorInterval, oauthStore, mcpSessions, authRateLimiter, keyRateLimiter)
+
 	server := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           app.routes(authRateLimiter, keyRateLimiter, keyConcurrency),
@@ -555,6 +574,10 @@ func NewServer(cfg Config) (*Server, error) {
 			return nil, fmt.Errorf("snapshot scheduler: %w", err)
 		}
 	}
+
+	// m6-integrate INT-P1/P2/P3: drive periodic Cleanup. Stop is
+	// handled by Server.Close.
+	app.janitor.Start()
 
 	return app, nil
 }
@@ -798,8 +821,16 @@ func (s *Server) Serve(ctx context.Context, drainTimeout time.Duration) error {
 // multiple subsystems misbehave.
 func (s *Server) Close(ctx context.Context) error {
 	var firstErr error
+	if s.janitor != nil {
+		if err := s.janitor.Stop(ctx); err != nil {
+			firstErr = fmt.Errorf("janitor stop: %w", err)
+		}
+	}
 	if s.snapshotScheduler != nil {
 		if err := s.snapshotScheduler.Stop(ctx); err != nil {
+			if firstErr != nil {
+				return fmt.Errorf("%w; snapshot scheduler stop: %v", firstErr, err)
+			}
 			firstErr = fmt.Errorf("snapshot scheduler stop: %w", err)
 		}
 	}
