@@ -132,6 +132,10 @@ type Server struct {
 	// when StorePath is empty; admin endpoints that depend on it
 	// return 503 in that mode.
 	store *sqlite.Store
+
+	// Stage 2b-retention: daily audit compactor. Nil when StorePath
+	// is empty (FileSink-only path). Stop is called from Server.Close.
+	auditCompactor *audit.Compactor
 }
 
 // defaultWorkspaceID names the single implicit workspace v1 ships with.
@@ -313,14 +317,39 @@ func NewServer(cfg Config) (*Server, error) {
 	// enforces S9 (off-hot-path) by accepting events in O(1) Enqueue
 	// calls and flushing from a background goroutine.
 	//
-	// Stage 2b: prefer the SQLiteSink when a store is configured —
-	// audit_events becomes the canonical sink and the table is the
-	// source of truth for retention + compaction (a follow-up pass).
+	// Stage 2b-substrate: prefer the SQLiteSink when a store is
+	// configured. Stage 2b-retention: wrap with SpilloverSink so a
+	// crash between batch-append and inner-Write is bounded — the
+	// next startup's ReplaySpillover drains pending events into the
+	// sink before serving.
+	//
 	// Tests and configs without a StorePath fall back to the FileSink
-	// so behaviour is preserved for legacy paths.
+	// path so behaviour is preserved for legacy paths.
 	var auditSink audit.Sink
 	if sqliteStore != nil {
-		auditSink = audit.NewSQLiteSink(sqliteStore.DB())
+		base := audit.NewSQLiteSink(sqliteStore.DB())
+
+		// Replay any pending spillover from a previous incarnation
+		// BEFORE wrapping the sink — the replay path doesn't go
+		// through the spillover layer (avoids re-appending the
+		// events we're trying to drain).
+		spilloverPath := filepath.Join(filepath.Dir(cfg.StorePath), "audit-spillover.jsonl")
+		if n, err := audit.ReplaySpillover(context.Background(), spilloverPath, base); err != nil {
+			slog.Warn("audit spillover replay failed; continuing with empty journal",
+				slog.String("component", "phronesis"),
+				slog.String("path", spilloverPath),
+				slog.String("err", err.Error()))
+		} else if n > 0 {
+			slog.Info("audit spillover replayed",
+				slog.String("component", "phronesis"),
+				slog.Int("events", n))
+		}
+
+		spilloverSink, err := audit.NewSpilloverSink(base, spilloverPath)
+		if err != nil {
+			return nil, fmt.Errorf("open audit spillover: %w", err)
+		}
+		auditSink = spilloverSink
 	} else {
 		var err error
 		auditSink, err = audit.NewFileSink(cfg.AuditLog)
@@ -329,6 +358,15 @@ func NewServer(cfg Config) (*Server, error) {
 		}
 	}
 	auditDrainer := audit.NewBufferedDrainer(auditSink, audit.DrainerConfig{})
+
+	// Stage 2b-retention: schedule the daily compactor when a SQLite
+	// store is wired. Folds raw audit_events older than 90 days into
+	// per-day audit_aggregates. Stop is called from Server.Close.
+	var auditCompactor *audit.Compactor
+	if sqliteStore != nil {
+		auditCompactor = audit.NewCompactor(sqliteStore.DB(), audit.CompactorConfig{})
+		auditCompactor.Start(context.Background())
+	}
 
 	// INT-1: externalizable session store. Default is in-process MemStore,
 	// consumed by auth.Manager via WithStore. A future deployment can swap
@@ -358,19 +396,20 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	app := &Server{
-		cfg:          cfg,
-		auth:         authManager,
-		workspaces:   workspaces,
-		staticFS:     staticHandler(cfg.FrontendDist),
-		blobStore:    blobStore,
-		media:        mediaHandler,
-		auditSink:    auditSink,
-		auditDrainer: auditDrainer,
-		sessionStore: sessionStore,
-		broadcaster:  broadcaster,
-		journal:      journalFile,
-		oidc:         oidcAdapter,
-		store:        sqliteStore,
+		cfg:            cfg,
+		auth:           authManager,
+		workspaces:     workspaces,
+		staticFS:       staticHandler(cfg.FrontendDist),
+		blobStore:      blobStore,
+		media:          mediaHandler,
+		auditSink:      auditSink,
+		auditDrainer:   auditDrainer,
+		sessionStore:   sessionStore,
+		broadcaster:    broadcaster,
+		journal:        journalFile,
+		oidc:           oidcAdapter,
+		store:          sqliteStore,
+		auditCompactor: auditCompactor,
 	}
 
 	// INT-6: snapshot scheduler. When SnapshotDir is non-empty, construct
@@ -544,6 +583,11 @@ func (s *Server) Close(ctx context.Context) error {
 			}
 			firstErr = fmt.Errorf("journal close: %w", err)
 		}
+	}
+	// Stop the compactor BEFORE closing the SQLite store so its
+	// in-flight tx (if any) commits cleanly.
+	if s.auditCompactor != nil {
+		s.auditCompactor.Stop()
 	}
 	if s.store != nil {
 		if err := s.store.Close(); err != nil {
