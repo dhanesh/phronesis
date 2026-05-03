@@ -161,7 +161,7 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 		if authz := r.Header.Get("Authorization"); strings.HasPrefix(authz, "Bearer ") {
 			plaintext := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
 			if plaintext != "" && strings.HasPrefix(plaintext, "phr_live_") {
-				p, err := auth.ResolveBearerKey(r.Context(), s.store.DB(), plaintext)
+				p, err := auth.ResolveBearerKey(r.Context(), s.store.DB(), plaintext, s.authCache)
 				if err == nil && p != nil {
 					return *p, true
 				}

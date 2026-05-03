@@ -139,6 +139,14 @@ func (s *Server) handleAdminKeysList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAdminKeyRevoke(w http.ResponseWriter, r *http.Request, id int64) {
+	// Look up the prefix BEFORE the UPDATE — once revoked_at is set
+	// the row's still there, but we want the prefix for cache
+	// invalidation regardless. (And if the row doesn't exist, the
+	// SELECT 0-rows is the same not-found signal we'd get below.)
+	var keyPrefix string
+	_ = s.store.DB().QueryRowContext(r.Context(),
+		`SELECT key_prefix FROM api_keys WHERE id = ?`, id).Scan(&keyPrefix)
+
 	res, err := s.store.DB().ExecContext(r.Context(),
 		`UPDATE api_keys
 		    SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -152,8 +160,16 @@ func (s *Server) handleAdminKeyRevoke(w http.ResponseWriter, r *http.Request, id
 		writeError(w, http.StatusNotFound, "key not found or already revoked")
 		return
 	}
+	// Stage 2c-cache: short-circuit the 30s TTL belt by invalidating
+	// the cached principal immediately. Subsequent requests with this
+	// key bypass the cache, hit the slow path, and see revoked_at IS
+	// NOT NULL → ErrKeyRevoked.
+	if keyPrefix != "" {
+		s.authCache.Invalidate(keyPrefix)
+	}
 	s.auditEnqueue("key.revoke", r, "", map[string]string{
-		"key_id": strconv.FormatInt(id, 10),
+		"key_id":     strconv.FormatInt(id, 10),
+		"key_prefix": keyPrefix,
 	})
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -169,7 +169,13 @@ func MintKey(ctx context.Context, db *sql.DB, userID int64, workspace, scope, la
 // failure (callers map all of these to HTTP 401 with a generic
 // "unauthorized" message — leaking which leaf failed helps probing).
 //
-// Verification steps:
+// Stage 2c-cache: when cache is non-nil, Get is checked before the
+// SQL+Argon2id slow path. On miss, the slow path runs and the result
+// is Put back into the cache for future hits within TTL. This brings
+// the cached-path cost down to ~1µs (T4's 5ms budget has 4-orders-of-
+// magnitude of headroom).
+//
+// Verification steps (slow path):
 //  1. Parse plaintext as phr_live_<prefix>_<suffix>; if malformed,
 //     return ErrKeyMalformed.
 //  2. SELECT api_keys row by key_prefix; if missing, ErrKeyNotFound.
@@ -182,10 +188,17 @@ func MintKey(ctx context.Context, db *sql.DB, userID int64, workspace, scope, la
 //
 // Constant-time comparison on the Argon2id hash is implicit in
 // argon2.IDKey + crypto/subtle.ConstantTimeCompare.
-func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string) (*principal.Principal, error) {
+func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string, cache *Cache) (*principal.Principal, error) {
 	prefix, ok := parseKeyPrefix(plaintext)
 	if !ok {
 		return nil, ErrKeyMalformed
+	}
+
+	// Fast path: cache hit returns immediately.
+	if cache != nil {
+		if p, ok := cache.Get(prefix); ok {
+			return &p, nil
+		}
 	}
 
 	var (
@@ -238,7 +251,7 @@ func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string) (*princ
 		return nil, ErrInvalidKey
 	}
 
-	return &principal.Principal{
+	resolved := &principal.Principal{
 		Type:        principal.TypeServiceAccount,
 		ID:          prefix, // audit-meaningful identity per service-account
 		WorkspaceID: workspace,
@@ -249,7 +262,14 @@ func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string) (*princ
 			"owner_oidc_sub": oidcSub,
 			"key_id":         fmt.Sprintf("%d", id),
 		},
-	}, nil
+	}
+	// Stage 2c-cache: populate cache for future hits within TTL.
+	// Failed verifications above don't reach here, so we only cache
+	// known-good principals.
+	if cache != nil {
+		cache.Put(prefix, *resolved)
+	}
+	return resolved, nil
 }
 
 // RevokeKey marks a key revoked. Idempotent: a second call on an

@@ -136,6 +136,12 @@ type Server struct {
 	// Stage 2b-retention: daily audit compactor. Nil when StorePath
 	// is empty (FileSink-only path). Stop is called from Server.Close.
 	auditCompactor *audit.Compactor
+
+	// Stage 2c-cache: in-process cache mapping bearer-key prefix
+	// (phr_live_<...>) to resolved Principal. TTL=30s per TN4 belt;
+	// Invalidate is called by revoke/suspend handlers. Nil when
+	// StorePath is empty (no keys exist; nothing to cache).
+	authCache *auth.Cache
 }
 
 // defaultWorkspaceID names the single implicit workspace v1 ships with.
@@ -368,6 +374,15 @@ func NewServer(cfg Config) (*Server, error) {
 		auditCompactor.Start(context.Background())
 	}
 
+	// Stage 2c-cache: auth cache for bearer-key resolution. TTL=30s
+	// per TN4 belt; revoke/suspend handlers call Invalidate to
+	// short-circuit the belt. Nil when StorePath is empty (no keys
+	// exist; the cache would have nothing to cache).
+	var authCache *auth.Cache
+	if sqliteStore != nil {
+		authCache = auth.NewCache(30 * time.Second)
+	}
+
 	// INT-1: externalizable session store. Default is in-process MemStore,
 	// consumed by auth.Manager via WithStore. A future deployment can swap
 	// in a Postgres/Redis-backed Store without touching auth.Manager's API.
@@ -410,6 +425,7 @@ func NewServer(cfg Config) (*Server, error) {
 		oidc:           oidcAdapter,
 		store:          sqliteStore,
 		auditCompactor: auditCompactor,
+		authCache:      authCache,
 	}
 
 	// INT-6: snapshot scheduler. When SnapshotDir is non-empty, construct

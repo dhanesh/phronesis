@@ -133,10 +133,15 @@ func (s *Server) handleAdminUserStatus(w http.ResponseWriter, r *http.Request, i
 		writeError(w, http.StatusNotFound, "user not found")
 		return
 	}
-	// Audit hook: cookie-auth principals don't have a user_id in users
-	// (Stage 2 wires that). For now we record the action via the existing
-	// audit substrate; the SQLite audit_events table grows to be the
-	// canonical sink in Stage 2.
+	// Stage 2c-cache: a suspension MUST propagate to all of the
+	// user's keys within seconds (S5 invariant). The slow path
+	// already checks users.status='suspended' and returns
+	// ErrKeyRevoked, so cache invalidation is what closes the gap
+	// between an admin clicking Suspend and the next request with
+	// the user's key getting 401.
+	if status == "suspended" && s.authCache != nil {
+		_ = s.authCache.InvalidateByUser(r.Context(), s.store.DB(), id)
+	}
 	s.auditEnqueue("user."+status, r, "", map[string]string{
 		"target_user_id": strconv.FormatInt(id, 10),
 	})

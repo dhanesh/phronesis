@@ -98,7 +98,7 @@ func TestResolveBearerKeyReturnsCorrectPrincipal(t *testing.T) {
 			if err != nil {
 				t.Fatalf("MintKey: %v", err)
 			}
-			p, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext)
+			p, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
 			if err != nil {
 				t.Fatalf("ResolveBearerKey: %v", err)
 			}
@@ -142,7 +142,7 @@ func TestResolveBearerKeyRejectsWrongPlaintextForKnownPrefix(t *testing.T) {
 	}
 	tampered := row.Plaintext[:sepIdx+1] + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-	_, err = ResolveBearerKey(ctx, store.DB(), tampered)
+	_, err = ResolveBearerKey(ctx, store.DB(), tampered, nil)
 	if err != ErrInvalidKey {
 		t.Fatalf("expected ErrInvalidKey, got %v", err)
 	}
@@ -160,7 +160,7 @@ func TestResolveBearerKeyRejectsRevoked(t *testing.T) {
 	if err := RevokeKey(ctx, store.DB(), row.ID); err != nil {
 		t.Fatalf("RevokeKey: %v", err)
 	}
-	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext)
+	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
 	if err != ErrKeyRevoked {
 		t.Fatalf("expected ErrKeyRevoked, got %v", err)
 	}
@@ -179,7 +179,7 @@ func TestResolveBearerKeyRejectsKeysOfSuspendedUser(t *testing.T) {
 	if _, err := store.DB().Exec(`UPDATE users SET status='suspended' WHERE id=?`, uid); err != nil {
 		t.Fatalf("suspend: %v", err)
 	}
-	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext)
+	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
 	if err != ErrKeyRevoked {
 		t.Fatalf("expected ErrKeyRevoked when owner suspended, got %v", err)
 	}
@@ -203,7 +203,7 @@ func TestResolveBearerKeyRejectsExpiredKey(t *testing.T) {
 		t.Fatalf("backdate expiry: %v", err)
 	}
 
-	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext)
+	_, err = ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
 	if err != ErrKeyExpired {
 		t.Fatalf("expected ErrKeyExpired, got %v", err)
 	}
@@ -214,7 +214,7 @@ func TestResolveBearerKeyRejectsUnknownPrefix(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := ResolveBearerKey(ctx, store.DB(),
-		"phr_live_aaaaaaaaaaaa_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+		"phr_live_aaaaaaaaaaaa_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", nil)
 	if err != ErrKeyNotFound {
 		t.Fatalf("expected ErrKeyNotFound, got %v", err)
 	}
@@ -232,7 +232,7 @@ func TestResolveBearerKeyRejectsMalformed(t *testing.T) {
 		"phr_live_aaaaaaaaaaaa_short", // suffix too short
 		"phr_test_aaaaaaaaaaaa_bbbbbbbbbbbbbbbbbb", // wrong env (Stage 2 only emits live)
 	} {
-		_, err := ResolveBearerKey(ctx, store.DB(), bad)
+		_, err := ResolveBearerKey(ctx, store.DB(), bad, nil)
 		if err != ErrKeyMalformed && err != ErrKeyNotFound {
 			t.Errorf("input %q: expected ErrKeyMalformed or ErrKeyNotFound, got %v", bad, err)
 		}
@@ -289,5 +289,71 @@ func TestRevokeKeyTwiceIsIdempotent(t *testing.T) {
 	// Second call: row exists but already revoked → no error.
 	if err := RevokeKey(ctx, store.DB(), row.ID); err != nil {
 		t.Fatalf("second revoke (idempotent): %v", err)
+	}
+}
+
+// @constraint T4 / RT-4 — cached path skips the slow Argon2id verify.
+// Two ResolveBearerKey calls in a row: first warms the cache, second
+// is a hit. We can't observe the timing in a deterministic test, but
+// we can confirm the cache is populated after the first call AND the
+// second call returns the same principal.
+func TestResolveBearerKeyPopulatesCacheOnSuccess(t *testing.T) {
+	store, uid := newKeysTestStore(t)
+	ctx := context.Background()
+	cache := NewCache(time.Hour)
+
+	row, err := MintKey(ctx, store.DB(), uid, "default", "write", "claude-code", nil)
+	if err != nil {
+		t.Fatalf("MintKey: %v", err)
+	}
+	if cache.Size() != 0 {
+		t.Fatalf("cache should start empty, got size %d", cache.Size())
+	}
+
+	// First resolve: populates cache.
+	p1, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, cache)
+	if err != nil {
+		t.Fatalf("first resolve: %v", err)
+	}
+	if cache.Size() != 1 {
+		t.Fatalf("cache should have 1 entry after resolve, got %d", cache.Size())
+	}
+
+	// Second resolve: cache hit. Result must match first call.
+	p2, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, cache)
+	if err != nil {
+		t.Fatalf("second resolve: %v", err)
+	}
+	if p1.ID != p2.ID || p1.Role != p2.Role || p1.WorkspaceID != p2.WorkspaceID {
+		t.Errorf("cache hit returned different principal: %+v vs %+v", p1, p2)
+	}
+}
+
+// @constraint S5 / RT-4 — Invalidate after revoke means the next
+// resolve goes through the slow path which sees revoked_at IS NOT
+// NULL → ErrKeyRevoked. Without invalidation the cache would
+// happily return the pre-revoke principal until 30s TTL expires.
+func TestResolveBearerKeyAfterInvalidateMissesCache(t *testing.T) {
+	store, uid := newKeysTestStore(t)
+	ctx := context.Background()
+	cache := NewCache(time.Hour)
+
+	row, _ := MintKey(ctx, store.DB(), uid, "default", "read", "x", nil)
+	// Warm cache.
+	if _, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, cache); err != nil {
+		t.Fatalf("warm: %v", err)
+	}
+
+	// Revoke + manually invalidate (the handler does this in
+	// production; here we exercise the cache + slow-path interaction).
+	if err := RevokeKey(ctx, store.DB(), row.ID); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+	cache.Invalidate(row.Prefix)
+
+	// Next resolve must hit the slow path → ErrKeyRevoked.
+	_, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, cache)
+	if err != ErrKeyRevoked {
+		t.Fatalf("expected ErrKeyRevoked after revoke + invalidate, got %v", err)
 	}
 }
