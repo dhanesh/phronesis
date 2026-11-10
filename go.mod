@@ -1,11 +1,11 @@
 module github.com/dhanesh/phronesis
 
-go 1.25.0
+go 1.26.0
 
 tool honnef.co/go/tools/cmd/staticcheck
 
 require (
-	golang.org/x/crypto v0.50.0
+	golang.org/x/crypto v0.58.0
 	modernc.org/sqlite v1.55.0
 )
 
@@ -19,7 +19,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.37.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/tools v0.47.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	honnef.co/go/tools v0.6.1 // indirect
