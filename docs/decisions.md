@@ -47,3 +47,12 @@ resume or context compaction.
   Dex IdP, verified working end to end, ready to gather feedback.
 - **All local testing happens in Colima.** Docker and Kubernetes (Helm)
   deployment are supported out of the box and tested (Colima's k3s).
+- **Beta scope (Jev ranking, rule-bounded, unattended).** Rule: a beta MUST is
+  something without which a team cannot do basic wiki work for a week, cannot
+  operate it safely, or cannot test the "humans AND agents" promise.
+  - In: Dex SSO (browser auth-code + PKCE), Docker Compose + Helm tested in
+    Colima, wiki MCP tools (list/read/write/search; Jev 1.76), production
+    config guards (1.42, low confidence; cheap safety), page delete/rename
+    (1.35, low confidence; cheap), backup/restore docs (1.12).
+  - Deferred: search (0.90), history (1.04), group-to-role mapping (0.95),
+    audit viewer, comments, CRDT wiring, git sync, feedback link.

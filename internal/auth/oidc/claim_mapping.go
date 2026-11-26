@@ -102,6 +102,11 @@ func (cm ClaimMapping) Apply(claims map[string]any) (principal.Principal, error)
 			out.Claims["groups"] = stringifyGroups(v)
 		}
 	}
+	// nonce is carried through so the browser SSO callback can bind the
+	// id_token to the authorization request it started (OIDC Core 3.1.2.1).
+	if v, ok := stringClaim(claims, "nonce"); ok {
+		out.Claims["nonce"] = v
+	}
 	out.Claims["oidc_schema_version"] = fmt.Sprintf("%d", cm.SchemaVersion)
 	return out, nil
 }

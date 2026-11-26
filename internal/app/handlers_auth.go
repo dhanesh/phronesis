@@ -25,13 +25,29 @@ func requestIsSecure(r *http.Request) bool {
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	username, ok := s.auth.Username(r)
 	role := ""
+	displayName := username
 	if p, err := principal.FromContext(r.Context()); err == nil {
 		role = string(p.Role)
+		// OIDC subjects are opaque (Dex: base64 ids); show the projected
+		// display name or email instead.
+		if s.store != nil && p.Claims["auth_method"] == "oidc" {
+			var name, email string
+			_ = s.store.DB().QueryRowContext(r.Context(),
+				`SELECT COALESCE(display_name, ''), COALESCE(email, '') FROM users WHERE oidc_sub = ?`, p.ID).Scan(&name, &email)
+			if name != "" {
+				displayName = name
+			} else if email != "" {
+				displayName = email
+			}
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authenticated": ok,
 		"username":      username,
+		"display_name":  displayName,
 		"role":          role,
+		// sso tells the sign-in page to offer "Sign in with SSO".
+		"sso": s.sso != nil,
 	})
 }
 

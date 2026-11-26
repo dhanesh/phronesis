@@ -25,7 +25,7 @@ import (
 //
 // Satisfies: RT-11, S4, S8, TN5
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
-	if s.oidc == nil {
+	if s.oidc == nil && s.sso == nil {
 		http.Error(w, "oidc not enabled", http.StatusNotFound)
 		return
 	}
@@ -40,7 +40,12 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid oidc login request")
 		return
 	}
-	p, err := s.oidc.Authenticate(r.Context(), req.IDToken)
+	adapter, err := s.oidcAdapterFor(r.Context())
+	if err != nil {
+		writeError(w, http.StatusServiceUnavailable, "oidc provider unavailable")
+		return
+	}
+	p, err := adapter.Authenticate(r.Context(), req.IDToken)
 	if err != nil {
 		// Audit the failure but do not leak error details to the client.
 		s.recordAudit(audit.Event{
@@ -52,6 +57,16 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !s.establishOIDCSession(w, r, p) {
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"username": p.ID})
+}
+
+// establishOIDCSession projects an authenticated OIDC principal into the
+// users table, refuses suspended accounts, and sets the session cookie.
+// It writes the error response itself and returns false on failure.
+func (s *Server) establishOIDCSession(w http.ResponseWriter, r *http.Request, p principal.Principal) bool {
 	// Project the user into the SQLite store (user-mgmt-mcp T2). A new
 	// user is role 'viewer'; an existing row keeps
 	// the role an admin gave it. A suspended account gets no session.
@@ -64,10 +79,10 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 					PrincipalID: p.ID,
 				})
 				writeError(w, http.StatusForbidden, "account suspended")
-				return
+				return false
 			}
 			writeError(w, http.StatusInternalServerError, "user projection failed")
-			return
+			return false
 		}
 	}
 
@@ -77,7 +92,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 	token, err := issueOIDCSession(s.sessionStore, p)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "session issue failed")
-		return
+		return false
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
@@ -94,7 +109,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		PrincipalType: string(p.Type),
 		WorkspaceID:   p.WorkspaceID,
 	})
-	writeJSON(w, http.StatusOK, map[string]any{"username": p.ID})
+	return true
 }
 
 // projectOIDCUser upserts the users row for an authenticated OIDC

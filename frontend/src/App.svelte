@@ -47,6 +47,9 @@
   let workspaces = $state([]);
   let currentWorkspace = $state('default');
   let userRole = $state('');
+  let selfId = $state('');
+  let displayName = $state('');
+  let ssoEnabled = $state(false);
   // Page RBAC (docs/roles.md): only editors and admins may write.
   let canEdit = $derived(userRole === 'editor' || userRole === 'admin');
   let workspaceManagerOpen = $state(false);
@@ -123,6 +126,12 @@
     window.addEventListener('keydown', onGlobalKey);
 
     await loadSession();
+    // The SSO callback reports failures as ?sso_error=<message>.
+    const ssoError = new URLSearchParams(window.location.search).get('sso_error');
+    if (ssoError) {
+      loginError = ssoError;
+      history.replaceState(null, '', window.location.pathname);
+    }
     if (authenticated) {
       await loadWorkspaces();
       const match = window.location.pathname.match(/^\/w\/(.+)$/);
@@ -175,6 +184,9 @@
       const data = await res.json();
       authenticated = Boolean(data.authenticated);
       userRole = data.role || '';
+      selfId = data.username || '';
+      displayName = data.display_name || data.username || '';
+      ssoEnabled = Boolean(data.sso);
     } catch (error) {
       authenticated = false;
       bootError = error?.name === 'AbortError'
@@ -197,6 +209,10 @@
     } catch {
       return '';
     }
+  }
+
+  function startSSO() {
+    window.location.assign('/api/auth/oidc/start?next=' + encodeURIComponent(safeNextPath()));
   }
 
   async function login() {
@@ -273,7 +289,7 @@
       const incoming = payload.page;
       const localDirty = draft !== page.content;
       page = incoming;
-      if (!localDirty || payload.author === username) {
+      if (!localDirty || payload.author === selfId) {
         draft = incoming.content;
       }
       mergedNotice = payload.merged ? 'Concurrent edits were merged on the server.' : '';
@@ -355,6 +371,10 @@
       </label>
       <button type="submit">Sign in</button>
       {#if loginError}<p class="error">{loginError}</p>{/if}
+      {#if ssoEnabled}
+        <div class="sso-divider" aria-hidden="true"><span>or</span></div>
+        <button type="button" class="sso-button" data-testid="sso-signin" onclick={startSSO}>Sign in with SSO</button>
+      {/if}
     </form>
   </main>
 {:else if consentMode}
@@ -372,6 +392,8 @@
       onManageWorkspaces={() => (workspaceManagerOpen = true)}
       onOpenPalette={() => (paletteOpen = true)}
       onLogout={logout}
+      {displayName}
+      role={userRole}
     />
 
     <div class="app-body">
@@ -607,6 +629,25 @@
   }
   button:hover {
     background: var(--accent-hover);
+  }
+
+  .sso-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+  .sso-divider::before,
+  .sso-divider::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .sso-button {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong, var(--border-subtle));
   }
 
   .error {

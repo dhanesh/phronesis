@@ -59,6 +59,17 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 		Limiter:      authRateLimiter,
 		PathPrefixes: []string{"/api/auth/"},
 	}, http.HandlerFunc(s.handleOIDCLogin)))
+	// Browser SSO against a real IdP (authorization code + PKCE).
+	for _, path := range []string{"/api/auth/oidc/start", "/api/auth/oidc/callback"} {
+		h := s.handleSSOStart
+		if path == "/api/auth/oidc/callback" {
+			h = s.handleSSOCallback
+		}
+		mux.Handle(path, ratelimit.Middleware(ratelimit.Config{
+			Limiter:      authRateLimiter,
+			PathPrefixes: []string{"/api/auth/"},
+		}, http.HandlerFunc(h)))
+	}
 	mux.HandleFunc("/api/logout", s.withAuth(s.handleLogout))
 	mux.HandleFunc("/api/session", s.handleSession)
 	mux.HandleFunc("/api/pages", s.withAuth(s.handlePages))
