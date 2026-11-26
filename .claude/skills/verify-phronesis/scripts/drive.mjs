@@ -167,8 +167,36 @@ const features = {
     save('target-render.json', tgt.render);
     check('links_extracted', (src.render.links ?? []).includes(target), JSON.stringify(src.render.links));
     check('tags_extracted', (src.render.tags ?? []).includes('verifytag'), JSON.stringify(src.render.tags));
-    check('tasks_extracted', (src.render.tasks ?? []).length === 2, JSON.stringify(src.render.tasks));
+    const tasks = src.render.tasks ?? [];
+    check('tasks_extracted',
+      tasks.length === 2
+        && tasks[0].text === 'open task' && tasks[0].checked === false
+        && tasks[1].text === 'done task' && tasks[1].checked === true,
+      JSON.stringify(tasks));
     check('backlink_on_target', (tgt.render.backlinks ?? []).includes(source), JSON.stringify(tgt.render.backlinks));
+    // Side effect: both pages are Markdown files on disk with the typed syntax.
+    const pagesDir = path.join(DATA, 'pages', 'default');
+    const srcFile = path.join(pagesDir, `${source}.md`);
+    const srcDisk = fs.existsSync(srcFile) ? fs.readFileSync(srcFile, 'utf8') : '';
+    save('source-disk.md', srcDisk);
+    check('pages_on_disk',
+      fs.existsSync(path.join(pagesDir, `${target}.md`))
+        && srcDisk.includes('#verifytag') && srcDisk.includes('- [ ] open task'),
+      pagesDir);
+    // Shown in the browser on the source page: the tag chip in the rail
+    // (rendered from render.tags) and the task checkboxes in the editor
+    // (CodeMirror live preview; the UI does not render render.tasks).
+    const srcPage = await ctx.newPage();
+    await srcPage.goto(`/w/${source}`);
+    await srcPage.locator('.cm-content').waitFor();
+    const chip = srcPage.locator('button.tag-chip', { hasText: '#verifytag' });
+    await chip.first().waitFor({ timeout: 5000 }).catch(() => {});
+    check('tag_chip_in_ui', await chip.first().isVisible());
+    const boxes = srcPage.locator('input.cm-md-task-checkbox');
+    await boxes.nth(1).waitFor({ timeout: 5000 }).catch(() => {});
+    const boxStates = await boxes.evaluateAll((els) => els.map((e) => e.checked));
+    check('task_checkboxes_in_ui', JSON.stringify(boxStates) === '[false,true]', JSON.stringify(boxStates));
+    await shot(srcPage, 'source-tags-tasks.png');
     const page = await ctx.newPage();
     await page.goto(`/w/${target}`);
     await page.locator('.cm-content').waitFor();

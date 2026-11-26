@@ -23,11 +23,12 @@ Set these once per session, from the repo root:
 
 ```sh
 SKILL="$(git rev-parse --show-toplevel)/.claude/skills/verify-phronesis"
-INSTANCE="verify-a"          # any short name; one per isolated server
-INSTANCE_OAUTH="verify-b"    # second instance, launched with --oauth (mcp-oauth only)
+INSTANCE="<verifier>-a"      # unique per session: prefix with your verifier id so you
+INSTANCE_OAUTH="<verifier>-b" # never reuse another verifier's .verify/<instance>/ dir
 VERIFIER="<your id>"         # under factory-conductor: the id from the verifier brief;
                              # working alone: a stable name for this session, never the
                              # author of the change being proven
+FORGE="$HOME/.claude/skills/verification-skill-forge"   # the forge that maintains this skill
 ```
 
 Prerequisites, once per checkout: `cd frontend && npm ci && npx playwright install chromium`.
@@ -35,7 +36,10 @@ Prerequisites, once per checkout: `cd frontend && npm ci && npx playwright insta
 ## Launch
 
 Build the production binary from HEAD, then start one instance per name. Launch refuses a
-binary whose `--version` commit is not HEAD, so always rebuild after a commit.
+binary whose `--version` commit is not HEAD, so always rebuild after a commit. It also
+refuses uncommitted changes under `cmd/`, `internal/`, `frontend/src/`, `go.mod` or
+`go.sum`, because evidence is recorded against HEAD and must describe HEAD. Commit first
+(on a branch), then build, then drive.
 
 ```sh
 make build                                       # embeds the frontend, stamps commit=HEAD
@@ -87,7 +91,9 @@ The harness drives the browser through stable handles only: ARIA labels and role
 (`getByLabel('Username')`, `getByRole('button', { name: 'Sign in' })`,
 `getByRole('combobox', { name: 'Switch workspace' })`), CodeMirror classes (`.cm-content`,
 `.cm-md-*`), `data-testid` attributes and route paths (`/w/<page>`, `/api/...`, `/mcp`).
-It prints one JSON object: `{"feature","ok","checks":[{"name","ok","detail"}],"artifacts":[...]}`.
+It prints one JSON object:
+`{"feature","instance","base_url","ok","checks":[{"name","ok","detail"}],"artifacts":[...]}`
+and saves the same object as `result.json`, which is the last entry in `artifacts`.
 Exit 0 = all checks passed, 1 = a check failed, 2 = usage or instance not running.
 
 To add a feature: add a function to the `features` table in `scripts/drive.mjs`, check the
@@ -123,8 +129,14 @@ The recorder reads the commit from git and pins each artifact by sha256 under
 `.verify/$INSTANCE/<feature-id>/<sha>/`. Under factory-conductor, export
 `VERIFY_EVIDENCE_DIR=<run root>/.verify` first. When a drive shows behaviour that
 contradicts the feature file, record it as a product bug with
-`python3 <forge>/assets/forge.py finding "$SKILL" --feature <id> --expected "..." --observed "..."`.
+`python3 "$FORGE/assets/forge.py" finding "$SKILL" --feature "$FEATURE" --expected "..." --observed "..."`.
 Never edit the feature file to match the bug.
+
+The `- proven:` line in a feature file names the commit a passing drive was recorded on.
+The verifier who recorded the pass updates it, in a separate commit that touches only
+`features/`. A pass recorded with an uncommitted change to `scripts/` does not count:
+commit the harness change, rebuild, drive again, then set `proven`. After editing the
+skill, run `python3 "$FORGE/assets/forge.py" lint "$SKILL"`.
 
 ## Cleanup
 

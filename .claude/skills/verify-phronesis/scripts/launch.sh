@@ -6,7 +6,7 @@
 # Each instance gets its own claimed port, its own data root under
 # .verify-run/<instance>/data, its own cookie jar and its own pid file.
 # --oauth turns on the OAuth 2.1 server + /mcp transport for this instance.
-# Prints one JSON line: {"instance","port","base_url","pid","data","cookies"}.
+# Prints one JSON line: {"instance","port","base_url","pid","data","cookies","oauth"}.
 # Exit 0 = ready and logged in; non-zero = not ready (log path in stderr).
 set -euo pipefail
 
@@ -28,6 +28,12 @@ fi
 
 # Stale-binary guard: the binary must be built from HEAD. A leftover
 # ./phronesis from an older commit is the classic false pass.
+DIRTY="$(git -C "$ROOT" status --porcelain -- cmd internal frontend/src go.mod go.sum)"
+if [ -n "$DIRTY" ]; then
+  echo "launch: uncommitted product changes; evidence would not describe HEAD. Commit first:" >&2
+  echo "$DIRTY" >&2
+  exit 1
+fi
 HEAD_SHA="$(git -C "$ROOT" rev-parse HEAD)"
 BIN_COMMIT="$("$BIN" --version 2>/dev/null | sed -n 's/.*commit=\([0-9a-f]*\).*/\1/p')"
 if [ "$BIN_COMMIT" != "$HEAD_SHA" ]; then

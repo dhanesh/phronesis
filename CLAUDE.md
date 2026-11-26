@@ -114,6 +114,13 @@ This file describes the current project stack and implementation boundaries for 
 - Keep public behavior and docs aligned with the actual codebase state.
 - If changing stack choices, update this file and the README in the same change.
 
+## Verifying Changes
+
+- Tests passing is not verification. To prove a change works in the running
+  app, use the project skill `.claude/skills/verify-phronesis/` (launch isolated
+  instances, drive features with a Playwright harness, record SHA-bound evidence
+  under `.verify/`). The feature map is `.claude/skills/verify-phronesis/features/`.
+
 ## Pending Major Areas
 
 - richer CodeMirror live-preview behavior
