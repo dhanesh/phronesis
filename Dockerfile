@@ -6,14 +6,13 @@
 #
 # Satisfies: B1 (Docker channel), T1 (per-arch image), RT-3, RT-11.
 
-# distroless has no shell, so a tiny stage creates /data owned by the
-# nonroot user. A fresh named volume mounted at /data inherits it.
-FROM busybox:1.37 AS prep
-RUN mkdir -p /data && chown 65532:65532 /data
-
 FROM gcr.io/distroless/static-debian12:nonroot
 
-COPY --from=prep --chown=65532:65532 /data /data
+# /data must be owned by nonroot so a fresh named volume mounted there
+# inherits that owner. distroless has no shell, so copy its own empty
+# /home/nonroot directory: no RUN step, so cross-arch buildx needs no
+# emulation.
+COPY --from=gcr.io/distroless/static-debian12:nonroot --chown=65532:65532 /home/nonroot /data
 COPY phronesis /usr/local/bin/phronesis
 
 # Absolute data paths under the /data volume. PHRONESIS_ENV=production
@@ -24,8 +23,9 @@ ENV PHRONESIS_ENV=production \
     PHRONESIS_BLOB_DIR=/data/blobs \
     PHRONESIS_AUDIT_LOG=/data/audit.log \
     PHRONESIS_STORE_PATH=/data/phronesis.db \
-    PHRONESIS_OAUTH_KEY_PATH=/data/oauth-key.pem \
-    PHRONESIS_SNAPSHOT_DIR=/data/snapshots
+    PHRONESIS_OAUTH_KEY_PATH=/data/oauth-key.pem
+# Snapshots (PHRONESIS_SNAPSHOT_DIR) are opt-in: they are hourly full copies
+# with no pruning yet, so they would grow the volume without bound.
 
 USER nonroot:nonroot
 VOLUME ["/data"]

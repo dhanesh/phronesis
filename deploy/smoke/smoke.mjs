@@ -8,6 +8,8 @@
 // phase "persist" checks the marker page, the promoted role and the key
 // survived a restart (run it after recreating the pod/container).
 import { createRequire } from 'node:module';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,14 +25,22 @@ if (!BASE || !ADMIN_PW) {
 const checks = [];
 const check = (name, ok, detail = '') => checks.push({ name, ok: !!ok, detail: String(detail ?? '') });
 const MARKER = 'smoke-persist';
+// OUT_DIR (optional): save screenshots there.
+const SHOTS = process.env.OUT_DIR || '';
+const shot = async (page, name) => {
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name), fullPage: false }).catch(() => {});
+};
 
 async function ssoLogin(browser, email, password) {
   const ctx = await browser.newContext({ baseURL: BASE });
   const page = await ctx.newPage();
   await page.goto('/');
+  await page.getByTestId('sso-signin').waitFor();
+  await shot(page, 'signin-page.png');
   await page.getByTestId('sso-signin').click();
   // Dex local password form.
   await page.locator('#login').waitFor({ timeout: 15000 });
+  await shot(page, 'dex-login.png');
   await page.locator('#login').fill(email);
   await page.locator('#password').fill(password);
   await page.locator('#submit-login').click();
@@ -61,6 +71,7 @@ async function full(browser) {
   check('display_name_not_opaque_sub', s1.display_name === 'viewer', s1.display_name);
   check('whoami_shows_name', (await page.getByTestId('whoami').textContent())?.includes('viewer'));
   check('readonly_banner_for_viewer', await page.getByTestId('readonly-banner').isVisible());
+  await shot(page, 'viewer-after-sso.png');
   const denied = await viewer.request.post('/api/pages/smoke-viewer', { data: { content: 'x', baseVersion: 0 } });
   check('viewer_write_403', denied.status() === 403, denied.status());
 
@@ -87,6 +98,55 @@ async function full(browser) {
   }
   check('editor_autosave_persists', saved.includes('Edited through SSO'), saved.slice(0, 80));
 
+  await shot(page, 'editor-after-promotion.png');
+
+  // 3b. An MCP agent through OAuth: the SSO user authorizes a client in the
+  // browser (consent), the agent writes a page; demoting the user takes
+  // write away from the token already issued.
+  const redirectURI = 'http://127.0.0.1:8976/callback';
+  const reg = await (await browser.newContext({ baseURL: BASE })).request.post('/oauth/register', {
+    data: { client_name: 'smoke-agent', redirect_uris: [redirectURI] },
+  });
+  const client = await reg.json();
+  check('mcp_client_registered', reg.status() === 201, reg.status());
+  const verifier = crypto.randomBytes(48).toString('base64url');
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  let callback = null;
+  page.on('request', (req) => { if (req.url().startsWith(redirectURI)) callback = req.url(); });
+  await page.goto(`/oauth/authorize?response_type=code&client_id=${encodeURIComponent(client.client_id)}` +
+    `&redirect_uri=${encodeURIComponent(redirectURI)}&state=s1&scope=write` +
+    `&code_challenge=${challenge}&code_challenge_method=S256`);
+  await page.getByTestId('consent-approve').waitFor({ timeout: 10000 });
+  await shot(page, 'consent.png');
+  check('consent_shows_client', (await page.getByTestId('consent-client').textContent()) === 'smoke-agent');
+  await page.getByTestId('consent-approve').click();
+  for (let i = 0; i < 50 && !callback; i++) await page.waitForTimeout(200);
+  const code = callback ? new URL(callback).searchParams.get('code') : null;
+  check('consent_returns_code', !!code, callback);
+  const agent = await browser.newContext({ baseURL: BASE });
+  const tokRes = await agent.request.post('/oauth/token', {
+    form: { grant_type: 'authorization_code', code: code ?? '', code_verifier: verifier, client_id: client.client_id, redirect_uri: redirectURI },
+  });
+  const access = (await tokRes.json()).access_token;
+  check('oauth_token_issued', tokRes.ok() && !!access, tokRes.status());
+  const tool = async (name, args) => {
+    const r = await agent.request.post('/mcp', {
+      headers: { Authorization: `Bearer ${access}`, Accept: 'application/json, text/event-stream' },
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
+    });
+    const j = await r.json().catch(() => ({}));
+    return j.error ? { error: j.error.message } : JSON.parse(j.result?.content?.[0]?.text ?? '{}');
+  };
+  const agentPage = `smoke-agent-${Date.now()}`;
+  const w1 = await tool('write_page', { name: agentPage, content: '# Written by an MCP agent\n' });
+  check('mcp_agent_writes_page', !w1.error && w1.version >= 1, JSON.stringify(w1));
+  const r1 = await tool('read_page', { name: agentPage });
+  check('mcp_agent_reads_page', (r1.content ?? '').includes('MCP agent'), JSON.stringify(r1).slice(0, 100));
+  await admin.request.post(`/api/admin/users/${u?.id}/role`, { data: { role: 'viewer' } });
+  const w2 = await tool('write_page', { name: agentPage, content: 'should not land' });
+  check('demotion_limits_issued_token', (w2.error ?? '').includes('forbidden'), JSON.stringify(w2));
+  await admin.request.post(`/api/admin/users/${u?.id}/role`, { data: { role: 'editor' } });
+
   // 4. API keys work on the HTTP API (request -> approve).
   const req = await viewer.request.post('/api/keys/requests', { data: { scope: 'write', label: 'smoke' } });
   check('key_request_201', req.status() === 201, req.status());
@@ -104,6 +164,10 @@ async function full(browser) {
   const { ctx: second } = await ssoLogin(browser, 'admin@example.com', 'admin-pass');
   const s2 = await (await second.request.get('/api/session')).json();
   check('second_sso_user_is_viewer', s2.role === 'viewer', s2.role);
+  const p2 = await second.newPage();
+  await p2.goto('/');
+  await p2.getByTestId('whoami').waitFor();
+  await shot(p2, 'whoami-viewer.png');
   return { key };
 }
 

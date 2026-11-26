@@ -48,6 +48,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Preflight: the cluster answers, and k3s's Docker has the image built from
+# HEAD (pullPolicy=Never would otherwise run a stale or missing image).
+DCTX="${DOCKER_CONTEXT:-$KCTX}"
+kubectl --context "$KCTX" get nodes >/dev/null 2>&1 || { echo "error: kube context $KCTX is not reachable" >&2; exit 1; }
+REV=$(docker --context "$DCTX" image inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)
+HEAD=$(git rev-parse HEAD)
+if [ "$REV" != "$HEAD" ]; then
+  echo "error: $IMAGE in docker context $DCTX is revision '${REV:-missing}', HEAD is $HEAD (run: make image DOCKER_CONTEXT=$DCTX)" >&2
+  exit 1
+fi
 # A namespace left Terminating by an earlier run must finish first.
 kubectl --context "$KCTX" wait --for=delete "namespace/$NS" --timeout=300s >/dev/null 2>&1 || true
 kubectl --context "$KCTX" create namespace "$NS" --dry-run=client -o yaml | kubectl --context "$KCTX" apply -f - >/dev/null

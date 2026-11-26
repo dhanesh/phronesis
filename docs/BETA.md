@@ -25,12 +25,13 @@ know what works, what is confusing, and what is missing.
 - **Connect agents.** MCP at `/mcp` with OAuth 2.1 (consent screen) for
   clients such as Claude Code. Tools: `list_pages`, `read_page`,
   `write_page`, `search_pages`. Agents act with the lesser of the granted
-  scope and the user's role.
+  scope and the user's current role: demoting or suspending a user also
+  limits tokens already issued.
 - **Automate.** API keys (request in the app, admin approves) work on the
   HTTP API and on MCP, pinned to one workspace.
 - **Organise.** Several workspaces with a switcher.
 - **Operate.** Health and readiness endpoints, an audit log, rate limits,
-  snapshots, and a backup script.
+  backup instructions for Compose and Helm, and opt-in snapshots.
 
 ## Known limits
 
@@ -39,7 +40,9 @@ know what works, what is confusing, and what is missing.
 - IdP groups do not map to roles yet; promote users in Manage users.
 - Roles apply to the whole server, not per workspace.
 - Renaming a page does not rewrite links that point at it.
-- Sessions are in memory: everyone signs in again after a restart.
+- Sessions are in memory: everyone signs in again after a restart, and MCP
+  clients must authorize again (OAuth clients and refresh tokens are not
+  persisted yet).
 - One instance per data volume (SQLite).
 - Concurrent edits merge per document; there is no character-level
   real-time co-editing yet.

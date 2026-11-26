@@ -237,7 +237,7 @@ env-var plumbing is a future polish.
 - MCP search (`search_pages`) is a substring scan; there is no search UI or index yet.
 - There is no page history, no git sync to a remote, no CLI automation layer, and no `/metrics` Prometheus endpoint yet.
 - IdP groups are not mapped to roles; roles are instance-wide, not per workspace.
-- Sessions are in memory (users sign in again after a restart); one instance per data volume.
+- Sessions and OAuth clients/refresh tokens are in memory (users sign in and MCP clients authorize again after a restart); one instance per data volume.
 
 ## Near-Term Direction
 

@@ -57,6 +57,7 @@ for phase in ("full", "persist"):
             checks.append({"name": f"{phase}:parse", "ok": False, "detail": str(e)})
     else:
         checks.append({"name": f"{phase}:ran", "ok": False, "detail": "no output (see smoke.log)"})
+arts += sorted(os.path.join(out, f) for f in os.listdir(out) if f.endswith(".png"))
 log = os.path.join(out, "smoke.log")
 text = open(log).read() if os.path.exists(log) else ""
 marker = "COMPOSE_SMOKE: PASS" if feature == "deploy-compose" else "HELM_SMOKE: PASS"

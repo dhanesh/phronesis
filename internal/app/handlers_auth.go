@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -214,7 +215,14 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 				return principal.Principal{}, false
 			}
 			p, err := s.oauth.tokenVerifier.VerifyAccessToken(plaintext)
-			if err == nil {
+			if err != nil {
+				return principal.Principal{}, false
+			}
+			// The token's role was fixed at consent; cap it at the user's
+			// CURRENT role so demotion, suspension and deletion apply to
+			// tokens already issued (docs/roles.md principle 2).
+			if r, ok := s.currentUserRole(r.Context(), p.Claims["oauth_sub"]); ok {
+				p.Role = principal.MinRole(p.Role, r)
 				return p, true
 			}
 			return principal.Principal{}, false
@@ -233,4 +241,28 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 		}
 	}
 	return principal.Principal{}, false
+}
+
+// currentUserRole returns the current role of the human behind a delegated
+// credential. The built-in password admin has no users row and is admin.
+// ok is false for a missing, deleted or suspended user.
+func (s *Server) currentUserRole(ctx context.Context, sub string) (principal.Role, bool) {
+	if sub == "" {
+		return "", false
+	}
+	// The users row wins: an IdP subject that happens to equal the admin
+	// username gets its own (projected) role, never the admin's.
+	if s.store != nil {
+		var exists int
+		if err := s.store.DB().QueryRowContext(ctx, `SELECT 1 FROM users WHERE oidc_sub = ?`, sub).Scan(&exists); err == nil {
+			return s.oidcUserRole(ctx, sub)
+		}
+	}
+	if sub == s.cfg.AdminUser {
+		return principal.RoleAdmin, true
+	}
+	if s.store == nil {
+		return principal.RoleViewer, true
+	}
+	return "", false
 }

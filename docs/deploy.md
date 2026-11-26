@@ -9,7 +9,8 @@ Both use the same container image (`Dockerfile`):
 
 - distroless, runs as `nonroot` (uid 65532), no shell;
 - all data under the `/data` volume: pages, SQLite (users, keys, audit),
-  blobs, OAuth signing key, snapshots;
+  blobs, OAuth signing key (snapshots are opt-in with
+  `PHRONESIS_SNAPSHOT_DIR=/data/snapshots`; they are not pruned yet);
 - `PHRONESIS_ENV=production`: the server refuses to start with the default
   admin password or the development OIDC stub;
 - `phronesis -healthcheck <url>` for health checks (no curl in the image).
@@ -126,9 +127,11 @@ groups are not mapped to roles yet: promote users in the app.
 
 ## Operating notes
 
-- **Sessions are in memory.** After a restart users sign in again (SSO
-  makes this one click). Pages, users, roles, API keys and OAuth clients'
-  signing key are on the volume and survive.
+- **Sessions and OAuth state are in memory.** After a restart users sign in
+  again (SSO makes this one click), and MCP clients register and ask for
+  consent again (registered clients and refresh tokens are lost). Pages,
+  users, roles, API keys and the OAuth signing key are on the volume and
+  survive.
 - **Single instance.** Do not run two replicas against one volume.
 - **TLS** terminates at your ingress or reverse proxy. phronesis marks
   cookies `Secure` when the request arrived over HTTPS

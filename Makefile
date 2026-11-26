@@ -130,8 +130,14 @@ image: build ## Build the release Dockerfile for the host arch in Colima (no gor
 compose-test: image ## Run phronesis + Dex in Colima (Docker Compose) and the end-to-end smoke test
 	./deploy/compose/smoke.sh
 
-helm-test: image ## Install the Helm chart + Dex into Colima k3s and run the end-to-end smoke test
-	./deploy/helm/smoke.sh
+K8S_PROFILE ?= phronesis-k8s
+
+helm-test: ## Install the Helm chart + Dex into Colima k3s (profile phronesis-k8s) and run the end-to-end smoke test
+	@colima status $(K8S_PROFILE) >/dev/null 2>&1 || { \
+		echo "error: Colima profile $(K8S_PROFILE) is not running. Start it with:" >&2; \
+		echo "  colima start $(K8S_PROFILE) --kubernetes --cpu 2 --memory 4" >&2; exit 1; }
+	$(MAKE) image DOCKER_CONTEXT=colima-$(K8S_PROFILE)
+	KUBE_CONTEXT=colima-$(K8S_PROFILE) DOCKER_CONTEXT=colima-$(K8S_PROFILE) IMAGE=$(IMAGE) ./deploy/helm/smoke.sh
 
 clean: ## Remove build outputs (binary, frontend/dist, webfs/dist, goreleaser dist)
 	rm -rf phronesis dist $(WEBFS_DIST) $(FRONTEND_DIST)

@@ -89,7 +89,7 @@ a workspace admin.
 | Principal | How it is created | Effective role | Status |
 |---|---|---|---|
 | API key (`phr_live_...`) | User requests, admin approves; plaintext shown once | min(key scope, owner role); pinned to one workspace; works on `/mcp` and `/api/*` | **Built** |
-| OAuth client (MCP, e.g. Claude Code) | Dynamic registration (loopback redirect URIs only without an admin) + user consent | min(granted scope, user role); limited to `/mcp` | **Built** |
+| OAuth client (MCP, e.g. Claude Code) | Dynamic registration (loopback redirect URIs only without an admin) + user consent | min(granted scope, user's current role, re-read on every request; suspended or deleted user = 401); limited to `/mcp` | **Built** |
 | legacy single key (`API-KEY` header) | `PHRONESIS_API_KEY` env | editor on the default workspace | **Built** (deprecated) |
 | service account (no human owner) | Admin creates; for CI and bots that outlive people | its own role, workspace-pinned, owned by a team | Proposed |
 | AI agent acting for a user | OAuth on-behalf-of with a narrower scope per task | min(task scope, user role); every write audited with the agent id | Proposed |
