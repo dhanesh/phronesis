@@ -1,7 +1,7 @@
 # live-sse: See another user's edits live
 
 - id: live-sse
-- proven: no
+- proven: 4ba3375383c4d0e0108f2d42aa21d39a93d42f76
 - anchors: internal/app/handlers_pages.go, internal/wiki/session.go
 
 ## What it is

@@ -1,7 +1,7 @@
 # page-edit-autosave: Edit a page and have it autosave to Markdown on disk
 
 - id: page-edit-autosave
-- proven: no
+- proven: 4ba3375383c4d0e0108f2d42aa21d39a93d42f76
 - anchors: frontend/src/App.svelte:saveDraft, internal/app/handlers_pages.go, internal/wiki/store.go
 - constraints: collab-wiki:T1
 

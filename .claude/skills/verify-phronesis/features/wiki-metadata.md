@@ -1,7 +1,7 @@
 # wiki-metadata: Wiki links, backlinks, tags and tasks
 
 - id: wiki-metadata
-- proven: no
+- proven: 4ba3375383c4d0e0108f2d42aa21d39a93d42f76
 - anchors: internal/render/markdown.go, internal/wiki/store.go, frontend/src/App.svelte
 - constraints: collab-wiki:U4
 
