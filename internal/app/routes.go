@@ -99,6 +99,9 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 		Limiter:      authRateLimiter,
 		PathPrefixes: []string{"/oauth/"},
 	}, http.HandlerFunc(s.handleOAuthRegister)))
+	// Consent step: SPA page + the data it shows (finding mcp-oauth).
+	mux.HandleFunc("/oauth/consent", s.withAuth(s.handleWikiPage))
+	mux.HandleFunc("/api/oauth/consent-info", s.withAuth(s.handleOAuthConsentInfo))
 	mux.HandleFunc("/.well-known/oauth-authorization-server", s.handleOAuthMetadata)
 	mux.HandleFunc("/.well-known/jwks.json", s.handleJWKS)
 

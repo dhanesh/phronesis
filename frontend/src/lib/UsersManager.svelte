@@ -59,6 +59,25 @@
     }
   }
 
+  async function setRole(id, role) {
+    busy = true;
+    error = '';
+    try {
+      const res = await fetch(`/api/admin/users/${id}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        error = data.error || `role change failed (${res.status})`;
+      }
+      await refresh();
+    } finally {
+      busy = false;
+    }
+  }
+
   async function remove(user) {
     const label = user.display_name || user.email || user.oidc_sub;
     if (!confirm(`Delete user "${label}"? Their API keys will be revoked.`)) return;
@@ -135,7 +154,20 @@
                       <div class="users-sub">{u.email}</div>
                     {/if}
                   </td>
-                  <td><span class="users-role">{u.role}</span></td>
+                  <td>
+                    <select
+                      class="users-role"
+                      value={u.role}
+                      disabled={busy}
+                      aria-label={`Role for ${u.display_name || u.email || u.oidc_sub}`}
+                      data-testid="users-role"
+                      onchange={(e) => setRole(u.id, e.currentTarget.value)}
+                    >
+                      <option value="viewer">viewer</option>
+                      <option value="editor">editor</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </td>
                   <td>
                     <span class="users-status users-status-{u.status}">{u.status}</span>
                   </td>

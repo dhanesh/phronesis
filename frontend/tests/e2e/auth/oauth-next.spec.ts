@@ -63,10 +63,43 @@ test.describe('login honours ?next', () => {
     await page.getByLabel('Password').fill('admin123');
     await page.getByRole('button', { name: 'Sign in' }).click();
 
+    // Consent step (finding mcp-oauth): no code until the user approves.
+    const consent = page.getByRole('dialog', { name: 'Authorize application' });
+    await expect(consent).toBeVisible();
+    await expect(page.getByTestId('consent-client')).toHaveText('e2e');
+    await expect(page.getByTestId('consent-redirect')).toContainText('127.0.0.1:8976');
+    expect(callback).toBeNull();
+    await page.getByTestId('consent-approve').click();
+
     await expect.poll(() => callback, { timeout: 10_000 }).not.toBeNull();
     const url = new URL(callback!);
     expect(url.searchParams.get('code')).toMatch(/^phr_code_/);
     expect(url.searchParams.get('state')).toBe('xyz');
+    await ctx.close();
+  });
+
+  test('deny at the consent step returns access_denied and no code', async ({ browser, oauthBaseURL }) => {
+    const ctx = await browser.newContext({ baseURL: oauthBaseURL });
+    const redirectURI = 'http://127.0.0.1:8976/callback';
+    const { client_id } = await (
+      await ctx.request.post('/oauth/register', { data: { client_name: 'e2e-deny', redirect_uris: [redirectURI] } })
+    ).json();
+    expect((await ctx.request.post('/api/login', { data: { username: 'admin', password: 'admin123' } })).ok()).toBeTruthy();
+    const page = await ctx.newPage();
+    let callback: string | null = null;
+    page.on('request', (req) => {
+      if (req.url().startsWith(redirectURI)) callback = req.url();
+    });
+    await page.goto(
+      `/oauth/authorize?response_type=code&client_id=${encodeURIComponent(client_id)}` +
+        `&redirect_uri=${encodeURIComponent(redirectURI)}&state=d1` +
+        `&code_challenge=${'a'.repeat(43)}&code_challenge_method=S256`,
+    );
+    await page.getByTestId('consent-deny').click();
+    await expect.poll(() => callback, { timeout: 10_000 }).not.toBeNull();
+    const url = new URL(callback!);
+    expect(url.searchParams.get('error')).toBe('access_denied');
+    expect(url.searchParams.get('code')).toBeNull();
     await ctx.close();
   });
 

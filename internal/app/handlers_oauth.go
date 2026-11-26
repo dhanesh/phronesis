@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"github.com/dhanesh/phronesis/internal/principal"
 	"net/http"
 	"net/url"
 	"strings"
@@ -112,12 +113,34 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Consent step (finding mcp-oauth; decision 2026-11-27). A GET, or
+	// a POST without a decision, shows the SPA consent page with the same
+	// query. Only an explicit same-origin POST decision=approve mints a code.
+	decision := ""
+	if r.Method == http.MethodPost {
+		decision = r.PostForm.Get("decision")
+	}
+	if decision == "" {
+		http.Redirect(w, r, "/oauth/consent?"+r.Form.Encode(), http.StatusFound)
+		return
+	}
+	if !sameOriginPost(r) {
+		writeError(w, http.StatusForbidden, "cross-origin consent is not allowed")
+		return
+	}
+	if decision != "approve" {
+		s.auditEnqueue("oauth.deny", r, "", map[string]string{"client_id": client.ID, "user_sub": username})
+		oauthErrorRedirect(w, r, redirectURI, state, "access_denied", "the user denied the request")
+		return
+	}
+	granted := s.grantedOAuthScope(r, r.Form.Get("scope"))
+
 	code, err := s.oauth.store.MintCode(oauth.AuthorizationCode{
 		ClientID:            client.ID,
 		UserSub:             username,
 		WorkspaceID:         defaultWorkspaceID,
 		RedirectURI:         redirectURI,
-		Scope:               r.Form.Get("scope"),
+		Scope:               granted,
 		CodeChallenge:       r.Form.Get("code_challenge"),
 		CodeChallengeMethod: "S256",
 	})
@@ -141,8 +164,9 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 	s.auditEnqueue("oauth.authorize", r, "", map[string]string{
 		"client_id": client.ID,
 		"user_sub":  username,
+		"scope":     granted,
 	})
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	redirectOrJSON(w, r, u.String())
 }
 
 // handleOAuthToken implements POST /oauth/token.
@@ -306,6 +330,20 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// Anonymous registration is limited to loopback redirect URIs (local
+	// MCP clients). Any other redirect URI needs an admin session
+	// (finding mcp-oauth; decision 2026-11-27).
+	for _, u := range req.RedirectURIs {
+		if isLoopbackRedirect(u) {
+			continue
+		}
+		if p, ok := s.principalFromRequest(r); !ok || p.Role != principal.RoleAdmin {
+			oauthJSONError(w, http.StatusForbidden, "invalid_redirect_uri",
+				"only loopback redirect URIs can be registered without an admin session")
+			return
+		}
+		break
+	}
 
 	client, err := s.oauth.store.RegisterClient(r.Context(), oauth.Client{
 		Name:         req.ClientName,
@@ -375,7 +413,19 @@ func oauthErrorRedirect(w http.ResponseWriter, r *http.Request, redirectURI, sta
 		q.Set("state", state)
 	}
 	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	redirectOrJSON(w, r, u.String())
+}
+
+// redirectOrJSON sends the client back to its redirect_uri. The SPA
+// consent page asks with Accept: application/json and navigates itself,
+// because the CSP's form-action 'self' blocks a form POST from following a
+// redirect to the client's (other-origin) callback.
+func redirectOrJSON(w http.ResponseWriter, r *http.Request, target string) {
+	if r.Method == http.MethodPost && strings.Contains(r.Header.Get("Accept"), "application/json") {
+		writeJSON(w, http.StatusOK, map[string]string{"redirect_to": target})
+		return
+	}
+	http.Redirect(w, r, target, http.StatusFound)
 }
 
 // stripTrailingSlash is used by the discovery handler to keep the
@@ -383,4 +433,97 @@ func oauthErrorRedirect(w http.ResponseWriter, r *http.Request, redirectURI, sta
 // shape MCP clients expect.
 func stripTrailingSlash(s string) string {
 	return strings.TrimRight(s, "/")
+}
+
+// isLoopbackRedirect reports whether raw is an http URL on a loopback host.
+func isLoopbackRedirect(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "http" {
+		return false
+	}
+	switch u.Hostname() {
+	case "127.0.0.1", "::1", "localhost":
+		return true
+	}
+	return false
+}
+
+// sameOriginPost rejects a consent POST that a browser marks as coming
+// from another site. The session cookie is SameSite=Lax, so a cross-site
+// form POST already arrives without it; this is defence in depth.
+func sameOriginPost(r *http.Request) bool {
+	if site := r.Header.Get("Sec-Fetch-Site"); site != "" && site != "same-origin" && site != "none" {
+		return false
+	}
+	if origin := r.Header.Get("Origin"); origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil || u.Host != r.Host {
+			return false
+		}
+	}
+	return true
+}
+
+// grantedOAuthScope caps the requested scope at the signed-in user's role,
+// so an OAuth token never outranks its user (docs/roles.md).
+func (s *Server) grantedOAuthScope(r *http.Request, requested string) string {
+	want := principal.RoleViewer
+	for _, tok := range strings.Fields(requested) {
+		switch tok {
+		case "admin":
+			want = principal.RoleAdmin
+		case "write":
+			if want != principal.RoleAdmin {
+				want = principal.RoleEditor
+			}
+		}
+	}
+	have := principal.RoleViewer
+	if p, ok := s.principalFromRequest(r); ok {
+		have = p.Role
+	}
+	return scopeForRole(principal.MinRole(want, have))
+}
+
+func scopeForRole(r principal.Role) string {
+	switch r {
+	case principal.RoleAdmin:
+		return "admin"
+	case principal.RoleEditor:
+		return "write"
+	}
+	return "read"
+}
+
+// handleOAuthConsentInfo backs the SPA consent page:
+//
+//	GET /api/oauth/consent-info?client_id=&redirect_uri=&scope=
+//
+// It returns what the user is about to approve. The client name is
+// self-asserted at registration, so the page labels it unverified.
+func (s *Server) handleOAuthConsentInfo(w http.ResponseWriter, r *http.Request) {
+	if s.oauth == nil {
+		writeError(w, http.StatusServiceUnavailable, "oauth is not configured")
+		return
+	}
+	q := r.URL.Query()
+	client, err := s.oauth.store.Client(q.Get("client_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid client_id")
+		return
+	}
+	redirectURI := q.Get("redirect_uri")
+	if !redirectURIRegistered(client.RedirectURIs, redirectURI) {
+		writeError(w, http.StatusBadRequest, "invalid redirect_uri")
+		return
+	}
+	u, _ := url.Parse(redirectURI)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"client_id":       client.ID,
+		"client_name":     client.Name,
+		"redirect_host":   u.Host,
+		"loopback":        isLoopbackRedirect(redirectURI),
+		"requested_scope": q.Get("scope"),
+		"granted_scope":   s.grantedOAuthScope(r, q.Get("scope")),
+	})
 }

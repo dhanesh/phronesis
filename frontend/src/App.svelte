@@ -8,6 +8,8 @@
   import KeysManager from './lib/KeysManager.svelte';
   import MCPSetupPanel from './lib/MCPSetupPanel.svelte';
   import KeyRequestPanel from './lib/KeyRequestPanel.svelte';
+  import OAuthConsent from './lib/OAuthConsent.svelte';
+  const consentMode = window.location.pathname === '/oauth/consent';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -45,6 +47,8 @@
   let workspaces = $state([]);
   let currentWorkspace = $state('default');
   let userRole = $state('');
+  // Page RBAC (docs/roles.md): only editors and admins may write.
+  let canEdit = $derived(userRole === 'editor' || userRole === 'admin');
   let workspaceManagerOpen = $state(false);
   let usersManagerOpen = $state(false);
   let keysManagerOpen = $state(false);
@@ -315,6 +319,7 @@
   }
 
   function onEditorChange(detail) {
+    if (!canEdit) return;
     draft = detail.value;
     durability = 'dirty';
     scheduleSave();
@@ -352,6 +357,8 @@
       {#if loginError}<p class="error">{loginError}</p>{/if}
     </form>
   </main>
+{:else if consentMode}
+  <OAuthConsent />
 {:else}
   <main class="app-shell">
     <TopBar
@@ -392,11 +399,17 @@
       <section class="workspace">
         <div class="workspace-body">
           <section class="editor-card">
+            {#if !canEdit}
+              <p class="readonly-banner" role="status" data-testid="readonly-banner">
+                Read-only: your role is <strong>{userRole || 'viewer'}</strong>. Ask an admin for editor access to make changes.
+              </p>
+            {/if}
             <div class="editor-frame">
             <Editor
               bind:this={editor}
               value={draft}
               page={page.name}
+              readOnly={!canEdit}
               {durability}
               onchange={onEditorChange}
               onnavigate={onNavigate}
@@ -710,6 +723,15 @@
     padding: 0.9rem 1.1rem;
   }
 
+  .readonly-banner {
+    margin: 0 0 0.6rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in oklab, var(--bg-elevated) 85%, #f5b700 15%);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+  }
   .editor-frame {
     min-height: 68vh;
     padding: 0.5rem 1rem 0.25rem 1.2rem;
