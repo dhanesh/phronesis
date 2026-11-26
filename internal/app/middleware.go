@@ -31,13 +31,11 @@ func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-		_, ok := s.auth.Username(r)
-		if ok {
-			// A session whose principal was refused (a suspended or
-			// deleted OIDC user) is not authenticated.
-			_, perr := principal.FromContext(r.Context())
-			ok = perr == nil
-		}
+		// A session cookie or an API key authenticates alike (decision
+		// 2026-11-27). A session whose principal was refused (a suspended
+		// or deleted OIDC user) has no principal and is not authenticated.
+		p, perr := principal.FromContext(r.Context())
+		ok := perr == nil && apiCredentialAllowed(p)
 		if !ok {
 			if strings.HasPrefix(r.URL.Path, "/api/") {
 				writeError(w, http.StatusUnauthorized, "authentication required")

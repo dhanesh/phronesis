@@ -34,7 +34,7 @@ func TestProjectClaimsIsIdempotent(t *testing.T) {
 	ctx := context.Background()
 
 	// First projection
-	u1, err := ProjectClaims(ctx, store.DB(), "sub-aaa", "alice@example.com", "Alice", "user")
+	u1, err := ProjectClaims(ctx, store.DB(), "sub-aaa", "alice@example.com", "Alice", "viewer")
 	if err != nil {
 		t.Fatalf("first ProjectClaims: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestProjectClaimsIsIdempotent(t *testing.T) {
 	}
 
 	// Second projection with same sub + same claims
-	u2, err := ProjectClaims(ctx, store.DB(), "sub-aaa", "alice@example.com", "Alice", "user")
+	u2, err := ProjectClaims(ctx, store.DB(), "sub-aaa", "alice@example.com", "Alice", "viewer")
 	if err != nil {
 		t.Fatalf("second ProjectClaims: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestProjectClaimsUpdatesMutableFieldsOnReturn(t *testing.T) {
 	store := newProjectionTestStore(t)
 	ctx := context.Background()
 
-	_, err := ProjectClaims(ctx, store.DB(), "sub-bbb", "bob@example.com", "Bob", "user")
+	_, err := ProjectClaims(ctx, store.DB(), "sub-bbb", "bob@example.com", "Bob", "viewer")
 	if err != nil {
 		t.Fatalf("first: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestProjectClaimsPreservesSuspendedStatus(t *testing.T) {
 	ctx := context.Background()
 
 	// Initial projection
-	_, err := ProjectClaims(ctx, store.DB(), "sub-ccc", "c@example.com", "C", "user")
+	_, err := ProjectClaims(ctx, store.DB(), "sub-ccc", "c@example.com", "C", "viewer")
 	if err != nil {
 		t.Fatalf("first: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestProjectClaimsPreservesSuspendedStatus(t *testing.T) {
 	}
 
 	// Re-login attempts.
-	row, err := ProjectClaims(ctx, store.DB(), "sub-ccc", "c@example.com", "C", "user")
+	row, err := ProjectClaims(ctx, store.DB(), "sub-ccc", "c@example.com", "C", "viewer")
 	if !errors.Is(err, ErrUserSuspended) {
 		t.Fatalf("expected ErrUserSuspended, got %v", err)
 	}
@@ -118,7 +118,7 @@ func TestProjectClaimsPreservesSuspendedStatus(t *testing.T) {
 
 // TestProjectClaimsRejectsInvalidRole
 //
-// @constraint S3 — role tier is enforced at the boundary; only 'user'
+// @constraint S3 — role tier is enforced at the boundary; only 'viewer', 'editor'
 // and 'admin' are valid. The OIDC adapter is responsible for mapping
 // raw IdP group claims to one of these.
 func TestProjectClaimsRejectsInvalidRole(t *testing.T) {
@@ -135,7 +135,7 @@ func TestProjectClaimsHandlesMissingEmailAndName(t *testing.T) {
 	store := newProjectionTestStore(t)
 	ctx := context.Background()
 
-	row, err := ProjectClaims(ctx, store.DB(), "sub-eee", "", "", "user")
+	row, err := ProjectClaims(ctx, store.DB(), "sub-eee", "", "", "viewer")
 	if err != nil {
 		t.Fatalf("ProjectClaims with empty email/name: %v", err)
 	}

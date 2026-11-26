@@ -1,6 +1,8 @@
 package app
 
 import (
+	"encoding/json"
+	"github.com/dhanesh/phronesis/internal/principal"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,6 +34,7 @@ type adminUserRow struct {
 //	GET    /api/admin/users                     -> list
 //	POST   /api/admin/users/{id}/suspend
 //	POST   /api/admin/users/{id}/reactivate
+//	POST   /api/admin/users/{id}/role   {"role":"viewer"|"editor"|"admin"}
 //	DELETE /api/admin/users/{id}
 //
 // Wired in routes.go behind withAuth + withAdmin.
@@ -68,6 +71,8 @@ func (s *Server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
 			s.handleAdminUserStatus(w, r, id, "suspended")
 		case "reactivate":
 			s.handleAdminUserStatus(w, r, id, "active")
+		case "role":
+			s.handleAdminUserRole(w, r, id)
 		default:
 			writeError(w, http.StatusNotFound, "unknown user action")
 		}
@@ -146,6 +151,44 @@ func (s *Server) handleAdminUserStatus(w http.ResponseWriter, r *http.Request, i
 		"target_user_id": strconv.FormatInt(id, 10),
 	})
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleAdminUserRole sets a user's wiki role (docs/roles.md). The role is
+// read from the users row on every request, so the change applies to the
+// user's open sessions at once; cached API-key principals are dropped so
+// their owner-role cap is re-evaluated.
+func (s *Server) handleAdminUserRole(w http.ResponseWriter, r *http.Request, id int64) {
+	var body struct {
+		Role string `json:"role"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	switch principal.Role(body.Role) {
+	case principal.RoleViewer, principal.RoleEditor, principal.RoleAdmin:
+	default:
+		writeError(w, http.StatusBadRequest, "role must be viewer, editor or admin")
+		return
+	}
+	res, err := s.store.DB().ExecContext(r.Context(),
+		`UPDATE users SET role = ? WHERE id = ?`, body.Role, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	if s.authCache != nil {
+		_ = s.authCache.InvalidateByUser(r.Context(), s.store.DB(), id)
+	}
+	s.auditEnqueue("user.role", r, "", map[string]string{
+		"target_user_id": strconv.FormatInt(id, 10),
+		"role":           body.Role,
+	})
+	writeJSON(w, http.StatusOK, map[string]any{"id": id, "role": body.Role})
 }
 
 func (s *Server) handleAdminUserDelete(w http.ResponseWriter, r *http.Request, id int64) {

@@ -22,3 +22,28 @@ resume or context compaction.
 - **API keys follow the spec request -> approve flow (TN7).** Signed-in users
   with a users row submit `POST /api/keys/requests` from a small request form;
   the admin approves in the existing Keys panel and sees the plaintext once.
+- **API keys work on `/mcp` and the HTTP API alike.** A valid bearer key (or
+  OAuth access token) authenticates `/api/*` the same way a session cookie does,
+  bounded by the key's scope and workspace.
+- **RBAC is enforced on pages.** Every page, workspace-page and media route
+  checks the caller's role (`read` / `write`), for sessions and keys alike.
+- **Write a comprehensive role catalog** for a wiki that may run in an
+  enterprise setup (docs/roles.md): instance, workspace, page-level and
+  non-human roles, with a permission matrix and what is implemented today.
+- **Open design calls taken unattended (owner: "run with Jev's and the
+  advisor's decisions").** Provisional; the owner may revisit.
+  - A key never outranks its owner: effective role = min(key scope, owner
+    role). (Jev: cap 0.70, confidence 0.55 - low.)
+  - OAuth consent step as an SPA page; approve/deny posts back to
+    `/oauth/authorize`. (Jev 0.79.)
+  - Dynamic client registration stays open only for loopback redirect URIs;
+    other redirect URIs need an admin session. (Jev 0.48 vs admin-only 0.47 -
+    low confidence; the stricter of the two that keeps local MCP clients
+    working.)
+  - OAuth access tokens stay limited to `/mcp`; only sessions and API keys
+    reach `/api/*`. OAuth token role is capped at the user's role. (Jev 0.37
+    "no"; advisor agreed.)
+- **Goal: a beta release.** A full-featured wiki, OIDC tested against a real
+  Dex IdP, verified working end to end, ready to gather feedback.
+- **All local testing happens in Colima.** Docker and Kubernetes (Helm)
+  deployment are supported out of the box and tested (Colima's k3s).

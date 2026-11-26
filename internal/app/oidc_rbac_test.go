@@ -14,7 +14,7 @@ import (
 )
 
 // Decision 2026-11-27 (docs/decisions.md): OIDC users are projected into
-// users on login; a new user is role 'user', which authorises as viewer.
+// users on login; a new user is role viewer.
 // An admin-set role survives later logins. Roles come from the row on
 // every request, so suspension takes effect on existing sessions.
 
@@ -108,7 +108,7 @@ func TestOIDCLoginProjectsUserAsViewer(t *testing.T) {
 		Scan(&role, &status, &email); err != nil {
 		t.Fatalf("user not projected: %v", err)
 	}
-	if role != "user" || status != "active" || email != "alice@example.com" {
+	if role != "viewer" || status != "active" || email != "alice@example.com" {
 		t.Errorf("row = %s/%s/%s, want user/active/alice@example.com", role, status, email)
 	}
 	if got := sessionRole(t, s, c); got != "viewer" {

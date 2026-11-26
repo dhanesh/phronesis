@@ -155,7 +155,7 @@ func seedKeyTable(tb testing.TB, n int) (*sqlite.Store, []string) {
 	// Seed a single user; keys reference users.id via FK.
 	res, err := store.DB().Exec(
 		`INSERT INTO users (oidc_sub, email, display_name, role) VALUES (?, ?, ?, ?)`,
-		"sub-bench", "bench@example.com", "Bench", "user")
+		"sub-bench", "bench@example.com", "Bench", "viewer")
 	if err != nil {
 		tb.Fatalf("seed user: %v", err)
 	}

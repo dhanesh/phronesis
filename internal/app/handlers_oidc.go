@@ -53,7 +53,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Project the user into the SQLite store (user-mgmt-mcp T2). A new
-	// user is role 'user' (authorises as viewer); an existing row keeps
+	// user is role 'viewer'; an existing row keeps
 	// the role an admin gave it. A suspended account gets no session.
 	if s.store != nil {
 		if err := s.projectOIDCUser(r.Context(), p); err != nil {
@@ -100,7 +100,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 // projectOIDCUser upserts the users row for an authenticated OIDC
 // principal, preserving any role already stored for it.
 func (s *Server) projectOIDCUser(ctx context.Context, p principal.Principal) error {
-	role := "user"
+	role := string(principal.RoleViewer)
 	var existing string
 	err := s.store.DB().QueryRowContext(ctx, `SELECT role FROM users WHERE oidc_sub = ?`, p.ID).Scan(&existing)
 	switch {
@@ -122,10 +122,7 @@ func (s *Server) oidcUserRole(ctx context.Context, sub string) (principal.Role, 
 	if err != nil || status != "active" {
 		return "", false
 	}
-	if role == "admin" {
-		return principal.RoleAdmin, true
-	}
-	return principal.RoleViewer, true
+	return principal.ParseRole(role), true
 }
 
 // issueOIDCSession creates a cookie-session record in the supplied store for

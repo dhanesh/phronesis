@@ -23,7 +23,7 @@ func newKeysTestStore(t *testing.T) (*sqlite.Store, int64) {
 	t.Cleanup(func() { _ = store.Close() })
 	res, err := store.DB().Exec(
 		`INSERT INTO users (oidc_sub, email, display_name, role, status) VALUES (?, ?, ?, ?, ?)`,
-		"sub-keys", "k@example.com", "Keys Owner", "user", "active")
+		"sub-keys", "k@example.com", "Keys Owner", "admin", "active")
 	if err != nil {
 		t.Fatalf("seed user: %v", err)
 	}
@@ -355,5 +355,33 @@ func TestResolveBearerKeyAfterInvalidateMissesCache(t *testing.T) {
 	_, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, cache)
 	if err != ErrKeyRevoked {
 		t.Fatalf("expected ErrKeyRevoked after revoke + invalidate, got %v", err)
+	}
+}
+
+// A key never outranks its owner (docs/roles.md): a write key held by a
+// viewer resolves as viewer, and promoting the owner lifts it to editor.
+func TestResolveBearerKeyCapsRoleAtOwnerRole(t *testing.T) {
+	store, uid := newKeysTestStore(t)
+	ctx := context.Background()
+	if _, err := store.DB().Exec(`UPDATE users SET role='viewer' WHERE id=?`, uid); err != nil {
+		t.Fatal(err)
+	}
+	row, err := MintKey(ctx, store.DB(), uid, "default", "write", "capped", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Role != principal.RoleViewer {
+		t.Fatalf("viewer-owned write key role = %q, want viewer", p.Role)
+	}
+	if _, err := store.DB().Exec(`UPDATE users SET role='editor' WHERE id=?`, uid); err != nil {
+		t.Fatal(err)
+	}
+	p, _ = ResolveBearerKey(ctx, store.DB(), row.Plaintext, nil)
+	if p.Role != principal.RoleEditor {
+		t.Fatalf("editor-owned write key role = %q, want editor", p.Role)
 	}
 }

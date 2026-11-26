@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -128,17 +129,48 @@ func loadAppliedVersions(db *sql.DB) (map[int]struct{}, error) {
 	return out, rows.Err()
 }
 
+// fkOffDirective on a migration's first line asks the runner to disable
+// foreign keys for that migration (SQLite's 12-step table rebuild). The
+// pragma is a no-op inside a transaction, so it is set on a pinned
+// connection before BEGIN, checked with foreign_key_check before COMMIT,
+// and restored afterwards.
+const fkOffDirective = "-- phronesis:foreign-keys-off"
+
 func runMigration(db *sql.DB, m migration) error {
 	if strings.TrimSpace(m.sql) == "" {
 		return errors.New("empty migration body")
 	}
-	tx, err := db.Begin()
+	ctx := context.Background()
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("conn: %w", err)
+	}
+	defer conn.Close()
+	fkOff := strings.HasPrefix(strings.TrimSpace(m.sql), fkOffDirective)
+	if fkOff {
+		if _, err := conn.ExecContext(ctx, `PRAGMA foreign_keys = OFF`); err != nil {
+			return fmt.Errorf("disable foreign keys: %w", err)
+		}
+		defer func() { _, _ = conn.ExecContext(ctx, `PRAGMA foreign_keys = ON`) }()
+	}
+	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
 	if _, err := tx.Exec(m.sql); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("exec: %w", err)
+	}
+	if fkOff {
+		var n int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM pragma_foreign_key_check`).Scan(&n); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("foreign_key_check: %w", err)
+		}
+		if n != 0 {
+			_ = tx.Rollback()
+			return fmt.Errorf("foreign_key_check: %d violations", n)
+		}
 	}
 	if _, err := tx.Exec(`INSERT INTO schema_version (version, name) VALUES (?, ?)`, m.version, m.name); err != nil {
 		_ = tx.Rollback()

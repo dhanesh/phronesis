@@ -35,6 +35,9 @@ func (s *Server) handlePages(w http.ResponseWriter, r *http.Request) {
 	if slug == "" {
 		return
 	}
+	if _, ok := s.authorize(w, r, "read", slug); !ok {
+		return
+	}
 	pages, err := store.List()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -63,6 +66,14 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlu
 	if slug == "" {
 		return
 	}
+	action := "read"
+	if r.Method == http.MethodPost {
+		action = "write"
+	}
+	p, ok := s.authorize(w, r, action, slug)
+	if !ok {
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		page, err := hub.Snapshot(name)
@@ -83,8 +94,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlu
 			writeError(w, http.StatusBadRequest, "invalid update request")
 			return
 		}
-		username, _ := s.auth.Username(r)
-		page, merged, err := hub.Apply(name, req.BaseVersion, req.Content, username)
+		page, merged, err := hub.Apply(name, req.BaseVersion, req.Content, p.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -116,6 +126,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceS
 	}
 	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
 	if slug == "" {
+		return
+	}
+	if _, ok := s.authorize(w, r, "read", slug); !ok {
 		return
 	}
 	ch, cancel, err := hub.Subscribe(name)
