@@ -9,5 +9,6 @@ One file per user-facing feature, in sweep order. Drive each with `node "$SKILL/
 - [live-preview](live-preview.md) — SilverBullet-style live preview in the editor
 - [media-upload](media-upload.md) — Upload and serve images
 - [workspaces](workspaces.md) — Create, use and delete workspaces
+- [oidc-login](oidc-login.md) — Sign in with OIDC and get your own role
 - [api-keys](api-keys.md) — Request, approve, use and revoke an API key
 - [mcp-oauth](mcp-oauth.md) — Connect an MCP client with OAuth 2.1 + PKCE

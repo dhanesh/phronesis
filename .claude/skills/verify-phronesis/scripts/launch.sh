@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # Launch one isolated phronesis instance for verification.
 #
-#   launch.sh <instance> [--oauth]
+#   launch.sh <instance> [--oauth|--oidc]
 #
 # Each instance gets its own claimed port, its own data root under
 # .verify-run/<instance>/data, its own cookie jar and its own pid file.
 # --oauth turns on the OAuth 2.1 server + /mcp transport for this instance.
+# --oidc turns on OIDC sign-in with the HMAC stub verifier (secret
+#   verify-oidc-secret, issuer verify-iss, audience verify-aud).
 # Prints one JSON line: {"instance","port","base_url","pid","data","cookies","oauth"}.
 # Exit 0 = ready and logged in; non-zero = not ready (log path in stderr).
 set -euo pipefail
 
 INSTANCE="${1:?usage: launch.sh <instance> [--oauth]}"
-OAUTH=0
+OAUTH=0; OIDC=0
 [ "${2:-}" = "--oauth" ] && OAUTH=1
+[ "${2:-}" = "--oidc" ] && OIDC=1
 
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL="$ROOT/.claude/skills/verify-phronesis"
@@ -60,6 +63,10 @@ env_args=(
   PHRONESIS_ADMIN_USER=admin
   PHRONESIS_ADMIN_PASSWORD=verify-admin-pw
 )
+if [ "$OIDC" = 1 ]; then
+  env_args+=(PHRONESIS_OIDC_ENABLED=1 PHRONESIS_OIDC_SECRET=verify-oidc-secret
+             PHRONESIS_OIDC_ISSUER=verify-iss PHRONESIS_OIDC_AUDIENCE=verify-aud)
+fi
 if [ "$OAUTH" = 1 ]; then
   env_args+=(PHRONESIS_OAUTH_ENABLED=1 PHRONESIS_OAUTH_ISSUER="$BASE")
 fi

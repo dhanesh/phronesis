@@ -306,6 +306,32 @@ const features = {
     check('revoked_key_rejected', after === 401, after);
   },
 
+  // oidc-login: an OIDC user signs in, is projected into users, and gets
+  // its projected role (not admin). Needs an instance launched with --oidc.
+  async 'oidc-login'(browser) {
+    const ctx = await browser.newContext({ baseURL: BASE });
+    const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    const now = Math.floor(Date.now() / 1000);
+    const head = enc({ alg: 'HS256', typ: 'JWT', kid: 'stub-1' });
+    const body = enc({ iss: 'verify-iss', aud: 'verify-aud', iat: now, exp: now + 3600,
+      sub: `oidc-viewer-${stamp}`, email: `viewer-${stamp}@example.com` });
+    const sig = crypto.createHmac('sha256', 'verify-oidc-secret').update(`${head}.${body}`).digest('base64url');
+    const login = await ctx.request.post('/api/auth/oidc/login', { data: { id_token: `${head}.${body}.${sig}` } });
+    check('oidc_login_200', login.ok(), login.status());
+    const sess = await (await ctx.request.get('/api/session')).json();
+    save('session.json', sess);
+    check('session_authenticated', sess.authenticated === true);
+    check('role_not_admin_without_claim', sess.role !== 'admin', `role=${sess.role}`);
+    const ws = await ctx.request.post('/api/admin/workspaces', { data: { slug: `oidc-ws-${stamp}`, name: 'x' } });
+    save('admin-post.txt', `${ws.status()} ${await ws.text()}`);
+    check('admin_endpoint_forbidden', ws.status() === 403, ws.status());
+    const admin = await apiLoginContext(browser);
+    const users = await (await admin.request.get('/api/admin/users')).json();
+    save('users.json', users);
+    check('user_projected_into_users', (users.users ?? []).some((u) => u.email === `viewer-${stamp}@example.com`),
+      `users=${(users.users ?? []).length}`);
+  },
+
   // mcp-oauth: a signed-out user completes OAuth (DCR + PKCE) in the
   // browser, the client exchanges the code, then calls /mcp.
   // Needs an instance launched with --oauth.

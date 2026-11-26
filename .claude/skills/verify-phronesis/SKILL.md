@@ -25,6 +25,7 @@ Set these once per session, from the repo root:
 SKILL="$(git rev-parse --show-toplevel)/.claude/skills/verify-phronesis"
 INSTANCE="<verifier>-a"      # unique per session: prefix with your verifier id so you
 INSTANCE_OAUTH="<verifier>-b" # never reuse another verifier's .verify/<instance>/ dir
+INSTANCE_OIDC="<verifier>-c"  # launched with --oidc (oidc-login only)
 VERIFIER="<your id>"         # under factory-conductor: the id from the verifier brief;
                              # working alone: a stable name for this session, never the
                              # author of the change being proven
@@ -45,6 +46,7 @@ refuses uncommitted changes under `cmd/`, `internal/`, `frontend/src/`, `go.mod`
 make build                                       # embeds the frontend, stamps commit=HEAD
 "$SKILL/scripts/launch.sh" "$INSTANCE"           # plain instance
 "$SKILL/scripts/launch.sh" "$INSTANCE_OAUTH" --oauth   # OAuth 2.1 + /mcp enabled
+"$SKILL/scripts/launch.sh" "$INSTANCE_OIDC" --oidc     # OIDC sign-in, HMAC stub verifier
 ```
 
 What launch does for each instance:
@@ -146,6 +148,7 @@ you launched:
 ```sh
 "$SKILL/scripts/cleanup.sh" "$INSTANCE"
 "$SKILL/scripts/cleanup.sh" "$INSTANCE_OAUTH"
+"$SKILL/scripts/cleanup.sh" "$INSTANCE_OIDC"
 ```
 
 Cleanup sends SIGTERM to the pid in `.verify-run/$INSTANCE/pid` (SIGKILL after 3 s),
