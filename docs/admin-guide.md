@@ -24,13 +24,22 @@ arrived.
 | `service_account` | `Authorization: Bearer phr_live_<key>` | API keys minted for users |
 | `service_account` | `Authorization: Bearer <jwt>` | OAuth access tokens issued by phronesis (MCP clients) |
 
-Roles: `viewer` (read), `editor` (read/write), `admin` (full
-including these admin endpoints). The built-in password user is always
-`admin`. An OIDC sign-in projects the user into the SQLite `users`
-table: a new user gets `role=user`, which authorises as `viewer`; set
-`role=admin` on the row to promote them. The role is read from the row
-on every request, so promotion, suspension and deletion apply to live
-sessions at once. Mapping IdP group claims to roles is not built yet.
+Roles: `viewer` (read), `editor` (read and write pages, upload media),
+`admin` (everything, including these admin endpoints). The full role
+catalog, including the roles planned for enterprise use, is in
+[roles.md](roles.md).
+
+- The built-in password user is always `admin`.
+- An OIDC sign-in projects the user into the SQLite `users` table. A new
+  user is a `viewer`; an admin promotes them in the Users panel or with
+  `POST /api/admin/users/{id}/role`. Later sign-ins keep that role.
+- The role is read from the row on every request, so promotion, demotion,
+  suspension and deletion apply to open sessions at once.
+- Every page, workspace-page, live-update and media route checks the role.
+  A viewer sees a read-only editor with a banner; a write gets 403.
+- An API key or OAuth token never outranks its owner: its effective role is
+  the lesser of its scope and the owner's current role.
+- Mapping IdP group claims to roles is not built yet.
 
 ## Workspaces
 
@@ -96,6 +105,17 @@ Suspension takes effect within seconds — the in-process auth cache
 is invalidated synchronously so the user's keys stop working on the
 next request. The S5 manifold contract guarantees ≤60s propagation;
 in practice it's sub-second.
+
+### Changing a role
+
+```bash
+curl -b cookies.txt -X POST -H 'Content-Type: application/json' \
+  -d '{"role":"editor"}' http://localhost:8080/api/admin/users/123/role
+```
+
+`role` is `viewer`, `editor` or `admin`. The Users panel (command
+palette, "Manage users") has the same control. The change applies to
+the user's open sessions and to their API keys at once.
 
 ### Deleting
 
@@ -174,10 +194,19 @@ so the key stops working on the very next request.
 
 ### Using a key
 
+A key works on `/mcp` and on the HTTP API alike:
+
 ```bash
 curl -H 'Authorization: Bearer phr_live_abcd1234efgh_…' \
   http://localhost:8080/api/pages/my-page
 ```
+
+- A `read` key reads pages; a write returns 403. A `write` key also edits
+  pages and uploads media.
+- A key is pinned to the workspace it was requested in. It gets 403 on
+  other workspaces, and `GET /api/workspaces` lists only its own.
+- The key's role is capped at its owner's current role, so a write key
+  owned by a viewer acts as read.
 
 ## OAuth + MCP setup
 
@@ -231,9 +260,18 @@ For Claude Code:
 2. Add a new server with the URL `https://phronesis.your-domain.example`.
 3. The client performs RFC 7591 dynamic client registration against
    `/oauth/register` automatically.
-4. Your browser opens the phronesis cookie-login page (or your
-   configured OIDC IdP) for the OAuth consent step.
+4. Your browser opens the phronesis sign-in page if you are signed out,
+   then a consent page that names the client (marked "unverified": the
+   name is self-asserted), where it sends you back to, and the access it
+   gets. Nothing is issued until you click Approve; Deny returns
+   `error=access_denied` to the client.
 5. The client receives an access token + refresh token. Done.
+
+Anonymous dynamic registration accepts only loopback redirect URIs
+(`http://127.0.0.1`, `http://[::1]`, `http://localhost`), which is what
+local MCP clients use. Registering any other redirect URI needs an admin
+session. OAuth access tokens work on `/mcp` only; use an API key for the
+HTTP API.
 
 The client sees the `echo` tool by default. Real wiki tools (page
 list, get, write, search) land in subsequent stages.
@@ -254,7 +292,9 @@ Token shape: RS256 JWT with claims `iss`, `sub`, `aud`, `client_id`,
 `workspace`, `scope`, `iat`, `exp`. `client_id` becomes the
 `Principal.ID` after server-side verification; `workspace` and
 `scope` drive role mapping (`scope=admin` → admin role,
-`scope=write` → editor, otherwise viewer).
+`scope=write` → editor, otherwise viewer). The scope granted at consent is
+capped at the signing-in user's role: a viewer asking for `write` gets
+`read`.
 
 ## Operational tuning
 
@@ -332,9 +372,6 @@ is post-hoc detectable. Use only when OIDC is unreachable.
 
 ## What's not yet here
 
-- **Web UI for admin tasks.** The Users/Keys panels exist
-  (`/admin/users`, `/admin/keys` in the frontend), but workspace
-  CRUD is currently API-only.
 - **Per-workspace OAuth issuers.** All workspaces share one issuer.
 - **Wiki-aware MCP tools.** Stage 3c shipped the framework + an echo
   tool. Real tools (`pages/list`, `pages/get`, `pages/write`,
