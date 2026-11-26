@@ -110,12 +110,12 @@ comes from the feature file's Proof section:
 
 ```sh
 OUT=$(node "$SKILL/scripts/drive.mjs" page-edit-autosave "$INSTANCE"); RC=$?
-ART=(); for a in $(echo "$OUT" | python3 -c 'import sys,json;print("\n".join(json.load(sys.stdin)["artifacts"]))'); do ART+=(--artifact "$a"); done
+ART=(); for a in $(printf "%s" "$OUT" | python3 -c 'import sys,json;print("\n".join(json.load(sys.stdin)["artifacts"]))'); do ART+=(--artifact "$a"); done
 python3 "$SKILL/scripts/verify_evidence.py" record --instance "$INSTANCE" \
   --feature page-edit-autosave --verifier "$VERIFIER" \
   --result "$([ $RC = 0 ] && echo pass || echo fail)" \
   --action "typed into .cm-content on a new /w/ page, waited for autosave, reloaded" \
-  --observed "$(echo "$OUT" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(", ".join(c["name"]+"="+("ok" if c["ok"] else "FAIL") for c in d["checks"]))')" \
+  --observed "$(printf "%s" "$OUT" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(", ".join(c["name"]+"="+("ok" if c["ok"] else "FAIL") for c in d["checks"]))')" \
   --side-effect "file written: data/pages/default/verify-edit-*.md" "${ART[@]}"
 ```
 
