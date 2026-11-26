@@ -179,8 +179,11 @@ you launched:
 
 Container instances clean up inside `container.sh`: the compose smoke runs
 `docker compose -p "$INSTANCE_COMPOSE" down -v` and the Helm smoke deletes namespace
-`$INSTANCE_HELM`, then the port claims are released. With `KEEP=1` they stay up; remove
-them with the same two commands. Neither touches `.verify/` or any other project.
+`$INSTANCE_HELM`, then the port claims are released, and the teardown line appears in
+`smoke.log`. Then remove the run directory with `"$SKILL/scripts/cleanup.sh" "$INSTANCE_COMPOSE"`
+(and `$INSTANCE_HELM`); with no pid file it only removes `.verify-run/<instance>/`. With
+`KEEP=1` the stack stays up; remove it with the same two commands. Neither touches
+`.verify/` or any other project.
 
 Cleanup sends SIGTERM to the pid in `.verify-run/$INSTANCE/pid` (SIGKILL after 3 s),
 releases the port claim and removes `.verify-run/$INSTANCE/`. It never kills by process

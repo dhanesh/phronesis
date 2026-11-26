@@ -44,7 +44,8 @@ start_pf() {
 }
 cleanup() {
   stop_pf
-  [ "${KEEP:-0}" = 1 ] || kubectl --context "$KCTX" delete namespace "$NS" --wait=false >/dev/null 2>&1 || true
+  if [ "${KEEP:-0}" = 1 ]; then echo "teardown: skipped (KEEP=1), namespace $NS left"; return; fi
+  kubectl --context "$KCTX" delete namespace "$NS" --wait=false >/dev/null 2>&1 && echo "teardown: namespace $NS deleted" || echo "teardown: could not delete namespace $NS"
 }
 trap cleanup EXIT
 

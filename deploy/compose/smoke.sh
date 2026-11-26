@@ -24,7 +24,10 @@ wait_ready() {
   for _ in $(seq 1 60); do curl -sf "$BASE/api/readyz" >/dev/null && return 0; sleep 1; done
   echo "phronesis not ready at $BASE" >&2; dc logs --tail 50 >&2; return 1
 }
-cleanup() { [ "${KEEP:-0}" = 1 ] || dc down -v --remove-orphans >/dev/null 2>&1 || true; }
+cleanup() {
+  if [ "${KEEP:-0}" = 1 ]; then echo "teardown: skipped (KEEP=1), project $PROJECT left running"; return; fi
+  dc down -v --remove-orphans >/dev/null 2>&1 && echo "teardown: project $PROJECT and its volumes removed" || echo "teardown: down failed for $PROJECT"
+}
 trap cleanup EXIT
 
 dc down -v --remove-orphans >/dev/null 2>&1 || true

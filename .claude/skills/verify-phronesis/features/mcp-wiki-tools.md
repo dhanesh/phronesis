@@ -41,3 +41,4 @@ Side effect to record: file written: data/pages/default/agent-note-*.md.
 - Needs `--oidc --oauth`: keys come from the request -> approve flow (an OIDC user
   promoted to editor, so the write key is not capped to read).
 - Use the key from a cookie-less context; a session cookie outranks a bearer token.
+- `tools/list` also returns the baseline `echo` tool.
