@@ -176,6 +176,20 @@
     }
   }
 
+  // Returns the ?next= target only when it is a same-origin path, so a
+  // crafted link cannot turn the login form into an open redirect.
+  function safeNextPath() {
+    const raw = new URLSearchParams(window.location.search).get('next');
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '';
+    try {
+      const target = new URL(raw, window.location.origin);
+      if (target.origin !== window.location.origin) return '';
+      return target.pathname + target.search + target.hash;
+    } catch {
+      return '';
+    }
+  }
+
   async function login() {
     loginError = '';
     const res = await fetch('/api/login', {
@@ -190,6 +204,13 @@
     }
     authenticated = true;
     password = '';
+    // handleOAuthAuthorize bounces a signed-out browser to /?next=<authorize
+    // url>; send it back so the OAuth client receives its code.
+    const next = safeNextPath();
+    if (next) {
+      window.location.assign(next);
+      return;
+    }
     // Re-pull session to capture role for the freshly-logged-in user.
     await loadSession();
     await loadWorkspaces();
