@@ -14,6 +14,8 @@
     workspaces = [],
     currentWorkspace = '',
     isAdmin = false,
+    canEdit = false,
+    currentPage = '',
     onSelect,
   } = $props();
 
@@ -82,6 +84,25 @@
         hint: 'Workspace',
         invoke: () => onSelect?.({ type: 'switch-workspace', slug: w.slug }),
       }));
+    // Page management for editors: type a new name to rename the open page.
+    if (canEdit && currentPage) {
+      if (trimmed && trimmed !== currentPage) {
+        commands.push({
+          kind: 'command',
+          id: 'cmd:page.rename',
+          label: `Rename "${currentPage}" to "${q.trim()}"`,
+          hint: 'Page',
+          invoke: () => onSelect?.({ type: 'rename-page', from: currentPage, to: q.trim() }),
+        });
+      }
+      commands.push({
+        kind: 'command',
+        id: 'cmd:page.delete',
+        label: `Delete page "${currentPage}"`,
+        hint: 'Page',
+        invoke: () => onSelect?.({ type: 'delete-page', name: currentPage }),
+      });
+    }
     // Any signed-in user can ask an admin for an API key (TN7).
     commands.push({
       kind: 'command',

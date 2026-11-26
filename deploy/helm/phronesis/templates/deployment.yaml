@@ -1,0 +1,107 @@
+{{- $publicURL := required "publicURL is required (browser-facing base URL)" .Values.publicURL | trimSuffix "/" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "phronesis.fullname" . }}
+  labels: {{- include "phronesis.labels" . | nindent 4 }}
+spec:
+  # SQLite and on-disk pages need a single writer: one replica, and
+  # Recreate so the old pod releases the volume before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {{- include "phronesis.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "phronesis.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ toJson .Values | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: phronesis
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PHRONESIS_PUBLIC_URL
+              value: {{ $publicURL | quote }}
+            - name: PHRONESIS_ADMIN_USER
+              value: {{ .Values.auth.adminUser | quote }}
+            - name: PHRONESIS_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "phronesis.secretName" . }}
+                  key: admin-password
+            {{- if .Values.oidc.enabled }}
+            - name: PHRONESIS_OIDC_ENABLED
+              value: "1"
+            - name: PHRONESIS_OIDC_ISSUER
+              value: {{ required "oidc.issuer is required when oidc.enabled" .Values.oidc.issuer | quote }}
+            - name: PHRONESIS_OIDC_CLIENT_ID
+              value: {{ .Values.oidc.clientID | quote }}
+            - name: PHRONESIS_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "phronesis.secretName" . }}
+                  key: oidc-client-secret
+            {{- with .Values.oidc.providerURL }}
+            - name: PHRONESIS_OIDC_PROVIDER_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.oauth.enabled }}
+            - name: PHRONESIS_OAUTH_ENABLED
+              value: "1"
+            - name: PHRONESIS_OAUTH_ISSUER
+              value: {{ $publicURL | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /api/readyz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-data" (include "phronesis.fullname" .)) .Values.persistence.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}

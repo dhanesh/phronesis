@@ -83,7 +83,40 @@
       mcpSetupOpen = true;
     } else if (item.type === 'open-key-request') {
       keyRequestOpen = true;
+    } else if (item.type === 'rename-page') {
+      renamePage(item.from, item.to);
+    } else if (item.type === 'delete-page') {
+      deletePage(item.name);
     }
+  }
+
+  async function renamePage(from, to) {
+    const res = await fetch(`${pagePath(from)}/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      status = data.error || `Rename failed (${res.status})`;
+      return;
+    }
+    status = `Renamed to ${data.page.name}`;
+    await loadPages();
+    await loadPage(data.page.name);
+  }
+
+  async function deletePage(name) {
+    if (!confirm(`Delete page "${name}"? Links to it will point at an empty page.`)) return;
+    const res = await fetch(pagePath(name), { method: 'DELETE' });
+    if (!res.ok && res.status !== 204) {
+      const data = await res.json().catch(() => ({}));
+      status = data.error || `Delete failed (${res.status})`;
+      return;
+    }
+    status = `Deleted ${name}`;
+    await loadPages();
+    await loadPage(defaultPage);
   }
 
   async function switchWorkspace(slug) {
@@ -283,6 +316,17 @@
       if (!draft) {
         draft = page.content;
       }
+    });
+    // Another client renamed or deleted the open page.
+    source.addEventListener('renamed', (event) => {
+      const payload = JSON.parse(event.data);
+      status = `Page renamed to ${payload.page.name}`;
+      loadPages();
+      loadPage(payload.page.name);
+    });
+    source.addEventListener('deleted', () => {
+      status = 'This page was deleted by someone else.';
+      loadPages();
     });
     source.addEventListener('update', (event) => {
       const payload = JSON.parse(event.data);
@@ -530,6 +574,8 @@
   workspaces={workspaces}
   currentWorkspace={currentWorkspace}
   isAdmin={userRole === 'admin'}
+  {canEdit}
+  currentPage={page.name}
   onSelect={onPaletteSelect}
 />
 

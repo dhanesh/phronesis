@@ -1,0 +1,7 @@
+apiVersion: v2
+name: phronesis
+description: Self-hosted Markdown wiki for humans and AI agents (OIDC SSO, RBAC, MCP).
+type: application
+version: 0.1.0
+appVersion: "0.1.0-beta"
+home: https://github.com/dhanesh/phronesis

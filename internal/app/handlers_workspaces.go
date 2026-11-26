@@ -113,6 +113,10 @@ func (s *Server) handleWorkspaceRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleEvents(w, r, slug, name)
 		return
 	}
+	if strings.HasSuffix(pageTail, "/rename") {
+		s.handleRename(w, r, slug, strings.TrimSuffix(pageTail, "/rename"))
+		return
+	}
 	s.handlePage(w, r, slug, pageTail)
 }
 

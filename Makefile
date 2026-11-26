@@ -48,7 +48,7 @@ CHANNEL ?=
 WEBFS_DIST := internal/webfs/dist
 FRONTEND_DIST := frontend/dist
 
-.PHONY: help build test lint release docker clean test-flake-monitor bundle-size bench-decorations
+.PHONY: help build test lint release docker image compose-test helm-test clean test-flake-monitor bundle-size bench-decorations
 
 help: ## Show this help (auto-extracted from target docstrings)
 	@awk 'BEGIN {FS = ":.*?## "; printf "Usage: make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -113,6 +113,25 @@ docker: ## Build local multi-arch container image (goreleaser snapshot, no publi
 		echo "error: goreleaser not on PATH. Install: brew install goreleaser" >&2; exit 1; \
 	fi
 	goreleaser release --snapshot --clean --skip=archive,homebrew,nfpm
+
+IMAGE ?= phronesis:dev
+DOCKER_CONTEXT ?= colima
+IMAGE_ARCH ?= $(shell go env GOARCH)
+
+image: build ## Build the release Dockerfile for the host arch in Colima (no goreleaser, no push)
+	mkdir -p dist/image
+	SOURCE_DATE_EPOCH=$$(git log -1 --format=%ct 2>/dev/null || echo 0) \
+	    CGO_ENABLED=0 GOOS=linux GOARCH=$(IMAGE_ARCH) \
+	    go build -trimpath -tags=prod -ldflags="$(LDFLAGS)" -o dist/image/phronesis ./cmd/phronesis
+	docker --context $(DOCKER_CONTEXT) build --platform linux/$(IMAGE_ARCH) \
+	    --label org.opencontainers.image.revision=$(COMMIT) \
+	    -t $(IMAGE) -f Dockerfile dist/image
+
+compose-test: image ## Run phronesis + Dex in Colima (Docker Compose) and the end-to-end smoke test
+	./deploy/compose/smoke.sh
+
+helm-test: image ## Install the Helm chart + Dex into Colima k3s and run the end-to-end smoke test
+	./deploy/helm/smoke.sh
 
 clean: ## Remove build outputs (binary, frontend/dist, webfs/dist, goreleaser dist)
 	rm -rf phronesis dist $(WEBFS_DIST) $(FRONTEND_DIST)

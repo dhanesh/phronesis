@@ -1,0 +1,85 @@
+# phronesis + Dex (OIDC) for local use and the beta quick start.
+#
+#   make image        # builds phronesis:dev in Colima (or set PHRONESIS_IMAGE)
+#   export PHRONESIS_ADMIN_PASSWORD='<a long random secret>'
+#   docker compose -f deploy/compose/compose.yaml up -d
+#   open http://localhost:8080  -> "Sign in with SSO"
+#
+# Test users in Dex (change before sharing a beta):
+#   admin@example.com / admin-pass, editor@example.com / editor-pass,
+#   viewer@example.com / viewer-pass
+# Every SSO user starts as viewer; promote them in Manage users (sign in
+# with the password admin "admin" / $PHRONESIS_ADMIN_PASSWORD).
+#
+# Host ports: PHRONESIS_PORT (default 8080), DEX_PORT (default 5556).
+# Data: the phronesis-data volume (pages, SQLite, blobs, audit log, OAuth
+# signing key). Back it up with deploy/compose/backup.sh.
+name: phronesis
+
+configs:
+  dex:
+    # Compose interpolates ${...} here; $$ is a literal $ (bcrypt hashes).
+    content: |
+      issuer: http://localhost:${DEX_PORT:-5556}/dex
+      storage:
+        type: memory
+      web:
+        http: 0.0.0.0:5556
+      oauth2:
+        skipApprovalScreen: true
+      staticClients:
+        - id: phronesis
+          name: phronesis
+          secret: ${DEX_CLIENT_SECRET:-phronesis-dex-client-secret}
+          redirectURIs:
+            - http://localhost:${PHRONESIS_PORT:-8080}/api/auth/oidc/callback
+      enablePasswordDB: true
+      staticPasswords:
+        - email: admin@example.com
+          hash: "$$2a$$10$$zxuhPsfNrrncQcBWeJp/i.mImBj6hePAC3E4y4s8ukp4DZj2MGbT."
+          username: admin
+          userID: 0b5f5c1e-0001-4d6b-9a52-000000000001
+        - email: editor@example.com
+          hash: "$$2a$$10$$9sbzLFnbiCTdDjSxZOXvpu8TbSytFJPURLjFFP6yroCDDB5qTqz.y"
+          username: editor
+          userID: 0b5f5c1e-0002-4d6b-9a52-000000000002
+        - email: viewer@example.com
+          hash: "$$2a$$10$$PBOzCFHBw5.yaftWucalbezN06VWJ72v3T7kAipI0zVi9lAtZS/k6"
+          username: viewer
+          userID: 0b5f5c1e-0003-4d6b-9a52-000000000003
+
+services:
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    configs:
+      - source: dex
+        target: /etc/dex/config.yaml
+    ports:
+      - "${DEX_PORT:-5556}:5556"
+
+  phronesis:
+    image: ${PHRONESIS_IMAGE:-phronesis:dev}
+    depends_on: [dex]
+    ports:
+      - "${PHRONESIS_PORT:-8080}:8080"
+    environment:
+      PHRONESIS_ADMIN_PASSWORD: ${PHRONESIS_ADMIN_PASSWORD:?set PHRONESIS_ADMIN_PASSWORD}
+      PHRONESIS_PUBLIC_URL: http://localhost:${PHRONESIS_PORT:-8080}
+      PHRONESIS_OIDC_ENABLED: "1"
+      PHRONESIS_OIDC_ISSUER: http://localhost:${DEX_PORT:-5556}/dex
+      PHRONESIS_OIDC_PROVIDER_URL: http://dex:5556/dex
+      PHRONESIS_OIDC_CLIENT_ID: phronesis
+      PHRONESIS_OIDC_CLIENT_SECRET: ${DEX_CLIENT_SECRET:-phronesis-dex-client-secret}
+      PHRONESIS_OAUTH_ENABLED: "1"
+      PHRONESIS_OAUTH_ISSUER: http://localhost:${PHRONESIS_PORT:-8080}
+    volumes:
+      - phronesis-data:/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/phronesis", "-healthcheck", "http://127.0.0.1:8080/api/readyz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+
+volumes:
+  phronesis-data:

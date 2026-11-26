@@ -527,6 +527,8 @@ func NewServer(cfg Config) (*Server, error) {
 			return nil, fmt.Errorf("mcp: register echo tool: %w", err)
 		}
 	}
+	// Wiki MCP tools need the Server (workspaces + audit); registered
+	// after construction below.
 
 	app := &Server{
 		cfg:            cfg,
@@ -611,6 +613,13 @@ func NewServer(cfg Config) (*Server, error) {
 	// handled by Server.Close.
 	app.janitor.Start()
 
+	if app.mcp != nil {
+		for _, t := range app.wikiMCPTools() {
+			if err := app.mcp.Tools.Register(t); err != nil {
+				return nil, fmt.Errorf("mcp: register %s: %w", t.Name(), err)
+			}
+		}
+	}
 	return app, nil
 }
 

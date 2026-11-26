@@ -1,0 +1,61 @@
+# phronesis Helm values. Required: publicURL and an admin password
+# (auth.adminPassword or auth.existingSecret). See deploy/helm/README.md.
+
+image:
+  repository: ghcr.io/dhanesh/phronesis
+  tag: ""            # defaults to the chart appVersion
+  pullPolicy: IfNotPresent
+
+# Browser-facing base URL (scheme + host [+ port]), e.g. https://wiki.example.com.
+# Used for the SSO redirect URI and the OAuth issuer.
+publicURL: ""
+
+auth:
+  adminUser: admin
+  # Built-in admin password. Required unless existingSecret is set.
+  adminPassword: ""
+  # Use an existing Secret instead. Keys: admin-password, and
+  # oidc-client-secret when oidc.enabled.
+  existingSecret: ""
+
+oidc:
+  enabled: false
+  issuer: ""         # browser-facing issuer, e.g. https://dex.example.com/dex
+  providerURL: ""    # optional in-cluster URL for discovery/token/JWKS, e.g. http://dex.auth:5556/dex
+  clientID: phronesis
+  clientSecret: ""   # or auth.existingSecret key oidc-client-secret
+
+oauth:
+  # OAuth 2.1 server for MCP clients (issuer = publicURL).
+  enabled: true
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: ""   # cluster default when empty
+  accessMode: ReadWriteOnce
+  existingClaim: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: wiki.example.com
+  tls: []            # - secretName: wiki-tls
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 512Mi
+
+extraEnv: []         # - name: PHRONESIS_API_KEY ...
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

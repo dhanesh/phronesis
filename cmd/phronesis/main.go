@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -38,7 +39,23 @@ const drainTimeout = 30 * time.Second
 
 func main() {
 	showVersion := flag.Bool("version", false, "print version information and exit")
+	healthcheck := flag.String("healthcheck", "", "GET <url> (e.g. http://127.0.0.1:8080/api/readyz) and exit 0 on 200; for container health checks in images without curl")
 	flag.Parse()
+
+	if *healthcheck != "" {
+		client := &http.Client{Timeout: 5 * time.Second}
+		resp, err := client.Get(*healthcheck)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "healthcheck:", err)
+			os.Exit(1)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			fmt.Fprintln(os.Stderr, "healthcheck: HTTP", resp.StatusCode)
+			os.Exit(1)
+		}
+		return
+	}
 
 	if *showVersion {
 		// Single-line format keeps scripting simple: `phronesis --version | awk ...`
