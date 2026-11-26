@@ -75,7 +75,7 @@
       </p>
       <dl>
         <dt>Sends you back to</dt>
-        <dd data-testid="consent-redirect">{info.redirect_host}{#if info.loopback} (this computer){/if}</dd>
+        <dd data-testid="consent-redirect">{info.redirect_host}{#if info.loopback}&nbsp;(this computer){/if}</dd>
         <dt>Access granted</dt>
         <dd data-testid="consent-scope">{scopeText[info.granted_scope] || info.granted_scope}</dd>
       </dl>

@@ -719,12 +719,17 @@
     min-height: 0;
   }
 
+  /* With the read-only banner the card has two rows: banner, then editor. */
+  .editor-card:has(.readonly-banner) {
+    grid-template-rows: auto 1fr;
+  }
+
   .rail-card {
     padding: 0.9rem 1.1rem;
   }
 
   .readonly-banner {
-    margin: 0 0 0.6rem;
+    margin: 0.6rem 0.6rem 0;
     padding: 0.5rem 0.8rem;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm, 6px);
