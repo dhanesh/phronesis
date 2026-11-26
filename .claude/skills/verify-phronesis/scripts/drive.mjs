@@ -137,7 +137,13 @@ const features = {
     check('api_returns_typed_text', api.page?.content?.includes(text));
     await page.reload();
     await editor.waitFor();
-    check('text_survives_reload', (await editor.innerText()).includes(text));
+    // The editor mounts before the page body loads; wait for the text.
+    let shown = '';
+    for (let i = 0; i < 25 && !shown.includes(text); i++) {
+      shown = await editor.innerText();
+      if (!shown.includes(text)) await page.waitForTimeout(200);
+    }
+    check('text_survives_reload', shown.includes(text));
     await shot(page, 'after-reload.png');
   },
 
