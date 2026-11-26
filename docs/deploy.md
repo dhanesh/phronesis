@@ -83,15 +83,23 @@ IdP.
 
 ### Backup (Helm)
 
-Scale to zero, copy the PVC, scale back:
+Scale to zero, copy the volume out through a helper pod, scale back. (Do
+not stream `tar` through `kubectl run -i`: it treats the stream as text and
+corrupts the archive.)
 
 ```bash
 kubectl scale deploy/phronesis --replicas=0
-kubectl run backup --rm -i --restart=Never --image=busybox \
-  --overrides='{"spec":{"volumes":[{"name":"d","persistentVolumeClaim":{"claimName":"phronesis-data"}}],"containers":[{"name":"backup","image":"busybox","command":["tar","czf","-","-C","/data","."],"volumeMounts":[{"name":"d","mountPath":"/data"}]}]}}' \
-  > phronesis-backup.tgz
+kubectl wait --for=delete pod -l app.kubernetes.io/instance=phronesis --timeout=90s
+kubectl run phronesis-backup --restart=Never --image=busybox --overrides='{"spec":{"volumes":[{"name":"d","persistentVolumeClaim":{"claimName":"phronesis-data"}}],"containers":[{"name":"phronesis-backup","image":"busybox","command":["sleep","3600"],"volumeMounts":[{"name":"d","mountPath":"/data"}]}]}}'
+kubectl wait --for=condition=Ready pod/phronesis-backup
+kubectl exec phronesis-backup -- tar czf /tmp/phronesis-backup.tgz -C /data .
+kubectl cp phronesis-backup:/tmp/phronesis-backup.tgz ./phronesis-backup.tgz
+kubectl delete pod phronesis-backup
 kubectl scale deploy/phronesis --replicas=1
 ```
+
+The PVC name is `<release>-data` (`phronesis-data` for release
+`phronesis`).
 
 ## Using another OIDC provider
 

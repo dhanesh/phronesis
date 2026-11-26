@@ -48,6 +48,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# A namespace left Terminating by an earlier run must finish first.
+kubectl --context "$KCTX" wait --for=delete "namespace/$NS" --timeout=300s >/dev/null 2>&1 || true
 kubectl --context "$KCTX" create namespace "$NS" --dry-run=client -o yaml | kubectl --context "$KCTX" apply -f - >/dev/null
 sed -e "s/__DEX_PORT__/${DEX_PORT}/" -e "s/__WIKI_PORT__/${WIKI_PORT}/" test/dex.yaml | k apply -f - >/dev/null
 k rollout status deploy/dex --timeout=180s
