@@ -1,7 +1,7 @@
 # auth-login: Sign in and sign out
 
 - id: auth-login
-- proven: 4c4f87c9182ff85c6252556d44ce8d15d4b17a26
+- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
 - anchors: frontend/src/App.svelte:login, internal/app/handlers_auth.go:handleLogin, internal/auth/auth.go
 - constraints: collab-wiki:T9
 
