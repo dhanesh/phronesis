@@ -26,6 +26,10 @@ type ClaimMapping struct {
 	// DisplayNameClaim is OPTIONAL. If present, surfaces as Claims["display_name"].
 	DisplayNameClaim string
 
+	// EmailClaim is OPTIONAL. If present, surfaces as Claims["email"] so the
+	// login handler can project it into the users table.
+	EmailClaim string
+
 	// GroupsClaim is OPTIONAL. If present, the claim value (string or []string)
 	// is split into Claims["groups"] as a comma-joined string for audit purposes.
 	// v1 does NOT use groups for authorization (B2 role assignment is external).
@@ -86,6 +90,11 @@ func (cm ClaimMapping) Apply(claims map[string]any) (principal.Principal, error)
 	if cm.DisplayNameClaim != "" {
 		if v, ok := stringClaim(claims, cm.DisplayNameClaim); ok {
 			out.Claims["display_name"] = v
+		}
+	}
+	if cm.EmailClaim != "" {
+		if v, ok := stringClaim(claims, cm.EmailClaim); ok {
+			out.Claims["email"] = v
 		}
 	}
 	if cm.GroupsClaim != "" {

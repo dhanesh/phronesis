@@ -3,13 +3,16 @@ package app
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/dhanesh/phronesis/internal/audit"
 	"github.com/dhanesh/phronesis/internal/auth"
+	"github.com/dhanesh/phronesis/internal/auth/oidc"
 	"github.com/dhanesh/phronesis/internal/principal"
 	"github.com/dhanesh/phronesis/internal/sessions"
 )
@@ -49,6 +52,25 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Project the user into the SQLite store (user-mgmt-mcp T2). A new
+	// user is role 'user' (authorises as viewer); an existing row keeps
+	// the role an admin gave it. A suspended account gets no session.
+	if s.store != nil {
+		if err := s.projectOIDCUser(r.Context(), p); err != nil {
+			if errors.Is(err, oidc.ErrUserSuspended) {
+				s.recordAudit(audit.Event{
+					At:          time.Now().UTC(),
+					Action:      "auth.oidc_suspended",
+					PrincipalID: p.ID,
+				})
+				writeError(w, http.StatusForbidden, "account suspended")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "user projection failed")
+			return
+		}
+	}
+
 	// Issue a session using the same store-backed Login path as password auth.
 	// We directly persist a session record keyed by a random token so the
 	// Principal's id becomes the session's username.
@@ -73,6 +95,37 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 		WorkspaceID:   p.WorkspaceID,
 	})
 	writeJSON(w, http.StatusOK, map[string]any{"username": p.ID})
+}
+
+// projectOIDCUser upserts the users row for an authenticated OIDC
+// principal, preserving any role already stored for it.
+func (s *Server) projectOIDCUser(ctx context.Context, p principal.Principal) error {
+	role := "user"
+	var existing string
+	err := s.store.DB().QueryRowContext(ctx, `SELECT role FROM users WHERE oidc_sub = ?`, p.ID).Scan(&existing)
+	switch {
+	case err == nil:
+		role = existing
+	case !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
+	_, err = oidc.ProjectClaims(ctx, s.store.DB(), p.ID, p.Claims["email"], p.Claims["display_name"], role)
+	return err
+}
+
+// oidcUserRole reads the projected role for an OIDC session. ok is false
+// when the user row is missing or not active, which revokes the session.
+func (s *Server) oidcUserRole(ctx context.Context, sub string) (principal.Role, bool) {
+	var role, status string
+	err := s.store.DB().QueryRowContext(ctx,
+		`SELECT role, status FROM users WHERE oidc_sub = ?`, sub).Scan(&role, &status)
+	if err != nil || status != "active" {
+		return "", false
+	}
+	if role == "admin" {
+		return principal.RoleAdmin, true
+	}
+	return principal.RoleViewer, true
 }
 
 // issueOIDCSession creates a cookie-session record in the supplied store for

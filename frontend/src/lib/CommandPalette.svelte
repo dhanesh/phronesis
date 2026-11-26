@@ -82,6 +82,13 @@
         hint: 'Workspace',
         invoke: () => onSelect?.({ type: 'switch-workspace', slug: w.slug }),
       }));
+    // Any signed-in user can ask an admin for an API key (TN7).
+    commands.push({
+      kind: 'command',
+      id: 'cmd:keys.request',
+      label: 'Request an API key',
+      invoke: () => onSelect?.({ type: 'open-key-request' }),
+    });
     if (isAdmin) {
       commands.push({
         kind: 'command',

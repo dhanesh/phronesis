@@ -25,9 +25,12 @@ arrived.
 | `service_account` | `Authorization: Bearer <jwt>` | OAuth access tokens issued by phronesis (MCP clients) |
 
 Roles: `viewer` (read), `editor` (read/write), `admin` (full
-including these admin endpoints). The role is set per user in the
-SQLite store; OIDC sign-ins derive the role from a configurable group
-claim.
+including these admin endpoints). The built-in password user is always
+`admin`. An OIDC sign-in projects the user into the SQLite `users`
+table: a new user gets `role=user`, which authorises as `viewer`; set
+`role=admin` on the row to promote them. The role is read from the row
+on every request, so promotion, suspension and deletion apply to live
+sessions at once. Mapping IdP group claims to roles is not built yet.
 
 ## Workspaces
 
@@ -124,18 +127,31 @@ A database compromise does not expose the tokens.
 
 ### Minting a key (admin → user flow)
 
-The user requests a key via `POST /api/admin/keys/requests`; the
-admin approves with:
+A signed-in OIDC user requests a key from the web UI at
+`/settings/keys/request` (or "Request an API key" in the Cmd-K
+palette), or over HTTP:
+
+```bash
+curl -b user-cookies.txt -X POST http://localhost:8080/api/keys/requests \
+  -H 'Content-Type: application/json' \
+  -d '{"scope":"write","label":"my-laptop"}'
+```
+
+`scope` is `read` or `write`. `GET /api/keys/requests` lists the
+caller's own requests and their decision. The built-in password admin
+has no `users` row and cannot file requests.
+
+The admin sees pending requests in the "Manage API keys" dialog, or
+lists them with `GET /api/admin/keys/requests`, and approves with:
 
 ```bash
 curl -b cookies.txt -X POST \
-  http://localhost:8080/api/admin/keys/requests/42/approve \
-  -H 'Content-Type: application/json' \
-  -d '{"scope":"write","label":"my-laptop","expires_at":"2027-01-01T00:00:00Z"}'
+  http://localhost:8080/api/admin/keys/requests/42/approve
 ```
 
-The response carries `key_plaintext` — copy it once and hand it to
-the user. There is no way to retrieve it afterwards.
+The key gets the scope and label the user requested. The `201`
+response carries `key.plaintext`: copy it once and hand it to the
+user. There is no way to retrieve it afterwards.
 
 ### Listing keys
 

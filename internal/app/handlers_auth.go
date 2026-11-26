@@ -145,11 +145,25 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 				claims["auth_method"] = am
 			}
 		}
+		// The built-in password user is the configured admin. An OIDC
+		// session takes its role from the projected users row on every
+		// request, so promotion, suspension and deletion apply at once.
+		role := principal.RoleAdmin
+		if claims["auth_method"] == "oidc" {
+			role = principal.RoleViewer
+			if s.store != nil {
+				r2, ok := s.oidcUserRole(r.Context(), id)
+				if !ok {
+					return principal.Principal{}, false
+				}
+				role = r2
+			}
+		}
 		return principal.Principal{
 			Type:        ptype,
 			ID:          id,
 			WorkspaceID: wsID,
-			Role:        principal.RoleAdmin,
+			Role:        role,
 			Claims:      claims,
 		}, true
 	}

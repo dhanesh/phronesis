@@ -31,7 +31,14 @@ func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-		if _, ok := s.auth.Username(r); !ok {
+		_, ok := s.auth.Username(r)
+		if ok {
+			// A session whose principal was refused (a suspended or
+			// deleted OIDC user) is not authenticated.
+			_, perr := principal.FromContext(r.Context())
+			ok = perr == nil
+		}
+		if !ok {
 			if strings.HasPrefix(r.URL.Path, "/api/") {
 				writeError(w, http.StatusUnauthorized, "authentication required")
 			} else {

@@ -7,6 +7,7 @@
   import UsersManager from './lib/UsersManager.svelte';
   import KeysManager from './lib/KeysManager.svelte';
   import MCPSetupPanel from './lib/MCPSetupPanel.svelte';
+  import KeyRequestPanel from './lib/KeyRequestPanel.svelte';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -48,6 +49,7 @@
   let usersManagerOpen = $state(false);
   let keysManagerOpen = $state(false);
   let mcpSetupOpen = $state(false);
+  let keyRequestOpen = $state(false);
 
   function pagePath(name) {
     const ws = encodeURIComponent(currentWorkspace);
@@ -72,6 +74,8 @@
       keysManagerOpen = true;
     } else if (item.type === 'open-mcp-setup') {
       mcpSetupOpen = true;
+    } else if (item.type === 'open-key-request') {
+      keyRequestOpen = true;
     }
   }
 
@@ -121,6 +125,7 @@
       const initialPage = match ? decodeURIComponent(match[1]) : defaultPage;
       await Promise.all([loadPages(), loadPage(initialPage)]);
       // loadPage calls reconnectStream() internally; no extra connectStream() needed.
+      if (window.location.pathname === '/settings/keys/request') keyRequestOpen = true;
     }
   });
 
@@ -503,6 +508,7 @@
 <UsersManager bind:open={usersManagerOpen} />
 <KeysManager bind:open={keysManagerOpen} />
 <MCPSetupPanel bind:open={mcpSetupOpen} />
+<KeyRequestPanel bind:open={keyRequestOpen} />
 
 <style>
   /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).

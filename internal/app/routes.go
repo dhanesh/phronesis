@@ -75,6 +75,10 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 	// return 503 when StorePath is unset.
 	mux.HandleFunc("/api/admin/users", s.withAuth(s.withAdmin(s.handleAdminUsers)))
 	mux.HandleFunc("/api/admin/users/", s.withAuth(s.withAdmin(s.handleAdminUsers)))
+	// User side of the key request -> approve flow (TN7).
+	mux.HandleFunc("/api/keys/requests", s.withAuth(s.handleKeyRequests))
+	// /settings/... are SPA routes (the key request form).
+	mux.HandleFunc("/settings/", s.withAuth(s.handleWikiPage))
 	mux.HandleFunc("/api/admin/keys", s.withAuth(s.withAdmin(s.handleAdminKeys)))
 	mux.HandleFunc("/api/admin/keys/", s.withAuth(s.withAdmin(s.handleAdminKeys)))
 

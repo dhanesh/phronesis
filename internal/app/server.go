@@ -727,7 +727,11 @@ func buildOIDCAdapter(cfg Config) (*oidc.Adapter, error) {
 			SchemaVersion:    oidc.CurrentSchemaVersion,
 			UserIDClaim:      "sub",
 			DisplayNameClaim: "name",
-			RoleBinding:      func(map[string]any) principal.Role { return principal.RoleAdmin },
+			EmailClaim:       "email",
+			// Decision 2026-11-27: a new OIDC user is a viewer. The real
+			// role comes from the projected users row on every request
+			// (principalFromRequest); admins promote in-app.
+			RoleBinding:      func(map[string]any) principal.Role { return principal.RoleViewer },
 			WorkspaceBinding: func(map[string]any) string { return defaultWorkspaceID },
 		},
 	})
