@@ -5,6 +5,15 @@
 # removes ONLY its own compose project (KEEP=1 leaves it running).
 set -euo pipefail
 cd "$(dirname "$0")"
+# OUT_DIR=<dir> also saves each phase's JSON as <dir>/<phase>.json.
+run_smoke() {
+  if [ -n "${OUT_DIR:-}" ]; then
+    mkdir -p "$OUT_DIR"
+    node ../smoke/smoke.mjs "$BASE" "$PHRONESIS_ADMIN_PASSWORD" "$1" | tee "$OUT_DIR/$1.json"
+  else
+    node ../smoke/smoke.mjs "$BASE" "$PHRONESIS_ADMIN_PASSWORD" "$1"
+  fi
+}
 CTX="${DOCKER_CONTEXT:-colima}"
 PROJECT="${PROJECT:-phronesis-smoke}"
 export PHRONESIS_PORT="${PHRONESIS_PORT:-18080}" DEX_PORT="${DEX_PORT:-15556}"
@@ -21,10 +30,10 @@ trap cleanup EXIT
 dc down -v --remove-orphans >/dev/null 2>&1 || true
 dc up -d
 wait_ready
-node ../smoke/smoke.mjs "$BASE" "$PHRONESIS_ADMIN_PASSWORD" full
+run_smoke full
 dc up -d --force-recreate phronesis
 wait_ready
-node ../smoke/smoke.mjs "$BASE" "$PHRONESIS_ADMIN_PASSWORD" persist
+run_smoke persist
 for _ in $(seq 1 60); do
   [ "$(docker --context "$CTX" inspect "$PROJECT-phronesis-1" --format '{{.State.Health.Status}}')" = healthy ] && break
   sleep 2

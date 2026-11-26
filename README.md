@@ -9,13 +9,16 @@ The product is positioned for individuals capturing personal notes, teams sharin
 This repository implements:
 
 - file-backed Markdown pages addressed by wiki-style page names, scoped per workspace
-- built-in username/password authentication, optional OIDC sign-in, optional break-glass admin
+- built-in username/password authentication, OIDC single sign-on against a real IdP (authorization code + PKCE; tested with Dex), optional break-glass admin
+- viewer / editor / admin RBAC enforced on every page, live-update and media route ([roles](docs/roles.md))
 - a Go HTTP server that serves both API endpoints and the compiled frontend
 - autosave page editing over HTTP and live page updates over server-sent events
 - derived wiki metadata for links, backlinks, tags, and task list items
 - a Svelte frontend with a single CodeMirror-based editor surface and SilverBullet-style live preview (headings, bold/italic, inline code, lists, tables, images, fenced code, blockquotes, admonitions, frontmatter pill bar, attribute pills, hashtag chips, wiki-link chips)
 - workspace + user + API key administration backed by SQLite, with admin endpoints for workspace CRUD, user suspension/reactivation/deletion, and API key minting/revocation
-- an MCP HTTP transport at `/mcp` with OAuth 2.1 + PKCE, dynamic client registration (RFC 7591), JWKS publication, and a per-tool JSON-schema input registry — Claude Code and equivalent MCP clients can connect, complete the OAuth flow once, and use registered tools
+- an MCP HTTP transport at `/mcp` with OAuth 2.1 + PKCE, a consent screen, dynamic client registration (RFC 7591; loopback redirect URIs only without an admin), and wiki tools `list_pages`, `read_page`, `write_page`, `search_pages` — Claude Code and equivalent MCP clients connect, approve once, and work on pages
+- API keys (user requests, admin approves) that work on the HTTP API and on MCP, capped at the owner's role and pinned to one workspace
+- a production container image, a Docker Compose stack with Dex, and a Helm chart — see [docs/deploy.md](docs/deploy.md)
 - per-bearer-key rate limiting (sliding window + in-flight cap), an async audit pipeline with 90-day raw retention then aggregates, periodic workspace snapshots, and a fsync'd spillover journal for bounded loss-on-crash
 
 Git sync to a remote, CLI automation, and a `/metrics` Prometheus
@@ -71,15 +74,18 @@ server-rendered HTML), see [`docs/markdown-dialect.md`](docs/markdown-dialect.md
 
 ### Authentication
 
-- Built-in login uses a single configured username and password.
-- Session state is tracked with an HTTP-only cookie.
+- Built-in login uses a single configured username and password (the admin).
+- OIDC single sign-on: "Sign in with SSO" on the login page. New SSO users
+  are viewers until an admin promotes them.
+- Session state is tracked with an HTTP-only cookie; API keys use
+  `Authorization: Bearer phr_live_...`.
 - Unauthenticated API requests are rejected.
 
 ## Development
 
 ### Prerequisites
 
-- Go `1.24.5`
+- Go `1.25` (see `go.mod`)
 - Node.js `22.x`
 - npm `10.x`
 - `goreleaser` (only for local releases; `brew install goreleaser`). CI uses
@@ -88,14 +94,17 @@ server-rendered HTML), see [`docs/markdown-dialect.md`](docs/markdown-dialect.md
 
 ### Quick start
 
-The project ships a [`Makefile`](./Makefile) with seven targets covering the
-common dev loop. Run `make help` for the full list.
+The project ships a [`Makefile`](./Makefile) covering the common dev loop.
+Run `make help` for the full list.
 
 ```bash
-make test    # Backend tests with -race (dev stub frontend — no npm build needed)
-make lint    # go vet + staticcheck (staticcheck pinned via go.mod tool directive)
-make build   # Production binary: builds frontend + go build -tags=prod
-make clean   # Remove build outputs
+make test          # Backend tests with -race (dev stub frontend — no npm build needed)
+make lint          # gofmt + go vet + staticcheck
+make build         # Production binary: builds frontend + go build -tags=prod
+make image         # Release container image in Colima (phronesis:dev)
+make compose-test  # phronesis + Dex in Docker Compose, browser smoke test
+make helm-test     # Helm chart + Dex in Colima k3s, browser smoke test
+make clean         # Remove build outputs
 ```
 
 The longhand commands below still work; `make` wraps them with the right
@@ -125,7 +134,7 @@ Dex, etc).
 | Mode  | Trigger | Behaviour |
 |-------|---------|-----------|
 | Stub  | `PHRONESIS_OIDC_ENABLED=1` with `PHRONESIS_OIDC_SECRET=<any>` | HMAC-signed tokens are accepted. The server logs `OIDC adapter is using the HMAC-stub verifier` at startup. |
-| Real  | Set `PHRONESIS_OIDC_ISSUER=<https://your-idp/...>` (and `_AUDIENCE` / `_SECRET`) | Adapter swaps to the configured verifier. Stub-mode warning is suppressed. |
+| Real  | Set `PHRONESIS_OIDC_CLIENT_ID`, `_CLIENT_SECRET`, `_ISSUER` and `PHRONESIS_PUBLIC_URL` | Browser SSO (authorization code + PKCE), RS256 via the IdP's JWKS. The HMAC stub is off. See [docs/deploy.md](docs/deploy.md). |
 | Disabled | `PHRONESIS_OIDC_ENABLED` unset or empty | OIDC route returns 404; server falls back to cookie-session admin auth. |
 
 Stub mode emits a loud `slog.Warn` at startup mirroring the dev-frontend
@@ -189,8 +198,11 @@ workflow live in [`docs/admin-guide.md`](docs/admin-guide.md).
 ### Auth
 
 - `PHRONESIS_ADMIN_USER`: built-in login username, default `admin`
-- `PHRONESIS_ADMIN_PASSWORD`: built-in login password, default `admin123` (a startup warning fires if this is left at the default)
-- `PHRONESIS_OIDC_ENABLED` / `PHRONESIS_OIDC_ISSUER` / `PHRONESIS_OIDC_AUDIENCE` / `PHRONESIS_OIDC_SECRET`: OIDC sign-in (stub mode when only `_ENABLED` is set)
+- `PHRONESIS_ADMIN_PASSWORD`: built-in login password, default `admin123` (a startup warning fires if this is left at the default; with `PHRONESIS_ENV=production`, as in the container image, the server refuses to start)
+- `PHRONESIS_OIDC_ENABLED` / `PHRONESIS_OIDC_ISSUER` / `PHRONESIS_OIDC_CLIENT_ID` / `PHRONESIS_OIDC_CLIENT_SECRET` / `PHRONESIS_OIDC_PROVIDER_URL` / `PHRONESIS_OIDC_REDIRECT_URL` / `PHRONESIS_OIDC_AUDIENCE`: OIDC single sign-on (details in [docs/deploy.md](docs/deploy.md))
+- `PHRONESIS_OIDC_SECRET`: HMAC secret for the development stub (no client id)
+- `PHRONESIS_PUBLIC_URL`: browser-facing base URL (SSO redirect URI)
+- `PHRONESIS_ENV=production`: refuse unsafe defaults at start-up
 - `PHRONESIS_BREAKGLASS`: Argon2id PHC of a break-glass admin secret; route 404s when unset
 
 ### Storage + retention
@@ -222,16 +234,17 @@ env-var plumbing is a future polish.
 
 - The server's Markdown-to-HTML rendering is intentionally basic and not CommonMark-complete; richer rendering happens in the live editor (see [`docs/markdown-dialect.md`](docs/markdown-dialect.md)).
 - Collaboration is session-based with whole-document merge logic, not operational transform or CRDT-based.
-- The MCP transport ships a tool framework + an `echo` tool; wiki-aware tools (page list, get, write, search) are not yet implemented.
-- There is no git sync to a remote, no CLI automation layer, no `/metrics` Prometheus endpoint, and no search/index service yet.
-- Workspace administration is currently API-only; the user/key admin panels exist in the Web UI, but workspace CRUD requires `curl` against `/api/admin/workspaces` for now.
+- MCP search (`search_pages`) is a substring scan; there is no search UI or index yet.
+- There is no page history, no git sync to a remote, no CLI automation layer, and no `/metrics` Prometheus endpoint yet.
+- IdP groups are not mapped to roles; roles are instance-wide, not per workspace.
+- Sessions are in memory (users sign in again after a restart); one instance per data volume.
 
 ## Near-Term Direction
 
 The next meaningful steps are:
 
-1. wiki-aware MCP tools (`pages/list`, `pages/get`, `pages/write`, `pages/search`)
-2. workspace CRUD in the Web UI
+1. beta feedback (see [docs/BETA.md](docs/BETA.md)); search UI and page history
+2. IdP group-to-role mapping and per-workspace roles ([docs/roles.md](docs/roles.md))
 3. git-backed synchronization to a configurable remote
 4. CLI automation layer on top of the same document API
 5. `/metrics` Prometheus endpoint for operational visibility
@@ -240,6 +253,9 @@ The next meaningful steps are:
 ## Documentation index
 
 - [`docs/markdown-dialect.md`](docs/markdown-dialect.md) — supported Markdown syntax with examples
+- [`docs/BETA.md`](docs/BETA.md) — beta release notes, known limits, feedback
+- [`docs/deploy.md`](docs/deploy.md) — Docker Compose, Helm, OIDC providers, backups
+- [`docs/roles.md`](docs/roles.md) — role catalog and permission model
 - [`docs/admin-guide.md`](docs/admin-guide.md) — operator guide for workspaces, users, API keys, OAuth + MCP
 - [`docs/silverbullet-like-live-preview/README.md`](docs/silverbullet-like-live-preview/README.md) — live-preview architecture and how to add a decoration family
 - [`docs/dist-packaging/README.md`](docs/dist-packaging/README.md) — release tooling and distribution

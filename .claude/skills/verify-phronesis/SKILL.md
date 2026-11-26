@@ -26,7 +26,9 @@ SKILL="$(git rev-parse --show-toplevel)/.claude/skills/verify-phronesis"
 INSTANCE="<verifier>-a"      # unique per session: prefix with your verifier id so you
 INSTANCE_OAUTH="<verifier>-b" # never reuse another verifier's .verify/<instance>/ dir
 INSTANCE_OIDC="<verifier>-c"  # launched with --oidc (oidc-login)
-INSTANCE_KEYS="<verifier>-d"  # launched with --oidc --oauth (api-keys)
+INSTANCE_KEYS="<verifier>-d"  # launched with --oidc --oauth (api-keys, mcp-wiki-tools)
+INSTANCE_COMPOSE="<verifier>-compose"  # compose project for deploy-compose
+INSTANCE_HELM="<verifier>-helm"        # k8s namespace for deploy-helm
 VERIFIER="<your id>"         # under factory-conductor: the id from the verifier brief;
                              # working alone: a stable name for this session, never the
                              # author of the change being proven
@@ -66,6 +68,25 @@ What launch does for each instance:
 
 Exit 0 prints one JSON line: `{"instance","port","base_url","pid","data","cookies","oauth"}`.
 
+### Container instances (deploy-compose, deploy-helm)
+
+All container testing runs in Colima. The deploy features test the release image, not the
+local binary, so build it from HEAD first; `container.sh` refuses an image whose
+`org.opencontainers.image.revision` label is not HEAD (exit 2).
+
+```sh
+make image                                            # Docker context colima
+make image DOCKER_CONTEXT=colima-phronesis-k8s        # for Helm: k3s uses this Docker
+colima status phronesis-k8s || colima start phronesis-k8s --kubernetes --cpu 2 --memory 4
+```
+
+`colima start` switches the global docker and kubectl contexts; switch them back
+(`docker context use <previous>`, `kubectl config use-context <previous>`). Never restart
+the user's default Colima profile. `container.sh` claims two ports per instance
+(`<instance>` for phronesis, `<instance>-idp` for Dex), uses the instance name as the compose
+project or namespace, and launches, drives and tears down in one run; readiness is
+`/api/readyz` through the forwarded port (timeout 60 s).
+
 ## Doctor
 
 One read-only check per instance, before the first drive and after any failure:
@@ -89,6 +110,8 @@ FEATURE=page-edit-autosave        # any id from features/README.md
 node "$SKILL/scripts/drive.mjs" "$FEATURE" "$INSTANCE"            # headless
 node "$SKILL/scripts/drive.mjs" "$FEATURE" "$INSTANCE" --headed   # watch it
 node "$SKILL/scripts/drive.mjs" mcp-oauth "$INSTANCE_OAUTH"         # needs --oauth
+"$SKILL/scripts/container.sh" deploy-compose "$INSTANCE_COMPOSE"   # release image + Dex, Compose
+"$SKILL/scripts/container.sh" deploy-helm "$INSTANCE_HELM"         # release image + Dex, k3s
 ```
 
 The harness drives the browser through stable handles only: ARIA labels and roles
@@ -153,6 +176,11 @@ you launched:
 "$SKILL/scripts/cleanup.sh" "$INSTANCE_OIDC"
 "$SKILL/scripts/cleanup.sh" "$INSTANCE_KEYS"
 ```
+
+Container instances clean up inside `container.sh`: the compose smoke runs
+`docker compose -p "$INSTANCE_COMPOSE" down -v` and the Helm smoke deletes namespace
+`$INSTANCE_HELM`, then the port claims are released. With `KEEP=1` they stay up; remove
+them with the same two commands. Neither touches `.verify/` or any other project.
 
 Cleanup sends SIGTERM to the pid in `.verify-run/$INSTANCE/pid` (SIGKILL after 3 s),
 releases the port claim and removes `.verify-run/$INSTANCE/`. It never kills by process

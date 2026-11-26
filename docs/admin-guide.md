@@ -273,8 +273,10 @@ local MCP clients use. Registering any other redirect URI needs an admin
 session. OAuth access tokens work on `/mcp` only; use an API key for the
 HTTP API.
 
-The client sees the `echo` tool by default. Real wiki tools (page
-list, get, write, search) land in subsequent stages.
+Tools: `list_pages`, `read_page`, `write_page` (pass `base_version` from
+`read_page` to merge with concurrent edits), `search_pages` (case-insensitive
+substring), plus `echo`. Each call is checked like the HTTP API: the token's
+role must allow read or write, and edits are audited with `via=mcp`.
 
 ### Direct OAuth flow (for custom clients)
 
@@ -346,18 +348,19 @@ support is a future polish.
 
 ### OIDC
 
+Real-IdP single sign-on (authorization code + PKCE, RS256 via JWKS) is
+configured with `PHRONESIS_OIDC_ENABLED=1`, `_ISSUER`, `_CLIENT_ID`,
+`_CLIENT_SECRET` and `PHRONESIS_PUBLIC_URL`; the full table, the
+back-channel `PHRONESIS_OIDC_PROVIDER_URL`, and provider notes are in
+[deploy.md](deploy.md#using-another-oidc-provider). The login page then
+shows "Sign in with SSO".
+
 | Variable | Default | Behaviour |
 |---|---|---|
-| `PHRONESIS_OIDC_ENABLED` | unset (disabled) | Mounts `/api/auth/oidc/login` |
-| `PHRONESIS_OIDC_ISSUER` | unset | Canonical iss; required when enabled |
-| `PHRONESIS_OIDC_AUDIENCE` | unset | Expected aud; required when enabled |
-| `PHRONESIS_OIDC_SECRET` | unset | HMAC secret (stub mode); required when enabled |
+| `PHRONESIS_OIDC_SECRET` | unset | HMAC secret for the **stub** (no client id): dev tokens posted to `/api/auth/oidc/login`. Refused when `PHRONESIS_ENV=production`. |
 
-When `PHRONESIS_OIDC_ENABLED=1` is set without an `_ISSUER` pointing
-at a real IdP, phronesis runs in **stub mode** — the HMAC verifier
-accepts dev tokens and the server logs a loud `oidc=stub` warning at
-startup. Suitable for local evaluation only; never expose stub mode
-to a real network.
+Stub mode logs a loud `oidc=stub` warning at startup. Never expose it to a
+real network.
 
 ### Break-glass admin
 
@@ -373,9 +376,6 @@ is post-hoc detectable. Use only when OIDC is unreachable.
 ## What's not yet here
 
 - **Per-workspace OAuth issuers.** All workspaces share one issuer.
-- **Wiki-aware MCP tools.** Stage 3c shipped the framework + an echo
-  tool. Real tools (`pages/list`, `pages/get`, `pages/write`,
-  `pages/search`) come later.
 - **`/metrics` Prometheus endpoint.** The audit pipeline is
   observable; Prometheus export is a future operational follow-up.
 

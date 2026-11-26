@@ -33,7 +33,7 @@ and new OIDC users start as `viewer`.
 | `page.comment` | Comment on pages (planned feature) |
 | `page.propose` | Suggest an edit that someone else must accept (planned) |
 | `page.write` | Create and edit pages, upload media |
-| `page.delete` | Delete, rename and move pages (planned feature) |
+| `page.delete` | Delete and rename pages (built: editor and up; a maintainer-only policy is planned) |
 | `page.restrict` | Restrict a page to named people or groups (planned) |
 | `history.read` | Read page history and diffs (planned feature) |
 | `history.restore` | Restore an older version (planned feature) |
@@ -51,7 +51,7 @@ and new OIDC users start as `viewer`.
 | Role | Who | Permissions | Status |
 |---|---|---|---|
 | **viewer** | Default for every new user | `page.read`, `keys.request` | **Built** |
-| **editor** | Writers and maintainers of content | viewer + `page.write` | **Built** |
+| **editor** | Writers and maintainers of content | viewer + `page.write`, `page.delete` | **Built** |
 | **admin** | Operators of the wiki | everything except `breakglass` | **Built** |
 | break-glass admin | One emergency credential, off by default | admin, audited `severity=high` | **Built** (env-gated) |
 | owner / super-admin | The person accountable for the instance; the only role that can grant or remove admin | admin + `settings.manage` + admin grants | Proposed |
@@ -114,4 +114,4 @@ media routes call it through `authorize()` in `internal/app/authz.go`.
    override.
 2. Workspace roles (`workspace_members` table), then guest.
 3. Security auditor role with an audit-log viewer.
-4. Page history; then maintainer (`page.delete`, `history.restore`).
+4. Page history; then maintainer (`history.restore`, and move `page.delete` from editor to maintainer).

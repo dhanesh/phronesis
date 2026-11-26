@@ -7,6 +7,15 @@
 #   KUBE_CONTEXT=colima-phronesis-k8s IMAGE=phronesis:dev deploy/helm/smoke.sh
 set -euo pipefail
 cd "$(dirname "$0")"
+# OUT_DIR=<dir> also saves each phase's JSON as <dir>/<phase>.json.
+run_smoke() {
+  if [ -n "${OUT_DIR:-}" ]; then
+    mkdir -p "$OUT_DIR"
+    node ../smoke/smoke.mjs "$BASE" "$ADMIN_PW" "$1" | tee "$OUT_DIR/$1.json"
+  else
+    node ../smoke/smoke.mjs "$BASE" "$ADMIN_PW" "$1"
+  fi
+}
 KCTX="${KUBE_CONTEXT:-colima-phronesis-k8s}"
 NS="${NAMESPACE:-phronesis-smoke}"
 IMAGE="${IMAGE:-phronesis:dev}"
@@ -15,9 +24,16 @@ ADMIN_PW="${PHRONESIS_ADMIN_PASSWORD:-smoke-$(date +%s)-pw}"
 BASE="http://localhost:${WIKI_PORT}"
 k() { kubectl --context "$KCTX" -n "$NS" "$@"; }
 PF=()
-start_pf() {
-  for pid in "${PF[@]:-}"; do [ -n "$pid" ] && kill "$pid" 2>/dev/null || true; done
+stop_pf() {
+  for pid in "${PF[@]:-}"; do
+    [ -n "$pid" ] || continue
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+  done
   PF=()
+}
+start_pf() {
+  stop_pf
   k port-forward svc/dex "${DEX_PORT}:5556" >/dev/null 2>&1 & PF+=($!)
   k port-forward svc/phronesis "${WIKI_PORT}:80" >/dev/null 2>&1 & PF+=($!)
   for _ in $(seq 1 60); do
@@ -27,7 +43,7 @@ start_pf() {
   echo "port-forwards not ready" >&2; return 1
 }
 cleanup() {
-  for pid in "${PF[@]:-}"; do [ -n "$pid" ] && kill "$pid" 2>/dev/null || true; done
+  stop_pf
   [ "${KEEP:-0}" = 1 ] || kubectl --context "$KCTX" delete namespace "$NS" --wait=false >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -49,7 +65,7 @@ helm --kube-context "$KCTX" -n "$NS" upgrade --install phronesis ./phronesis \
 k get pods -o wide
 
 start_pf
-node ../smoke/smoke.mjs "$BASE" "$ADMIN_PW" full
+run_smoke full
 
 # Persistence: delete the pod; the Deployment recreates it on the same PVC.
 old=$(k get pod -l app.kubernetes.io/instance=phronesis -o jsonpath='{.items[0].metadata.name}')
@@ -59,5 +75,5 @@ new=$(k get pod -l app.kubernetes.io/instance=phronesis -o jsonpath='{.items[0].
 echo "pod replaced: $old -> $new"
 [ "$old" != "$new" ]
 start_pf
-node ../smoke/smoke.mjs "$BASE" "$ADMIN_PW" persist
+run_smoke persist
 echo "HELM_SMOKE: PASS"

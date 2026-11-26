@@ -11,13 +11,18 @@ This file describes the current project stack and implementation boundaries for 
 ### Backend
 
 - Language: Go
-- Go version: `1.24.5`
+- Go version: `1.25` (go.mod)
 - Module path: `github.com/dhanesh/phronesis`
 - HTTP server: standard library `net/http`
-- Auth: cookie session auth in `internal/auth` plus optional OIDC token-first
-  login in `internal/auth/oidc`
+- Auth: cookie session auth in `internal/auth`; OIDC in `internal/auth/oidc`
+  (browser SSO against a real IdP: auth code + PKCE in `rp.go`, handlers in
+  `internal/app/handlers_sso.go`; plus an HMAC stub for dev/tests)
 - Authorization: `internal/principal` carries the canonical Principal (user vs
-  service account, role, workspace) attached to request context
+  service account, role, workspace) attached to request context; page RBAC
+  is enforced through `authorize()` in `internal/app/authz.go`. Role
+  catalog: `docs/roles.md`
+- MCP: `/mcp` transport in `internal/mcp`, wiki tools in
+  `internal/app/mcp_tools.go`, OAuth 2.1 server in `internal/auth/oauth`
 - Storage: local filesystem-backed Markdown files in `internal/wiki/store.go`,
   binary blobs in `internal/blob`, atomic writes in `internal/fsutil`
 - Live updates: server-sent events in `internal/wiki/session.go` and
@@ -81,6 +86,8 @@ This file describes the current project stack and implementation boundaries for 
 - `internal/webfs`: dev-stub vs prod-embedded frontend FS (build-tagged)
 - `frontend`: Svelte/Vite application + Playwright e2e suite
 - `data/pages`: default on-disk content root used at runtime
+- `deploy/`: Docker Compose + Dex (`deploy/compose`), Helm chart
+  (`deploy/helm/phronesis`), deployment smoke test (`deploy/smoke`)
 
 ## Architectural Constraints
 
@@ -91,7 +98,10 @@ This file describes the current project stack and implementation boundaries for 
   - transport concerns
   - frontend/editor concerns
 - The frontend should continue moving toward a single-surface live editor model rather than reverting to a split preview/editor design.
-- CLI, MCP, and git sync are planned but not yet implemented. Do not imply they already exist.
+- CLI and git sync are planned but not yet implemented. Do not imply they already exist.
+- All local container and Kubernetes testing runs in Colima (`make image`,
+  `make compose-test`, `make helm-test`); pass `--context` explicitly and do
+  not switch the user's global docker/kubectl context.
 
 ## Current Product Semantics
 
@@ -126,7 +136,7 @@ This file describes the current project stack and implementation boundaries for 
 - richer CodeMirror live-preview behavior
 - stable HTTP document API
 - CLI interface
-- MCP interface
+- search UI, page history, IdP group-to-role mapping, per-workspace roles
 - git sync to configurable remote (push-journal scaffolding exists in
   `internal/journal`; no remote driver wired)
 - multi-workspace resolution from URL/subdomain (today everything resolves

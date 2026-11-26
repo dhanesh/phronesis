@@ -409,6 +409,101 @@ const features = {
     check('editor_write_ok', ew.ok(), ew.status());
   },
 
+  // page-delete-rename: an editor renames then deletes a page from the
+  // command palette; the Markdown file moves, then disappears.
+  async 'page-delete-rename'(browser) {
+    const ctx = await apiLoginContext(browser);
+    const name = `verify-dr-${stamp}`;
+    const w = await ctx.request.post(`/api/pages/${name}`, { data: { content: '# Rename me\n', baseVersion: 0 } });
+    check('page_created', w.ok(), w.status());
+    const page = await ctx.newPage();
+    await page.goto(`/w/${name}`);
+    await page.locator('.cm-content').waitFor();
+    const palette = async () => {
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
+      await page.getByPlaceholder(/type a page name|page name or command/i).first().waitFor();
+    };
+    await palette();
+    await page.keyboard.type(`${name}-renamed`);
+    await shot(page, 'rename-command.png');
+    await page.getByText(`Rename "${name}" to "${name}-renamed"`).click();
+    const dir = path.join(DATA, 'pages', 'default');
+    let moved = false;
+    for (let i = 0; i < 25 && !moved; i++) {
+      moved = fs.existsSync(path.join(dir, `${name}-renamed.md`)) && !fs.existsSync(path.join(dir, `${name}.md`));
+      if (!moved) await page.waitForTimeout(200);
+    }
+    check('file_moved_on_disk', moved, dir);
+    check('renamed_page_opened', page.url().includes(`${name}-renamed`) || (await page.locator('.cm-content').innerText()).includes('Rename me'));
+    page.once('dialog', (d) => d.accept());
+    await palette();
+    await page.keyboard.type('delete');
+    await page.getByText(`Delete page "${name}-renamed"`).click();
+    let gone = false;
+    for (let i = 0; i < 25 && !gone; i++) {
+      gone = !fs.existsSync(path.join(dir, `${name}-renamed.md`));
+      if (!gone) await page.waitForTimeout(200);
+    }
+    check('file_deleted_on_disk', gone);
+    const list = await (await ctx.request.get('/api/pages')).json();
+    save('pages-after.json', list);
+    check('page_gone_from_list', !list.pages.some((p) => p.name.startsWith(name)));
+  },
+
+  // mcp-wiki-tools: an agent with an API key lists, reads, writes and
+  // searches pages over /mcp, within its scope. Needs --oidc --oauth.
+  async 'mcp-wiki-tools'(browser) {
+    const admin = await apiLoginContext(browser);
+    const user = await oidcContext(browser, `agent-owner-${stamp}`);
+    const users = (await (await admin.request.get('/api/admin/users')).json()).users ?? [];
+    const u = users.find((x) => x.email === `agent-owner-${stamp}@example.com`);
+    await admin.request.post(`/api/admin/users/${u?.id}/role`, { data: { role: 'editor' } });
+    const mint = async (scope) => {
+      const r = await user.request.post('/api/keys/requests', { data: { scope, label: `mcp-${scope}-${stamp}` } });
+      const id = (await r.json()).request?.id;
+      const a = await admin.request.post(`/api/admin/keys/requests/${id}/approve`);
+      return (await a.json()).key?.plaintext;
+    };
+    const readKey = await mint('read');
+    const writeKey = await mint('write');
+    const agent = await browser.newContext({ baseURL: BASE });
+    const call = async (key, name, args, id = 1) => {
+      const r = await agent.request.post('/mcp', {
+        headers: { Authorization: `Bearer ${key}`, Accept: 'application/json, text/event-stream' },
+        data: { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } },
+      });
+      const j = await r.json();
+      return j.error ? { error: j.error.message } : JSON.parse(j.result.content[0].text);
+    };
+    const list = await agent.request.post('/mcp', {
+      headers: { Authorization: `Bearer ${readKey}`, Accept: 'application/json, text/event-stream' },
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+    });
+    const tools = ((await list.json()).result?.tools ?? []).map((t) => t.name);
+    check('tools_listed', ['list_pages', 'read_page', 'write_page', 'search_pages'].every((t) => tools.includes(t)), tools.join(','));
+    const name = `agent-note-${stamp}`;
+    const wrote = await call(writeKey, 'write_page', { name, content: `# Agent note\nCodename ZEPHYR-${stamp}` });
+    check('write_page_with_write_key', !wrote.error && wrote.version >= 1, JSON.stringify(wrote));
+    const file = path.join(DATA, 'pages', 'default', `${name}.md`);
+    check('markdown_file_written_by_agent', fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes(`ZEPHYR-${stamp}`), file);
+    const denied = await call(readKey, 'write_page', { name, content: 'x' });
+    check('read_key_cannot_write', (denied.error ?? '').includes('forbidden'), JSON.stringify(denied));
+    const read = await call(readKey, 'read_page', { name });
+    check('read_page', (read.content ?? '').includes(`ZEPHYR-${stamp}`), JSON.stringify(read).slice(0, 120));
+    const listed = await call(readKey, 'list_pages', {});
+    check('list_pages', JSON.stringify(listed).includes(name));
+    const found = await call(readKey, 'search_pages', { query: `zephyr-${stamp}` });
+    check('search_pages', JSON.stringify(found).includes(name), JSON.stringify(found).slice(0, 160));
+    save('mcp-tools-transcript.json', { tools, wrote, denied, read, listed, found });
+    const ui = await admin.newPage();
+    await ui.goto(`/w/${name}`);
+    await ui.locator('.cm-content').waitFor();
+    let txt = '';
+    for (let i = 0; i < 25 && !txt.includes('ZEPHYR'); i++) { txt = await ui.locator('.cm-content').innerText(); if (!txt.includes('ZEPHYR')) await ui.waitForTimeout(200); }
+    check('agent_edit_visible_in_ui', txt.includes(`ZEPHYR-${stamp}`));
+    await shot(ui, 'agent-page-in-ui.png');
+  },
+
   // mcp-oauth: a signed-out user completes OAuth (DCR + PKCE) in the
   // browser, the client exchanges the code, then calls /mcp.
   // Needs an instance launched with --oauth.
