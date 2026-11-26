@@ -1,7 +1,7 @@
 # oidc-login: Sign in with OIDC and get your own role
 
 - id: oidc-login
-- proven: ed7956f8fec5c4e526770203c441ca74989f5d3b
+- proven: 4c4f87c9182ff85c6252556d44ce8d15d4b17a26
 - anchors: internal/app/handlers_oidc.go:projectOIDCUser, internal/app/handlers_auth.go:principalFromRequest, internal/auth/oidc/projection.go:ProjectClaims, internal/app/authz.go, frontend/src/lib/UsersManager.svelte
 - constraints: collab-wiki:B2, user-mgmt-mcp:T2
 

@@ -1,7 +1,7 @@
 # deploy-compose: Run phronesis + Dex SSO with Docker Compose
 
 - id: deploy-compose
-- proven: no
+- proven: 4c4f87c9182ff85c6252556d44ce8d15d4b17a26
 - anchors: Dockerfile, deploy/compose/compose.yaml, deploy/compose/smoke.sh, deploy/smoke/smoke.mjs, internal/app/handlers_sso.go, internal/auth/oidc/rp.go
 - constraints:
 

@@ -1,7 +1,7 @@
 # page-delete-rename: Rename and delete pages from the command palette
 
 - id: page-delete-rename
-- proven: no
+- proven: 4c4f87c9182ff85c6252556d44ce8d15d4b17a26
 - anchors: internal/wiki/delete_rename.go, internal/app/handlers_pages.go:handleRename, frontend/src/lib/CommandPalette.svelte, frontend/src/App.svelte:renamePage
 - constraints:
 

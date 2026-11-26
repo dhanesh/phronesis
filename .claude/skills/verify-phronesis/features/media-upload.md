@@ -1,7 +1,7 @@
 # media-upload: Upload and serve images
 
 - id: media-upload
-- proven: ed7956f8fec5c4e526770203c441ca74989f5d3b
+- proven: 4c4f87c9182ff85c6252556d44ce8d15d4b17a26
 - anchors: internal/media/handler.go, internal/blob
 - constraints: collab-wiki:S6
 
