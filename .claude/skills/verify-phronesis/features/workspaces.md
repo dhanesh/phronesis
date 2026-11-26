@@ -1,7 +1,7 @@
 # workspaces: Create, use and delete workspaces
 
 - id: workspaces
-- proven: 4ba3375383c4d0e0108f2d42aa21d39a93d42f76
+- proven: ed7956f8fec5c4e526770203c441ca74989f5d3b
 - anchors: internal/app/handlers_workspaces.go, frontend/src/lib/TopBar.svelte, frontend/src/lib/WorkspaceManager.svelte
 
 ## What it is
