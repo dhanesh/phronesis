@@ -3,7 +3,7 @@
 - id: api-keys
 - proven: no
 - anchors: internal/app/handlers_admin_keys.go, internal/auth/keys.go, frontend/src/lib/KeysManager.svelte
-- constraints: user-mgmt-mcp:S1, user-mgmt-mcp:S5, user-mgmt-mcp:U3
+- constraints: user-mgmt-mcp:S1, user-mgmt-mcp:S5
 
 ## What it is
 
