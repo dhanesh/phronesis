@@ -331,8 +331,18 @@ const features = {
     });
     const use = await call();
     check('bearer_key_authenticates', use.ok(), use.status());
-    const pagesWithKey = await client.request.get('/api/pages', { headers: { Authorization: `Bearer ${token}` } });
+    // Keys work on the HTTP API like sessions (decision 2026-11-27),
+    // bounded by scope (read) and workspace pin.
+    const bearer = { Authorization: `Bearer ${token}` };
+    const pagesWithKey = await client.request.get('/api/pages', { headers: bearer });
     save('pages-with-key.txt', `${pagesWithKey.status()} ${(await pagesWithKey.text()).slice(0, 200)}`);
+    check('read_key_lists_pages_on_http_api', pagesWithKey.status() === 200, pagesWithKey.status());
+    const writeWithRead = await client.request.post(`/api/pages/key-${stamp}`, { headers: bearer, data: { content: 'x', baseVersion: 0 } });
+    check('read_key_cannot_write_pages', writeWithRead.status() === 403, writeWithRead.status());
+    const otherWs = `keyws-${stamp}`;
+    await admin.request.post('/api/admin/workspaces', { data: { slug: otherWs, name: 'Key WS' } });
+    const crossWs = await client.request.get(`/api/workspaces/${otherWs}/pages`, { headers: bearer });
+    check('key_pinned_to_its_workspace', crossWs.status() === 403, crossWs.status());
     const rev = await admin.request.post(`/api/admin/keys/${keyId}/revoke`);
     check('revoke_ok', rev.ok(), rev.status());
     let after = 0;
@@ -362,6 +372,35 @@ const features = {
     save('users.json', users);
     check('user_projected_into_users', (users.users ?? []).some((u) => u.email === `oidc-viewer-${stamp}@example.com`),
       `users=${(users.users ?? []).length}`);
+
+    // Page RBAC (decision 2026-11-27): a viewer reads but cannot write.
+    check('new_oidc_user_is_viewer', sess.role === 'viewer', `role=${sess.role}`);
+    const page = await ctx.newPage();
+    await page.goto('/');
+    await page.getByTestId('readonly-banner').waitFor({ timeout: 10000 }).catch(() => {});
+    check('viewer_sees_readonly_banner', await page.getByTestId('readonly-banner').isVisible());
+    check('viewer_editor_not_editable', (await page.locator('.cm-content').getAttribute('contenteditable')) === 'false');
+    await shot(page, 'viewer-readonly.png');
+    const vw = await ctx.request.post(`/api/pages/rbac-${stamp}`, { data: { content: 'x', baseVersion: 0 } });
+    check('viewer_write_forbidden', vw.status() === 403, vw.status());
+
+    // The admin promotes the user to editor in the Users panel.
+    const adminPage = await admin.newPage();
+    await adminPage.goto('/');
+    await adminPage.locator('.top-bar').waitFor({ timeout: 10000 });
+    await adminPage.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k');
+    await adminPage.keyboard.type('users');
+    await adminPage.getByText(/manage users/i).first().click();
+    const row = adminPage.getByTestId('users-row').filter({ hasText: `oidc-viewer-${stamp}` });
+    await row.getByTestId('users-role').selectOption('editor');
+    await adminPage.waitForTimeout(500);
+    await shot(adminPage, 'users-role-picker.png');
+    check('admin_promotes_to_editor_in_ui', (await row.getByTestId('users-role').inputValue()) === 'editor');
+    await page.reload();
+    await page.locator('.cm-content').waitFor({ timeout: 10000 });
+    check('editor_editable_after_promotion', (await page.locator('.cm-content').getAttribute('contenteditable')) === 'true');
+    const ew = await ctx.request.post(`/api/pages/rbac-${stamp}`, { data: { content: '# promoted', baseVersion: 0 } });
+    check('editor_write_ok', ew.ok(), ew.status());
   },
 
   // mcp-oauth: a signed-out user completes OAuth (DCR + PKCE) in the
@@ -378,6 +417,10 @@ const features = {
     });
     const client = await reg.json();
     check('dynamic_registration_201', reg.status() === 201, reg.status());
+    const offsite = await anon.request.post('/oauth/register', {
+      data: { client_name: 'offsite', redirect_uris: ['https://evil.example/cb'] },
+    });
+    check('anonymous_non_loopback_registration_refused', offsite.status() === 403, offsite.status());
     const verifier = crypto.randomBytes(48).toString('base64url');
     const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
     const authURL = `/oauth/authorize?response_type=code&client_id=${encodeURIComponent(client.client_id)}` +
@@ -391,15 +434,28 @@ const features = {
     await page.goto(authURL);
     await page.getByRole('button', { name: 'Sign in' }).waitFor({ timeout: 10000 });
     await uiLogin(page);
+    // Consent step (finding mcp-oauth): nothing reaches the client until
+    // the user approves on the consent page.
+    const consent = page.getByRole('dialog', { name: 'Authorize application' });
+    await consent.waitFor({ timeout: 10000 }).catch(() => {});
+    check('consent_page_shown', await consent.isVisible(), page.url());
+    check('no_code_before_consent', callback === null, callback);
+    check('consent_names_client', (await page.getByTestId('consent-client').textContent().catch(() => '')) === 'verify-phronesis');
+    await shot(page, 'consent.png');
+    await page.getByTestId('consent-approve').click();
     for (let i = 0; i < 50 && !callback; i++) await page.waitForTimeout(200);
     save('callback-url.txt', callback ?? `no callback; page at ${page.url()}`);
     check('login_returns_to_client_with_code', !!callback && callback.includes('code='), callback ?? page.url());
     let code = callback ? new URL(callback).searchParams.get('code') : null;
     if (!code) {
-      // Fallback so the remaining MCP checks still run: re-hit authorize
+      // Fallback so the remaining MCP checks still run: approve directly
       // now that the browser is signed in.
-      const r = await anon.request.get(authURL, { maxRedirects: 0 });
-      code = new URL(r.headers()['location']).searchParams.get('code');
+      const form = Object.fromEntries(new URL(authURL, BASE).searchParams);
+      const r = await anon.request.post('/oauth/authorize', {
+        form: { ...form, decision: 'approve' }, headers: { Accept: 'application/json', Origin: BASE },
+      });
+      const to = (await r.json().catch(() => ({}))).redirect_to;
+      code = to ? new URL(to).searchParams.get('code') : null;
     }
     // The MCP client is a separate process with no browser cookies: a
     // session cookie outranks a bearer token in principalFromRequest.
