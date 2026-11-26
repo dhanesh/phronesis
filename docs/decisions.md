@@ -56,3 +56,14 @@ resume or context compaction.
     (1.35, low confidence; cheap), backup/restore docs (1.12).
   - Deferred: search (0.90), history (1.04), group-to-role mapping (0.95),
     audit viewer, comments, CRDT wiring, git sync, feedback link.
+- **Implementation calls made unattended (2026-11-27), revisit freely.**
+  - Editors may rename and delete pages (no maintainer role yet; roles.md
+    lists moving `page.delete` to a maintainer role as a next step).
+  - Real-IdP OIDC is selected by `PHRONESIS_OIDC_CLIENT_ID`; the HMAC stub is
+    never active alongside it, and `PHRONESIS_ENV=production` (set in the
+    image) refuses the stub and the default admin password.
+  - Local Kubernetes tests run in a separate Colima profile `phronesis-k8s`
+    so the default profile's running containers are untouched; `helm` and
+    `kubectl` were installed with Homebrew for this.
+  - Sessions stay in memory for the beta (documented: users sign in again
+    after a restart).
