@@ -2,7 +2,7 @@
 
 - id: oidc-login
 - proven: no
-- anchors: internal/app/handlers_oidc.go, internal/app/handlers_auth.go:principalFromRequest, internal/auth/oidc/projection.go:ProjectClaims
+- anchors: internal/app/handlers_oidc.go:projectOIDCUser, internal/app/handlers_auth.go:principalFromRequest, internal/auth/oidc/projection.go:ProjectClaims
 - constraints: collab-wiki:B2, user-mgmt-mcp:T2
 
 ## What it is
@@ -37,7 +37,6 @@ Side effect to record: row in users (SQLite at data/phronesis.db); no workspace 
 
 ## Gotchas
 
-- KNOWN FAILING at the time of writing: every cookie session gets role `admin` and
-  `ProjectClaims` has no caller, so the user is never projected. See `.verify/findings/`.
-  Do not edit this entry to match that behaviour.
+- A new user is `role=user` in SQLite and `viewer` in `/api/session`; the role is read
+  from the row on every request (decision 2026-11-27 in docs/decisions.md).
 - The stub token is HS256 with secret `verify-oidc-secret`, `iss=verify-iss`, `aud=verify-aud`.

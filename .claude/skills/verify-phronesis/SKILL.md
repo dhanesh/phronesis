@@ -25,7 +25,8 @@ Set these once per session, from the repo root:
 SKILL="$(git rev-parse --show-toplevel)/.claude/skills/verify-phronesis"
 INSTANCE="<verifier>-a"      # unique per session: prefix with your verifier id so you
 INSTANCE_OAUTH="<verifier>-b" # never reuse another verifier's .verify/<instance>/ dir
-INSTANCE_OIDC="<verifier>-c"  # launched with --oidc (oidc-login only)
+INSTANCE_OIDC="<verifier>-c"  # launched with --oidc (oidc-login)
+INSTANCE_KEYS="<verifier>-d"  # launched with --oidc --oauth (api-keys)
 VERIFIER="<your id>"         # under factory-conductor: the id from the verifier brief;
                              # working alone: a stable name for this session, never the
                              # author of the change being proven
@@ -47,6 +48,7 @@ make build                                       # embeds the frontend, stamps c
 "$SKILL/scripts/launch.sh" "$INSTANCE"           # plain instance
 "$SKILL/scripts/launch.sh" "$INSTANCE_OAUTH" --oauth   # OAuth 2.1 + /mcp enabled
 "$SKILL/scripts/launch.sh" "$INSTANCE_OIDC" --oidc     # OIDC sign-in, HMAC stub verifier
+"$SKILL/scripts/launch.sh" "$INSTANCE_KEYS" --oidc --oauth   # flags combine
 ```
 
 What launch does for each instance:
@@ -149,6 +151,7 @@ you launched:
 "$SKILL/scripts/cleanup.sh" "$INSTANCE"
 "$SKILL/scripts/cleanup.sh" "$INSTANCE_OAUTH"
 "$SKILL/scripts/cleanup.sh" "$INSTANCE_OIDC"
+"$SKILL/scripts/cleanup.sh" "$INSTANCE_KEYS"
 ```
 
 Cleanup sends SIGTERM to the pid in `.verify-run/$INSTANCE/pid` (SIGKILL after 3 s),

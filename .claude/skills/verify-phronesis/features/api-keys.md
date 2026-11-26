@@ -2,34 +2,49 @@
 
 - id: api-keys
 - proven: no
-- anchors: internal/app/handlers_admin_keys.go, internal/auth/keys.go, frontend/src/lib/KeysManager.svelte
+- anchors: internal/app/handlers_key_requests.go, internal/app/handlers_admin_keys.go, internal/auth/keys.go, frontend/src/lib/KeyRequestPanel.svelte, frontend/src/lib/KeysManager.svelte
 - constraints: user-mgmt-mcp:S1, user-mgmt-mcp:S5
 
 ## What it is
 
-Per docs/admin-guide.md: a user requests a key (`POST /api/admin/keys/requests`), an admin approves it and sees the `phr_live_` plaintext once, the key authenticates as a bearer token, and revoking it makes it fail within 60 s.
+A signed-in OIDC user asks for an API key (scope `read` or `write`, plus a label). An
+admin approves the request and sees the `phr_live_` plaintext exactly once, to hand to
+the user. The key authenticates as a workspace service account, and revoking it makes
+it fail within 60 s.
 
 ## How to reach it
 
-- Browser: `Manage API keys` dialog (Pending requests table, `keys-approve`, `keys-revoke`).
-- API: `GET /api/admin/keys`, `GET /api/admin/keys/requests`, `POST /api/admin/keys/requests/<id>/approve|deny`, `POST /api/admin/keys/<id>/revoke`.
+- User, browser: `/settings/keys/request` or "Request an API key" in the Cmd-K palette
+  (dialog `Request an API key`; `data-testid` `kr-scope`, `kr-label`, `kr-submit`, `kr-row`).
+- User, API: `POST /api/keys/requests` `{"scope","label"}`, `GET /api/keys/requests`.
+- Admin, browser: `Manage API keys` dialog (`keys-approve`, `keys-revoke`).
+- Admin, API: `GET /api/admin/keys/requests`, `POST /api/admin/keys/requests/<id>/approve|deny`,
+  `GET /api/admin/keys`, `POST /api/admin/keys/<id>/revoke`.
+- Key use: `Authorization: Bearer phr_live_...` on `/mcp` (service-account surface).
 
 ## Drive it
 
 ```sh
-node "$SKILL/scripts/drive.mjs" api-keys "$INSTANCE"
+"$SKILL/scripts/launch.sh" "$INSTANCE_KEYS" --oidc --oauth
+node "$SKILL/scripts/drive.mjs" api-keys "$INSTANCE_KEYS"
 ```
 
-Expected: exit code 0 and JSON with `"ok": true`. Checks: request_created, request_listed_pending, approve_returns_plaintext_once, bearer_key_authenticates, revoke_ok, revoked_key_rejected.
-Exit 1 means a check failed (each failed check has `"ok": false` and a `detail`); exit 2 means the instance is not running.
+Expected: exit code 0 and JSON with `"ok": true`. Checks: request_form_submitted,
+own_request_listed_pending, admin_sees_pending_request, approve_returns_plaintext_once,
+plaintext_not_in_listing, bearer_key_authenticates, revoke_ok, revoked_key_rejected_within_60s.
+Exit 1 means a check failed; exit 2 means the instance is not running.
 
 ## Proof
 
-`request-response.txt` shows 201 with a request id; approve returns `key.plaintext` starting `phr_live_`; the bearer call answers 200 before revoke and 401 after.
-Artifacts are listed in the JSON `artifacts` array (under `.verify-run/<instance>/artifacts/api-keys/`); pass each to `record --artifact`.
+`request-form.png` shows the user's pending request; `admin-pending.json` lists it for
+the admin; approve answers 201 with `key.plaintext`; `keys-list.json` holds the key
+without its plaintext; the bearer `tools/list` call answers 200 before revoke and 401
+after. `pages-with-key.txt` records what `/api/pages` answers to the key (informational).
 Side effect to record: rows in key_requests and api_keys (SQLite at data/phronesis.db).
 
 ## Gotchas
 
-- KNOWN FAILING at the time of writing: no endpoint creates a key request (POST answers 405), so nothing can be approved. See `.verify/<instance>/findings/`. Do not edit this entry to match that behaviour.
-- `key_requests.user_id` must reference a `users` row, and users are only projected from OIDC sign-in.
+- Needs `--oidc` (the requester must be a projected users row; the password admin has
+  none) and `--oauth` (`/mcp` is not mounted without it).
+- The approve endpoint uses the requested scope and label; it ignores any body.
+- Session cookies outrank bearer tokens, so use the key from a cookie-less context.

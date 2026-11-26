@@ -69,6 +69,23 @@ async function apiLoginContext(browser) {
   return ctx;
 }
 
+// OIDC sign-in with the HMAC stub (instance launched with --oidc).
+function oidcToken(sub) {
+  const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const head = enc({ alg: 'HS256', typ: 'JWT', kid: 'stub-1' });
+  const body = enc({ iss: 'verify-iss', aud: 'verify-aud', iat: now, exp: now + 3600, sub, email: `${sub}@example.com`, name: sub });
+  const sig = crypto.createHmac('sha256', 'verify-oidc-secret').update(`${head}.${body}`).digest('base64url');
+  return `${head}.${body}.${sig}`;
+}
+
+async function oidcContext(browser, sub) {
+  const ctx = await browser.newContext({ baseURL: BASE });
+  const res = await ctx.request.post('/api/auth/oidc/login', { data: { id_token: oidcToken(sub) } });
+  if (!res.ok()) throw new Error(`oidc login failed: ${res.status()} ${await res.text()}`);
+  return ctx;
+}
+
 const features = {
   // auth-login: sign in through the form, see the editor, sign out.
   async 'auth-login'(browser) {
@@ -272,51 +289,66 @@ const features = {
     check('gone_from_list', !list.workspaces.some((w) => w.slug === slug));
   },
 
-  // api-keys: the documented request -> approve -> use -> revoke flow.
+  // api-keys: an OIDC user requests a key through the form at
+  // /settings/keys/request, the admin approves it and gets the plaintext
+  // once, the key works as a bearer token, and revoking it stops it.
+  // Needs an instance launched with --oidc --oauth (/mcp is the
+  // service-account surface the key is used on).
   async 'api-keys'(browser) {
-    const ctx = await apiLoginContext(browser);
-    const req = await ctx.request.post('/api/admin/keys/requests', {
-      data: { workspace: 'default', scope: 'read', label: `verify-${stamp}` },
-    });
-    const reqBody = await req.text();
-    save('request-response.txt', `${req.status()} ${reqBody}`);
-    check('request_created', req.status() === 201, `${req.status()} ${reqBody}`);
-    let id;
-    try { id = JSON.parse(reqBody).request?.id ?? JSON.parse(reqBody).id; } catch { /* reported above */ }
-    const list = await (await ctx.request.get('/api/admin/keys/requests')).json();
-    check('request_listed_pending', list.requests?.some((r) => r.id === id && !r.decided_at), JSON.stringify(list).slice(0, 200));
-    const appr = await ctx.request.post(`/api/admin/keys/requests/${id}/approve`, { data: { scope: 'read', label: `verify-${stamp}` } });
+    const user = await oidcContext(browser, `keyuser-${stamp}`);
+    const page = await user.newPage();
+    await page.goto('/settings/keys/request');
+    const dialog = page.getByRole('dialog', { name: 'Request an API key' });
+    await dialog.waitFor({ timeout: 10000 });
+    await page.getByTestId('kr-scope').selectOption('read');
+    await page.getByTestId('kr-label').fill(`verify-${stamp}`);
+    await page.getByTestId('kr-submit').click();
+    await page.getByTestId('kr-info').waitFor({ timeout: 5000 }).catch(() => {});
+    check('request_form_submitted', await page.getByTestId('kr-info').isVisible(),
+      await page.getByTestId('kr-error').textContent().catch(() => ''));
+    await page.getByTestId('kr-row').first().waitFor({ timeout: 5000 }).catch(() => {});
+    check('own_request_listed_pending', (await page.getByTestId('kr-row').first().textContent().catch(() => '')).includes('pending'));
+    await shot(page, 'request-form.png');
+
+    const admin = await apiLoginContext(browser);
+    const list = await (await admin.request.get('/api/admin/keys/requests')).json();
+    save('admin-pending.json', list);
+    const req = list.requests?.find((r) => r.requested_label === `verify-${stamp}`);
+    check('admin_sees_pending_request', !!req, JSON.stringify(list).slice(0, 200));
+    const appr = await admin.request.post(`/api/admin/keys/requests/${req?.id}/approve`);
     const apprBody = await appr.json().catch(() => ({}));
     const token = apprBody.key?.plaintext;
-    check('approve_returns_plaintext_once', appr.ok() && typeof token === 'string' && token.startsWith('phr_live_'), appr.status());
-    const anon = await browser.newContext({ baseURL: BASE });
-    const use = await anon.request.get('/api/pages', { headers: { Authorization: `Bearer ${token}` } });
-    check('bearer_key_authenticates', use.ok(), use.status());
-    const keys = await (await ctx.request.get('/api/admin/keys')).json();
-    const keyId = apprBody.key?.id;
+    check('approve_returns_plaintext_once', appr.status() === 201 && typeof token === 'string' && token.startsWith('phr_live_'), appr.status());
+    const keys = await (await admin.request.get('/api/admin/keys')).json();
     save('keys-list.json', keys);
-    const rev = await ctx.request.post(`/api/admin/keys/${keyId}/revoke`);
+    check('plaintext_not_in_listing', !JSON.stringify(keys).includes(token ?? '<none>'));
+    const keyId = apprBody.key?.id;
+
+    const client = await browser.newContext({ baseURL: BASE });
+    const call = () => client.request.post('/mcp', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json, text/event-stream' },
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+    });
+    const use = await call();
+    check('bearer_key_authenticates', use.ok(), use.status());
+    const pagesWithKey = await client.request.get('/api/pages', { headers: { Authorization: `Bearer ${token}` } });
+    save('pages-with-key.txt', `${pagesWithKey.status()} ${(await pagesWithKey.text()).slice(0, 200)}`);
+    const rev = await admin.request.post(`/api/admin/keys/${keyId}/revoke`);
     check('revoke_ok', rev.ok(), rev.status());
     let after = 0;
-    for (let i = 0; i < 20; i++) {
-      after = (await anon.request.get('/api/pages', { headers: { Authorization: `Bearer ${token}` } })).status();
+    for (let i = 0; i < 120; i++) {
+      after = (await call()).status();
       if (after === 401) break;
       await new Promise((r) => setTimeout(r, 500));
     }
-    check('revoked_key_rejected', after === 401, after);
+    check('revoked_key_rejected_within_60s', after === 401, after);
   },
 
   // oidc-login: an OIDC user signs in, is projected into users, and gets
   // its projected role (not admin). Needs an instance launched with --oidc.
   async 'oidc-login'(browser) {
     const ctx = await browser.newContext({ baseURL: BASE });
-    const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-    const now = Math.floor(Date.now() / 1000);
-    const head = enc({ alg: 'HS256', typ: 'JWT', kid: 'stub-1' });
-    const body = enc({ iss: 'verify-iss', aud: 'verify-aud', iat: now, exp: now + 3600,
-      sub: `oidc-viewer-${stamp}`, email: `viewer-${stamp}@example.com` });
-    const sig = crypto.createHmac('sha256', 'verify-oidc-secret').update(`${head}.${body}`).digest('base64url');
-    const login = await ctx.request.post('/api/auth/oidc/login', { data: { id_token: `${head}.${body}.${sig}` } });
+    const login = await ctx.request.post('/api/auth/oidc/login', { data: { id_token: oidcToken(`oidc-viewer-${stamp}`) } });
     check('oidc_login_200', login.ok(), login.status());
     const sess = await (await ctx.request.get('/api/session')).json();
     save('session.json', sess);
@@ -328,7 +360,7 @@ const features = {
     const admin = await apiLoginContext(browser);
     const users = await (await admin.request.get('/api/admin/users')).json();
     save('users.json', users);
-    check('user_projected_into_users', (users.users ?? []).some((u) => u.email === `viewer-${stamp}@example.com`),
+    check('user_projected_into_users', (users.users ?? []).some((u) => u.email === `oidc-viewer-${stamp}@example.com`),
       `users=${(users.users ?? []).length}`);
   },
 

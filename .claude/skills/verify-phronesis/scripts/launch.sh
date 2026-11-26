@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Launch one isolated phronesis instance for verification.
 #
-#   launch.sh <instance> [--oauth|--oidc]
+#   launch.sh <instance> [--oauth] [--oidc]
 #
 # Each instance gets its own claimed port, its own data root under
 # .verify-run/<instance>/data, its own cookie jar and its own pid file.
@@ -14,8 +14,13 @@ set -euo pipefail
 
 INSTANCE="${1:?usage: launch.sh <instance> [--oauth]}"
 OAUTH=0; OIDC=0
-[ "${2:-}" = "--oauth" ] && OAUTH=1
-[ "${2:-}" = "--oidc" ] && OIDC=1
+for flag in "${@:2}"; do
+  case "$flag" in
+    --oauth) OAUTH=1 ;;
+    --oidc) OIDC=1 ;;
+    *) echo "launch: unknown flag $flag" >&2; exit 2 ;;
+  esac
+done
 
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL="$ROOT/.claude/skills/verify-phronesis"
