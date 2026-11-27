@@ -120,7 +120,8 @@ Traces to: TN5 (resolved), RT-8, U1, B1.
 ## ADR-6: Native GHA runners per platform; no QEMU
 
 **Decision.** Release workflow uses a 4-runner matrix with explicit
-labels: `macos-14`, `macos-13`, `ubuntu-24.04`, `ubuntu-24.04-arm`.
+labels: `macos-15` (arm64), `macos-15-intel`, `ubuntu-24.04`, `ubuntu-24.04-arm`
+(updated 2026-11-28: GitHub retired the `macos-14` and `macos-13` images).
 QEMU is used ONLY for Docker buildx cross-arch image staging, never
 for Go runtime smoke tests.
 

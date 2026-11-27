@@ -46,7 +46,7 @@ jobs:
             platform: linux-arm64
           - os: macos-15-intel
             platform: darwin-amd64
-          - os: macos-14
+          - os: macos-15
             platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     name: smoke (${{ matrix.platform }})
@@ -179,7 +179,7 @@ jobs:
   # the first release (before tap provisioning) doesn't flake the step.
   audit-brew:
     needs: release
-    runs-on: macos-14
+    runs-on: macos-15
     name: brew audit (S5 / RT-10)
     continue-on-error: true
     steps:
