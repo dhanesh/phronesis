@@ -45,6 +45,7 @@ func (s *Server) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// nosemgrep: no-direct-write-to-responsewriter -- static embedded index.html, served as text/html
 	if _, err := w.Write(data); err != nil {
 		slog.Warn("serveIndex write failed",
 			slog.String("path", r.URL.Path),

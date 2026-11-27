@@ -7,6 +7,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # Wait a week before proposing a new release: most malicious or broken
+    # publishes are pulled within days.
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
       - "playwright"
@@ -20,3 +24,15 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+
+  # Keeps the SHA-pinned actions in .github/workflows current (the tag is
+  # in the comment after each SHA).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7

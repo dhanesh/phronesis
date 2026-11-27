@@ -11,7 +11,7 @@ This file describes the current project stack and implementation boundaries for 
 ### Backend
 
 - Language: Go
-- Go version: `1.25` (go.mod)
+- Go version: `1.26` floor, `toolchain go1.26.11` pinned (go.mod)
 - Module path: `github.com/dhanesh/phronesis`
 - HTTP server: standard library `net/http`
 - Auth: cookie session auth in `internal/auth`; OIDC in `internal/auth/oidc`
@@ -118,6 +118,10 @@ This file describes the current project stack and implementation boundaries for 
   invocations. The Makefile wraps them with the right flags (deterministic
   ldflags, `-tags=prod`, frontend staging). Raw `go test ./...` and
   `cd frontend && npm run build` still work as a fallback.
+- Run `make security` before publishing (gitleaks, semgrep, govulncheck,
+  trivy, SonarQube; same script as the CI `security` workflow). Suppress
+  only verified false positives, narrowly and with a reason
+  (`docs/security-scans.md`).
 - Backend tests use a dev-stub frontend (see `internal/webfs/`) so
   `make test` runs without a prior `npm run build`.
 - Prefer ASCII unless a file already requires Unicode.

@@ -24,6 +24,7 @@ ADMIN_PW="${PHRONESIS_ADMIN_PASSWORD:-smoke-$(date +%s)-pw}"
 BASE="http://localhost:${WIKI_PORT}"
 k() { kubectl --context "$KCTX" -n "$NS" "$@"; }
 PF=()
+PFLOG="${TMPDIR:-/tmp}/phronesis-helm-smoke-pf.$$"
 stop_pf() {
   for pid in "${PF[@]:-}"; do
     [ -n "$pid" ] || continue
@@ -34,13 +35,15 @@ stop_pf() {
 }
 start_pf() {
   stop_pf
-  k port-forward svc/dex "${DEX_PORT}:5556" >/dev/null 2>&1 & PF+=($!)
-  k port-forward svc/phronesis "${WIKI_PORT}:80" >/dev/null 2>&1 & PF+=($!)
+  # Call kubectl directly (not the k function): `k ... &` would fork a
+  # subshell, and killing that would leave kubectl holding the port.
+  kubectl --context "$KCTX" -n "$NS" port-forward svc/dex "${DEX_PORT}:5556" >"$PFLOG.dex" 2>&1 & PF+=($!)
+  kubectl --context "$KCTX" -n "$NS" port-forward svc/phronesis "${WIKI_PORT}:80" >"$PFLOG.wiki" 2>&1 & PF+=($!)
   for _ in $(seq 1 60); do
     curl -sf "$BASE/api/readyz" >/dev/null && curl -sf "http://localhost:${DEX_PORT}/dex/healthz" >/dev/null && return 0
     sleep 1
   done
-  echo "port-forwards not ready" >&2; return 1
+  echo "port-forwards not ready" >&2; tail -3 "$PFLOG.dex" "$PFLOG.wiki" >&2; return 1
 }
 cleanup() {
   stop_pf

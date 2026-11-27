@@ -18,6 +18,8 @@ spec:
       annotations:
         checksum/config: {{ toJson .Values | sha256sum }}
     spec:
+      # phronesis never calls the Kubernetes API.
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532

@@ -67,3 +67,27 @@ resume or context compaction.
     `kubectl` were installed with Homebrew for this.
   - Sessions stay in memory for the beta (documented: users sign in again
     after a restart).
+- **Security scans before publishing (user, 2026-11-27).** "does the ci have
+  gitsecrets, semgrep and trivy? also sonarqube scanner? run it locally first
+  to fix things before publishing." None were in CI. All now run from one
+  script (`scripts/security-scan.sh`, `make security`), locally in Colima
+  and in `.github/workflows/security.yml`. Secret scanning uses gitleaks
+  (it covers git-secrets' AWS patterns and many more). Jev calls
+  (unattended, all confident):
+  - Toolchain `go1.26.11` rather than `go1.27.4` (Choice 0.88): smallest
+    change that clears 18 reachable stdlib CVEs. `golang.org/x/crypto`
+    v0.59 raised the module floor to Go 1.26.
+  - CI gate (0.90): fail on any gitleaks leak, any semgrep ERROR, trivy
+    HIGH/CRITICAL vulns with a fix, HIGH/CRITICAL misconfig or secrets, and
+    any reachable govulncheck vuln; everything else is report-only.
+  - SonarQube job driven by `SONAR_TOKEN` + `SONAR_HOST_URL` (SonarQube
+    Cloud or self-hosted), skipped with a notice when unset (0.90).
+  - Pin every action to a commit SHA, kept current by dependabot's new
+    `github-actions` entry with a 7-day cooldown (Noul 0.86).
+  - Upgrade Playwright now (0.85): 1.50.0 -> 1.55.1, the smallest release
+    fixing GHSA-7mvr-c777-76hp; validated by the full e2e suite.
+  - False positives, suppressed inline or by path with a reason: cookies
+    with `Secure: requestIsSecure(r)` (0.73), same-origin redirects behind
+    `safeNext` (0.79), Dockerfile DS031 on a key *path* (0.84).
+  - Rewrite the two super-linear editor regexes (0.77): a collaborator's
+    crafted line could stall every viewer's editor.

@@ -94,6 +94,7 @@ func (s *Server) establishOIDCSession(w http.ResponseWriter, r *http.Request, p 
 		writeError(w, http.StatusInternalServerError, "session issue failed")
 		return false
 	}
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    token,

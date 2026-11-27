@@ -30,4 +30,7 @@ ENV PHRONESIS_ENV=production \
 USER nonroot:nonroot
 VOLUME ["/data"]
 EXPOSE 8080
+# No shell or curl in distroless: the binary probes itself.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/usr/local/bin/phronesis", "-healthcheck", "http://127.0.0.1:8080/api/health"]
 ENTRYPOINT ["/usr/local/bin/phronesis"]

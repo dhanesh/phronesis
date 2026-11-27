@@ -18,6 +18,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const runs = fs.readdirSync(dataDir).filter(e => {
+  // nosemgrep: path-join-resolve-traversal -- e is a directory entry name from readdirSync, not user input
   try { return fs.statSync(path.join(dataDir, e)).isDirectory(); } catch { return false; }
 });
 

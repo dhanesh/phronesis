@@ -78,6 +78,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    token,
@@ -109,6 +110,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	// INT-5: logout event (Principal still attached to ctx via attachPrincipal).
 	s.auditEnqueue("auth.logout", r, "", nil)
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    "",

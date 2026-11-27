@@ -221,8 +221,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceS
 				)
 				continue
 			}
+			// nosemgrep: no-fprintf-to-responsewriter -- text/event-stream frame; type is a server constant, data is JSON
 			fmt.Fprintf(w, "event: %s\n", event.Type)
-			fmt.Fprintf(w, "data: %s\n\n", payload)
+			fmt.Fprintf(w, "data: %s\n\n", payload) // nosemgrep: no-fprintf-to-responsewriter
 			flusher.Flush()
 		}
 	}

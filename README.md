@@ -19,6 +19,7 @@ This repository implements:
 - an MCP HTTP transport at `/mcp` with OAuth 2.1 + PKCE, a consent screen, dynamic client registration (RFC 7591; loopback redirect URIs only without an admin), and wiki tools `list_pages`, `read_page`, `write_page`, `search_pages` — Claude Code and equivalent MCP clients connect, approve once, and work on pages
 - API keys (user requests, admin approves) that work on the HTTP API and on MCP, capped at the owner's role and pinned to one workspace
 - a production container image, a Docker Compose stack with Dex, and a Helm chart — see [docs/deploy.md](docs/deploy.md)
+- security scans (gitleaks, semgrep, govulncheck, trivy, SonarQube) run with `make security` and in CI — see [docs/security-scans.md](docs/security-scans.md)
 - per-bearer-key rate limiting (sliding window + in-flight cap), an async audit pipeline with 90-day raw retention then aggregates, periodic workspace snapshots, and a fsync'd spillover journal for bounded loss-on-crash
 
 Git sync to a remote, CLI automation, and a `/metrics` Prometheus
@@ -85,7 +86,7 @@ server-rendered HTML), see [`docs/markdown-dialect.md`](docs/markdown-dialect.md
 
 ### Prerequisites
 
-- Go `1.25` (see `go.mod`)
+- Go `1.26` (see `go.mod`; builds use the pinned `toolchain go1.26.11`)
 - Node.js `22.x`
 - npm `10.x`
 - `goreleaser` (only for local releases; `brew install goreleaser`). CI uses

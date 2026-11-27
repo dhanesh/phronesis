@@ -1,0 +1,16 @@
+# semgrep ignores (scripts/security-scan.sh). With this file present the
+# built-in defaults no longer apply, so list them explicitly.
+:include .gitignore
+node_modules/
+frontend/dist/
+internal/webfs/dist/
+dist/
+.git/
+# semgrep's own defaults: tests and fixtures (fake keys, test IdP users).
+# gitleaks still scans them for real secrets.
+test/
+tests/
+*_test.go
+# Planning docs: p/secrets matches the literal `service_account` in prose
+# (detected-google-gcm-service-account). gitleaks still scans these files.
+docs/collab-wiki/*.md

@@ -81,6 +81,7 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		// Bounce through the homepage so the cookie auth flow runs and
 		// the browser comes back with the same query string. Path-and-
 		// query are preserved via the absolute URL.
+		// nosemgrep: open-redirect -- same-origin path; the request URI is query-escaped
 		http.Redirect(w, r, "/?next="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
 		return
 	}
@@ -121,6 +122,7 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		decision = r.PostForm.Get("decision")
 	}
 	if decision == "" {
+		// nosemgrep: open-redirect -- same-origin path to the consent page
 		http.Redirect(w, r, "/oauth/consent?"+r.Form.Encode(), http.StatusFound)
 		return
 	}

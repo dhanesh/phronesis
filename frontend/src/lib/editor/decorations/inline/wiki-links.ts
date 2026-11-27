@@ -9,7 +9,9 @@ import type { Range } from '@codemirror/state';
 import { Decoration } from '../base';
 import type { DecorationFamily } from '../base';
 
-const WIKI_LINK_REGEX = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+// Bounded parts keep the scan linear: an unclosed `[[` can only make the
+// engine look 512 characters ahead, not to the end of the visible slice.
+const WIKI_LINK_REGEX = /\[\[([^\]|]{1,512})(?:\|([^\]]{1,512}))?\]\]/g;
 
 function normalizeWikiName(name: string): string {
   return (name || '').trim().replaceAll(' ', '-').replace(/^\/+/, '').toLowerCase();

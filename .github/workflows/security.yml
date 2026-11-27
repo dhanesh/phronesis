@@ -1,0 +1,90 @@
+# Security scans: gitleaks, semgrep, govulncheck, trivy (fs + image) and
+# SonarQube. Every job runs scripts/security-scan.sh, the same script used
+# locally (`make security`), so local and CI results match. The gate is
+# described at the top of that script.
+
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"   # weekly: new CVEs land without code changes
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0   # gitleaks scans the whole history
+      - run: scripts/security-scan.sh secrets
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with: {name: scan-secrets, path: dist/scan/, retention-days: 14}
+
+  sast:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: scripts/security-scan.sh sast
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with: {name: scan-sast, path: dist/scan/, retention-days: 14}
+
+  deps:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with: {go-version-file: go.mod, cache: true}
+      - run: scripts/security-scan.sh deps
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with: {name: scan-deps, path: dist/scan/, retention-days: 14}
+
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with: {go-version-file: go.mod, cache: true}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: build image (same recipe as release)
+        run: make image DOCKER_CONTEXT=default IMAGE=phronesis:scan
+      - run: IMAGE=phronesis:scan scripts/security-scan.sh image
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with: {name: scan-image, path: dist/scan/trivy-image.json, retention-days: 14}
+
+  sonar:
+    # Works with SonarQube Cloud or a self-hosted server. Set the
+    # SONAR_TOKEN secret and SONAR_HOST_URL (secret or variable); without
+    # them the job is skipped with a notice.
+    runs-on: ubuntu-24.04
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || vars.SONAR_HOST_URL }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0   # SonarQube blame and new-code detection
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        if: env.SONAR_TOKEN != ''
+        with: {go-version-file: go.mod, cache: true}
+      - if: env.SONAR_TOKEN == ''
+        run: echo "::notice::SonarQube skipped; set the SONAR_TOKEN secret and SONAR_HOST_URL to enable it."
+      - if: env.SONAR_TOKEN != ''
+        run: scripts/security-scan.sh sonar

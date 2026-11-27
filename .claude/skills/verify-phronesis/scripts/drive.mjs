@@ -75,6 +75,7 @@ function oidcToken(sub) {
   const now = Math.floor(Date.now() / 1000);
   const head = enc({ alg: 'HS256', typ: 'JWT', kid: 'stub-1' });
   const body = enc({ iss: 'verify-iss', aud: 'verify-aud', iat: now, exp: now + 3600, sub, email: `${sub}@example.com`, name: sub });
+  // nosemgrep: hardcoded-hmac-key -- the dev OIDC stub's test secret (instance launched with --oidc)
   const sig = crypto.createHmac('sha256', 'verify-oidc-secret').update(`${head}.${body}`).digest('base64url');
   return `${head}.${body}.${sig}`;
 }

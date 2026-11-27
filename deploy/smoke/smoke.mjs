@@ -111,8 +111,9 @@ async function full(browser) {
   check('mcp_client_registered', reg.status() === 201, reg.status());
   const verifier = crypto.randomBytes(48).toString('base64url');
   const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
-  let callback = null;
-  page.on('request', (req) => { if (req.url().startsWith(redirectURI)) callback = req.url(); });
+  // The redirect target does not listen; capture the request URL instead.
+  const callbackReq = page.waitForRequest((req) => req.url().startsWith(redirectURI), { timeout: 10000 })
+    .then((req) => req.url(), () => null);
   await page.goto(`/oauth/authorize?response_type=code&client_id=${encodeURIComponent(client.client_id)}` +
     `&redirect_uri=${encodeURIComponent(redirectURI)}&state=s1&scope=write` +
     `&code_challenge=${challenge}&code_challenge_method=S256`);
@@ -120,7 +121,7 @@ async function full(browser) {
   await shot(page, 'consent.png');
   check('consent_shows_client', (await page.getByTestId('consent-client').textContent()) === 'smoke-agent');
   await page.getByTestId('consent-approve').click();
-  for (let i = 0; i < 50 && !callback; i++) await page.waitForTimeout(200);
+  const callback = await callbackReq;
   const code = callback ? new URL(callback).searchParams.get('code') : null;
   check('consent_returns_code', !!code, callback);
   const agent = await browser.newContext({ baseURL: BASE });

@@ -1,0 +1,22 @@
+# Trivy ignores (scripts/security-scan.sh). Every entry is scoped to paths
+# and carries a reason; a bare ID would hide future real findings.
+misconfigurations:
+  - id: DS031
+    paths: ["Dockerfile"]
+    statement: "ENV PHRONESIS_OAUTH_KEY_PATH is a file path on the data volume, not a secret; the key is generated at runtime."
+  - id: KSV011
+    paths: ["deploy/helm/phronesis/templates/deployment.yaml"]
+    statement: "No CPU limit on purpose: CFS throttling hurts latency; requests and a memory limit are set (values.yaml)."
+  - id: KSV110
+    paths: ["deploy/helm/phronesis/templates/*.yaml", "deploy/helm/test/dex.yaml"]
+    statement: "The namespace is chosen at install time (helm -n / kubectl -n); manifests do not hard-code one."
+  - id: KSV032
+    statement: "Organisation registry allowlist policy (Azure ACR); not applicable to an open-source chart."
+  - id: KSV033
+    statement: "Organisation registry allowlist policy (GCR); not applicable to an open-source chart."
+  - id: KSV034
+    statement: "Public registry images (ghcr.io) are the published release channel."
+  - id: KSV035
+    statement: "Organisation registry allowlist policy (ECR); not applicable to an open-source chart."
+  - id: KSV0125
+    statement: "Trusted-registry allowlist is an operator policy; operators mirror the image if they need one."

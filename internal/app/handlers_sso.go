@@ -178,6 +178,7 @@ func (s *Server) handleSSOStart(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, err.Error())
 		return
 	}
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name: ssoStateCookie, Value: fp.State, Path: "/api/auth/oidc/",
 		MaxAge: int(ssoFlowTTL.Seconds()), HttpOnly: true,
@@ -199,7 +200,7 @@ func (s *Server) handleSSOCallback(w http.ResponseWriter, r *http.Request) {
 	state := q.Get("state")
 	c, err := r.Cookie(ssoStateCookie)
 	// Clear the state cookie whatever happens: it is single-use.
-	http.SetCookie(w, &http.Cookie{Name: ssoStateCookie, Value: "", Path: "/api/auth/oidc/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: ssoStateCookie, Value: "", Path: "/api/auth/oidc/", MaxAge: -1, HttpOnly: true, Secure: requestIsSecure(r), SameSite: http.SameSiteLaxMode}) // nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure -- Secure on HTTPS (requestIsSecure)
 	if err != nil || state == "" || c.Value != state {
 		fail("state mismatch", "Sign-in expired or was started in another browser. Please try again.")
 		return
@@ -238,6 +239,7 @@ func (s *Server) handleSSOCallback(w http.ResponseWriter, r *http.Request) {
 	if !s.establishOIDCSession(w, r, p) {
 		return
 	}
+	// nosemgrep: open-redirect -- flow.next comes from safeNext: same-origin path only
 	http.Redirect(w, r, flow.next, http.StatusFound)
 }
 
