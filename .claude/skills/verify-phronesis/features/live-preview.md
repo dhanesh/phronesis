@@ -1,7 +1,7 @@
 # live-preview: SilverBullet-style live preview in the editor
 
 - id: live-preview
-- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
+- proven: 696d2475b27c8d8dc0b2aaa689fdf4fac9a35b3b
 - anchors: frontend/src/lib/Editor.svelte, frontend/src/lib/editor/decorations
 - constraints: silverbullet-like-live-preview:T1
 

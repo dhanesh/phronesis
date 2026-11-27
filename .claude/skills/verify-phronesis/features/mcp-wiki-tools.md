@@ -1,7 +1,7 @@
 # mcp-wiki-tools: Agents list, read, write and search pages over MCP
 
 - id: mcp-wiki-tools
-- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
+- proven: 696d2475b27c8d8dc0b2aaa689fdf4fac9a35b3b
 - anchors: internal/app/mcp_tools.go, internal/mcp/server.go, internal/wiki/session.go
 - constraints:
 

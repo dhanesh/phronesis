@@ -1,7 +1,7 @@
 # deploy-helm: Install the Helm chart with Dex SSO on Kubernetes
 
 - id: deploy-helm
-- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
+- proven: 696d2475b27c8d8dc0b2aaa689fdf4fac9a35b3b
 - anchors: deploy/helm/phronesis/templates/deployment.yaml, deploy/helm/phronesis/values.yaml, deploy/helm/smoke.sh, deploy/helm/test/dex.yaml, deploy/smoke/smoke.mjs
 - constraints:
 

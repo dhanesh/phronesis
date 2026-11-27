@@ -1,7 +1,7 @@
 # mcp-oauth: Connect an MCP client with OAuth 2.1 + PKCE
 
 - id: mcp-oauth
-- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
+- proven: 696d2475b27c8d8dc0b2aaa689fdf4fac9a35b3b
 - anchors: internal/app/handlers_oauth.go, internal/app/handlers_oauth_discovery.go, internal/mcp, frontend/src/App.svelte:safeNextPath, frontend/src/lib/OAuthConsent.svelte
 - constraints: user-mgmt-mcp:T1
 

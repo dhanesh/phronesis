@@ -1,7 +1,7 @@
 # api-keys: Request, approve, use and revoke an API key
 
 - id: api-keys
-- proven: 6ca46d12a3830b909ff6b6b099524ab191b33123
+- proven: 696d2475b27c8d8dc0b2aaa689fdf4fac9a35b3b
 - anchors: internal/app/handlers_key_requests.go, internal/app/handlers_admin_keys.go, internal/auth/keys.go, frontend/src/lib/KeyRequestPanel.svelte, frontend/src/lib/KeysManager.svelte, internal/app/authz.go, internal/app/middleware.go
 - constraints: user-mgmt-mcp:S1, user-mgmt-mcp:S5
 
