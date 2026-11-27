@@ -59,7 +59,9 @@ help: ## Show this help (auto-extracted from target docstrings)
 	     $(MAKEFILE_LIST)
 
 build: ## Build production binary (embeds frontend, deterministic ldflags)
-	cd frontend && npm ci && npm run build
+	# Subshell: .ONESHELL (GNU make >= 3.82, e.g. CI) would keep the cd for
+	# the rest of the recipe; macOS's make 3.81 ignores .ONESHELL.
+	(cd frontend && npm ci && npm run build)
 	@if [ ! -d "$(FRONTEND_DIST)" ] || [ -z "$$(ls -A $(FRONTEND_DIST) 2>/dev/null)" ]; then \
 		echo "error: $(FRONTEND_DIST) is empty after npm run build" >&2; exit 1; \
 	fi
