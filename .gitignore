@@ -34,6 +34,9 @@ frontend/blob-report/
 playwright-report/
 test-results/
 
+# world-model-ledger runtime store
+.world-model/
+
 # verify-phronesis evidence + per-instance run state (never committed)
 .verify/
 .verify-run/
