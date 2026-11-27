@@ -1,0 +1,10 @@
+phronesis is starting at {{ .Values.publicURL }}
+
+  Sign in as "{{ .Values.auth.adminUser }}" with the admin password{{ if .Values.oidc.enabled }}, or "Sign in with SSO" ({{ .Values.oidc.issuer }}){{ end }}.
+  New SSO users start as viewer; promote them in Manage users (Cmd/Ctrl-K).
+
+  Not exposed yet? Port-forward:
+    kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "phronesis.fullname" . }} 8080:{{ .Values.service.port }}
+
+  Data is on the PVC {{ include "phronesis.fullname" . }}-data (kept on uninstall).
+  Sessions are in memory: users sign in again after a pod restart.

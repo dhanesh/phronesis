@@ -24,10 +24,22 @@ arrived.
 | `service_account` | `Authorization: Bearer phr_live_<key>` | API keys minted for users |
 | `service_account` | `Authorization: Bearer <jwt>` | OAuth access tokens issued by phronesis (MCP clients) |
 
-Roles: `viewer` (read), `editor` (read/write), `admin` (full
-including these admin endpoints). The role is set per user in the
-SQLite store; OIDC sign-ins derive the role from a configurable group
-claim.
+Roles: `viewer` (read), `editor` (read and write pages, upload media),
+`admin` (everything, including these admin endpoints). The full role
+catalog, including the roles planned for enterprise use, is in
+[roles.md](roles.md).
+
+- The built-in password user is always `admin`.
+- An OIDC sign-in projects the user into the SQLite `users` table. A new
+  user is a `viewer`; an admin promotes them in the Users panel or with
+  `POST /api/admin/users/{id}/role`. Later sign-ins keep that role.
+- The role is read from the row on every request, so promotion, demotion,
+  suspension and deletion apply to open sessions at once.
+- Every page, workspace-page, live-update and media route checks the role.
+  A viewer sees a read-only editor with a banner; a write gets 403.
+- An API key or OAuth token never outranks its owner: its effective role is
+  the lesser of its scope and the owner's current role.
+- Mapping IdP group claims to roles is not built yet.
 
 ## Workspaces
 
@@ -94,6 +106,17 @@ is invalidated synchronously so the user's keys stop working on the
 next request. The S5 manifold contract guarantees ≤60s propagation;
 in practice it's sub-second.
 
+### Changing a role
+
+```bash
+curl -b cookies.txt -X POST -H 'Content-Type: application/json' \
+  -d '{"role":"editor"}' http://localhost:8080/api/admin/users/123/role
+```
+
+`role` is `viewer`, `editor` or `admin`. The Users panel (command
+palette, "Manage users") has the same control. The change applies to
+the user's open sessions and to their API keys at once.
+
 ### Deleting
 
 ```bash
@@ -124,18 +147,31 @@ A database compromise does not expose the tokens.
 
 ### Minting a key (admin → user flow)
 
-The user requests a key via `POST /api/admin/keys/requests`; the
-admin approves with:
+A signed-in OIDC user requests a key from the web UI at
+`/settings/keys/request` (or "Request an API key" in the Cmd-K
+palette), or over HTTP:
+
+```bash
+curl -b user-cookies.txt -X POST http://localhost:8080/api/keys/requests \
+  -H 'Content-Type: application/json' \
+  -d '{"scope":"write","label":"my-laptop"}'
+```
+
+`scope` is `read` or `write`. `GET /api/keys/requests` lists the
+caller's own requests and their decision. The built-in password admin
+has no `users` row and cannot file requests.
+
+The admin sees pending requests in the "Manage API keys" dialog, or
+lists them with `GET /api/admin/keys/requests`, and approves with:
 
 ```bash
 curl -b cookies.txt -X POST \
-  http://localhost:8080/api/admin/keys/requests/42/approve \
-  -H 'Content-Type: application/json' \
-  -d '{"scope":"write","label":"my-laptop","expires_at":"2027-01-01T00:00:00Z"}'
+  http://localhost:8080/api/admin/keys/requests/42/approve
 ```
 
-The response carries `key_plaintext` — copy it once and hand it to
-the user. There is no way to retrieve it afterwards.
+The key gets the scope and label the user requested. The `201`
+response carries `key.plaintext`: copy it once and hand it to the
+user. There is no way to retrieve it afterwards.
 
 ### Listing keys
 
@@ -158,10 +194,19 @@ so the key stops working on the very next request.
 
 ### Using a key
 
+A key works on `/mcp` and on the HTTP API alike:
+
 ```bash
 curl -H 'Authorization: Bearer phr_live_abcd1234efgh_…' \
   http://localhost:8080/api/pages/my-page
 ```
+
+- A `read` key reads pages; a write returns 403. A `write` key also edits
+  pages and uploads media.
+- A key is pinned to the workspace it was requested in. It gets 403 on
+  other workspaces, and `GET /api/workspaces` lists only its own.
+- The key's role is capped at its owner's current role, so a write key
+  owned by a viewer acts as read.
 
 ## OAuth + MCP setup
 
@@ -215,12 +260,23 @@ For Claude Code:
 2. Add a new server with the URL `https://phronesis.your-domain.example`.
 3. The client performs RFC 7591 dynamic client registration against
    `/oauth/register` automatically.
-4. Your browser opens the phronesis cookie-login page (or your
-   configured OIDC IdP) for the OAuth consent step.
+4. Your browser opens the phronesis sign-in page if you are signed out,
+   then a consent page that names the client (marked "unverified": the
+   name is self-asserted), where it sends you back to, and the access it
+   gets. Nothing is issued until you click Approve; Deny returns
+   `error=access_denied` to the client.
 5. The client receives an access token + refresh token. Done.
 
-The client sees the `echo` tool by default. Real wiki tools (page
-list, get, write, search) land in subsequent stages.
+Anonymous dynamic registration accepts only loopback redirect URIs
+(`http://127.0.0.1`, `http://[::1]`, `http://localhost`), which is what
+local MCP clients use. Registering any other redirect URI needs an admin
+session. OAuth access tokens work on `/mcp` only; use an API key for the
+HTTP API.
+
+Tools: `list_pages`, `read_page`, `write_page` (pass `base_version` from
+`read_page` to merge with concurrent edits), `search_pages` (case-insensitive
+substring), plus `echo`. Each call is checked like the HTTP API: the token's
+role must allow read or write, and edits are audited with `via=mcp`.
 
 ### Direct OAuth flow (for custom clients)
 
@@ -238,7 +294,9 @@ Token shape: RS256 JWT with claims `iss`, `sub`, `aud`, `client_id`,
 `workspace`, `scope`, `iat`, `exp`. `client_id` becomes the
 `Principal.ID` after server-side verification; `workspace` and
 `scope` drive role mapping (`scope=admin` → admin role,
-`scope=write` → editor, otherwise viewer).
+`scope=write` → editor, otherwise viewer). The scope granted at consent is
+capped at the signing-in user's role: a viewer asking for `write` gets
+`read`.
 
 ## Operational tuning
 
@@ -290,18 +348,19 @@ support is a future polish.
 
 ### OIDC
 
+Real-IdP single sign-on (authorization code + PKCE, RS256 via JWKS) is
+configured with `PHRONESIS_OIDC_ENABLED=1`, `_ISSUER`, `_CLIENT_ID`,
+`_CLIENT_SECRET` and `PHRONESIS_PUBLIC_URL`; the full table, the
+back-channel `PHRONESIS_OIDC_PROVIDER_URL`, and provider notes are in
+[deploy.md](deploy.md#using-another-oidc-provider). The login page then
+shows "Sign in with SSO".
+
 | Variable | Default | Behaviour |
 |---|---|---|
-| `PHRONESIS_OIDC_ENABLED` | unset (disabled) | Mounts `/api/auth/oidc/login` |
-| `PHRONESIS_OIDC_ISSUER` | unset | Canonical iss; required when enabled |
-| `PHRONESIS_OIDC_AUDIENCE` | unset | Expected aud; required when enabled |
-| `PHRONESIS_OIDC_SECRET` | unset | HMAC secret (stub mode); required when enabled |
+| `PHRONESIS_OIDC_SECRET` | unset | HMAC secret for the **stub** (no client id): dev tokens posted to `/api/auth/oidc/login`. Refused when `PHRONESIS_ENV=production`. |
 
-When `PHRONESIS_OIDC_ENABLED=1` is set without an `_ISSUER` pointing
-at a real IdP, phronesis runs in **stub mode** — the HMAC verifier
-accepts dev tokens and the server logs a loud `oidc=stub` warning at
-startup. Suitable for local evaluation only; never expose stub mode
-to a real network.
+Stub mode logs a loud `oidc=stub` warning at startup. Never expose it to a
+real network.
 
 ### Break-glass admin
 
@@ -316,13 +375,7 @@ is post-hoc detectable. Use only when OIDC is unreachable.
 
 ## What's not yet here
 
-- **Web UI for admin tasks.** The Users/Keys panels exist
-  (`/admin/users`, `/admin/keys` in the frontend), but workspace
-  CRUD is currently API-only.
 - **Per-workspace OAuth issuers.** All workspaces share one issuer.
-- **Wiki-aware MCP tools.** Stage 3c shipped the framework + an echo
-  tool. Real tools (`pages/list`, `pages/get`, `pages/write`,
-  `pages/search`) come later.
 - **`/metrics` Prometheus endpoint.** The audit pipeline is
   observable; Prometheus export is a future operational follow-up.
 

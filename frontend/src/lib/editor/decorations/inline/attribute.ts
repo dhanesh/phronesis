@@ -17,7 +17,9 @@ import type { Range } from '@codemirror/state';
 import { Decoration, treeFamily } from '../base';
 import type { DecorationFamily, SyntaxNodeRef } from '../base';
 
-const ATTR_REGEX = /^\[([^[\]:]+?)::\s*(.*?)\]$/;
+// Linear-time: key cannot contain ':' so greedy is the same as lazy, and the
+// value is trimmed by the caller, so no `\s*` is needed before it.
+const ATTR_REGEX = /^\[([^[\]:]+)::(.*)\]$/;
 
 class AttributePillWidget extends WidgetType {
   constructor(

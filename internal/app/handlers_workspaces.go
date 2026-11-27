@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"github.com/dhanesh/phronesis/internal/principal"
 	"net/http"
 	"strings"
 
@@ -16,9 +17,18 @@ func (s *Server) handleWorkspacesList(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"workspaces": s.workspaces.List(),
-	})
+	list := s.workspaces.List()
+	// An API key sees only the workspace it is pinned to.
+	if p, err := principal.FromContext(r.Context()); err == nil && p.IsServiceAccount() {
+		filtered := list[:0:0]
+		for _, ws := range list {
+			if ws.Slug == p.WorkspaceID {
+				filtered = append(filtered, ws)
+			}
+		}
+		list = filtered
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"workspaces": list})
 }
 
 // handleWorkspaceRoutes parses URLs of the form
@@ -60,6 +70,9 @@ func (s *Server) handleWorkspaceRoutes(w http.ResponseWriter, r *http.Request) {
 			methodNotAllowed(w)
 			return
 		}
+		if _, ok := s.authorize(w, r, "read", resolved); !ok {
+			return
+		}
 		pages, err := store.List()
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -84,6 +97,9 @@ func (s *Server) handleWorkspaceRoutes(w http.ResponseWriter, r *http.Request) {
 			methodNotAllowed(w)
 			return
 		}
+		if _, ok := s.authorize(w, r, "read", resolved); !ok {
+			return
+		}
 		pages, err := store.List()
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -95,6 +111,10 @@ func (s *Server) handleWorkspaceRoutes(w http.ResponseWriter, r *http.Request) {
 	if strings.HasSuffix(pageTail, "/events") {
 		name := strings.TrimSuffix(pageTail, "/events")
 		s.handleEvents(w, r, slug, name)
+		return
+	}
+	if strings.HasSuffix(pageTail, "/rename") {
+		s.handleRename(w, r, slug, strings.TrimSuffix(pageTail, "/rename"))
 		return
 	}
 	s.handlePage(w, r, slug, pageTail)

@@ -8,6 +8,8 @@
 # help). Widened to ≤10 on 2026-05-03 after sibling manifolds (e2e-testing,
 # silverbullet-like-live-preview) added test-flake-monitor, bundle-size, and
 # bench-decorations. See .manifold/dist-packaging.md U1 history section.
+# Exceeded on 2026-11-27 (beta): image, compose-test, helm-test and security
+# make the deploy and security checks one command each (docs/decisions.md).
 #
 # Design rules (see .manifold/dist-packaging.md for derivation):
 #   1. Every user-facing target has a `## ` docstring on the SAME line as the
@@ -19,8 +21,9 @@
 #      - goreleaser:  pinned by version in `.github/workflows/release.yml` via
 #        goreleaser/goreleaser-action. Released tool; not carried in go.mod.
 #      Never `go install <url>@latest` (unpinned).
-#      Module's Go floor: 1.25.0 (bumped from 1.24.5 in user-mgmt-mcp Stage 1a;
-#      modernc.org/sqlite v1.50 requires Go 1.25). go.mod is the source of truth.
+#      Module's Go floor: 1.26.0 (1.24.5 -> 1.25 for modernc.org/sqlite v1.50;
+#      -> 1.26 for golang.org/x/crypto v0.59). The `toolchain go1.26.11` line
+#      pins the patched compiler/stdlib (govulncheck). go.mod is the source of truth.
 #   3. Production builds go through `build` which sets `-tags=prod`. Never
 #      bypass — a binary without the tag emits a startup warning (RT-9).
 
@@ -48,7 +51,7 @@ CHANNEL ?=
 WEBFS_DIST := internal/webfs/dist
 FRONTEND_DIST := frontend/dist
 
-.PHONY: help build test lint release docker clean test-flake-monitor bundle-size bench-decorations
+.PHONY: help build test lint release docker image compose-test helm-test security clean test-flake-monitor bundle-size bench-decorations
 
 help: ## Show this help (auto-extracted from target docstrings)
 	@awk 'BEGIN {FS = ":.*?## "; printf "Usage: make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -56,7 +59,9 @@ help: ## Show this help (auto-extracted from target docstrings)
 	     $(MAKEFILE_LIST)
 
 build: ## Build production binary (embeds frontend, deterministic ldflags)
-	cd frontend && npm ci && npm run build
+	# Subshell: .ONESHELL (GNU make >= 3.82, e.g. CI) would keep the cd for
+	# the rest of the recipe; macOS's make 3.81 ignores .ONESHELL.
+	(cd frontend && npm ci && npm run build)
 	@if [ ! -d "$(FRONTEND_DIST)" ] || [ -z "$$(ls -A $(FRONTEND_DIST) 2>/dev/null)" ]; then \
 		echo "error: $(FRONTEND_DIST) is empty after npm run build" >&2; exit 1; \
 	fi
@@ -113,6 +118,34 @@ docker: ## Build local multi-arch container image (goreleaser snapshot, no publi
 		echo "error: goreleaser not on PATH. Install: brew install goreleaser" >&2; exit 1; \
 	fi
 	goreleaser release --snapshot --clean --skip=archive,homebrew,nfpm
+
+IMAGE ?= phronesis:dev
+DOCKER_CONTEXT ?= colima
+IMAGE_ARCH ?= $(shell go env GOARCH)
+
+image: build ## Build the release Dockerfile for the host arch in Colima (no goreleaser, no push)
+	mkdir -p dist/image
+	SOURCE_DATE_EPOCH=$$(git log -1 --format=%ct 2>/dev/null || echo 0) \
+	    CGO_ENABLED=0 GOOS=linux GOARCH=$(IMAGE_ARCH) \
+	    go build -trimpath -tags=prod -ldflags="$(LDFLAGS)" -o dist/image/phronesis ./cmd/phronesis
+	docker --context $(DOCKER_CONTEXT) build --pull --platform linux/$(IMAGE_ARCH) \
+	    --label org.opencontainers.image.revision=$(COMMIT) \
+	    -t $(IMAGE) -f Dockerfile dist/image
+
+compose-test: image ## Run phronesis + Dex in Colima (Docker Compose) and the end-to-end smoke test
+	./deploy/compose/smoke.sh
+
+K8S_PROFILE ?= phronesis-k8s
+
+helm-test: ## Install the Helm chart + Dex into Colima k3s (profile phronesis-k8s) and run the end-to-end smoke test
+	@colima status $(K8S_PROFILE) >/dev/null 2>&1 || { \
+		echo "error: Colima profile $(K8S_PROFILE) is not running. Start it with:" >&2; \
+		echo "  colima start $(K8S_PROFILE) --kubernetes --cpu 2 --memory 4" >&2; exit 1; }
+	$(MAKE) image DOCKER_CONTEXT=colima-$(K8S_PROFILE)
+	KUBE_CONTEXT=colima-$(K8S_PROFILE) DOCKER_CONTEXT=colima-$(K8S_PROFILE) IMAGE=$(IMAGE) ./deploy/helm/smoke.sh
+
+security: ## Run gitleaks, semgrep, govulncheck, trivy (fs + image) and SonarQube (if configured) in Colima, same as CI
+	./scripts/security-scan.sh all
 
 clean: ## Remove build outputs (binary, frontend/dist, webfs/dist, goreleaser dist)
 	rm -rf phronesis dist $(WEBFS_DIST) $(FRONTEND_DIST)

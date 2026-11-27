@@ -41,6 +41,40 @@ const (
 	RoleAdmin  Role = "admin"
 )
 
+// ParseRole maps a stored role string to a Role. Unknown values fail
+// closed to RoleViewer.
+func ParseRole(s string) Role {
+	switch Role(s) {
+	case RoleEditor:
+		return RoleEditor
+	case RoleAdmin:
+		return RoleAdmin
+	}
+	return RoleViewer
+}
+
+// rank orders roles for MinRole: viewer < editor < admin.
+func (r Role) rank() int {
+	switch r {
+	case RoleEditor:
+		return 2
+	case RoleAdmin:
+		return 3
+	case RoleViewer:
+		return 1
+	}
+	return 0
+}
+
+// MinRole returns the weaker of two roles. Delegated credentials (API keys,
+// OAuth tokens) use it so they never outrank the user who owns them.
+func MinRole(a, b Role) Role {
+	if a.rank() <= b.rank() {
+		return a
+	}
+	return b
+}
+
 // Principal is a request-scoped authenticated identity.
 //
 // All four authentication paths produce the same shape so the authorization

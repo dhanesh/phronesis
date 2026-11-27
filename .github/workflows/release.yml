@@ -46,21 +46,21 @@ jobs:
             platform: linux-arm64
           - os: macos-15-intel
             platform: darwin-amd64
-          - os: macos-14
+          - os: macos-15
             platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     name: smoke (${{ matrix.platform }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0   # goreleaser needs full history for changelog
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
           cache: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -108,27 +108,27 @@ jobs:
     runs-on: ubuntu-24.04
     name: release (goreleaser)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
           cache: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: set up QEMU (only for buildx multi-arch Docker staging)
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
       - name: set up Docker buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: login to ghcr.io
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -138,7 +138,7 @@ jobs:
       # version BEFORE building. Fails in seconds instead of minutes on
       # config drift. See DECISIONS.md ADR-3.
       - name: goreleaser check (T7)
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           version: "~> v2"
           args: check
@@ -159,7 +159,7 @@ jobs:
 
       - name: run goreleaser (pinned action version; tool version derived from action)
         id: gh-release
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           # RT-5 adjacency: pin the tool version. Bumps are intentional.
           version: "~> v2"
@@ -179,12 +179,12 @@ jobs:
   # the first release (before tap provisioning) doesn't flake the step.
   audit-brew:
     needs: release
-    runs-on: macos-14
+    runs-on: macos-15
     name: brew audit (S5 / RT-10)
     continue-on-error: true
     steps:
       - name: checkout tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: dhanesh/homebrew-phronesis
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}

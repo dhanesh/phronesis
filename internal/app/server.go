@@ -98,14 +98,29 @@ type Config struct {
 	SnapshotDir      string        // default "./data/snapshots" when PagesDir is set
 	SnapshotInterval time.Duration // default 1h per O7
 
-	// INT-8 (Wave-3): OIDC login. When OIDCEnabled, NewServer constructs
-	// an oidc.Adapter and mounts POST /api/auth/oidc/login. The default
-	// verifier is HMAC-stub for testing; production deployments swap in
-	// an RS256 verifier (not yet wired).
-	OIDCEnabled  bool
-	OIDCIssuer   string
-	OIDCAudience string
-	OIDCSecret   string // HMAC shared secret (stub mode only)
+	// INT-8 (Wave-3): OIDC login. Two modes:
+	//   - real IdP (OIDCClientID set): browser SSO via authorization code +
+	//     PKCE (/api/auth/oidc/start, /callback), RS256 over the IdP's JWKS
+	//     found by discovery. The HMAC verifier is never active here.
+	//   - stub (OIDCSecret set, no client id): HMAC-signed dev tokens posted
+	//     to /api/auth/oidc/login. Dev and tests only.
+	OIDCEnabled      bool
+	OIDCIssuer       string
+	OIDCAudience     string // default: OIDCClientID in real-IdP mode
+	OIDCSecret       string // HMAC shared secret (stub mode only)
+	OIDCClientID     string
+	OIDCClientSecret string
+	// OIDCProviderURL is the server-to-IdP base URL when it differs from
+	// the browser-facing issuer (Docker/Kubernetes service DNS).
+	OIDCProviderURL string
+	// OIDCRedirectURL defaults to PublicURL + /api/auth/oidc/callback.
+	OIDCRedirectURL string
+	// PublicURL is the browser-facing base URL of this server.
+	PublicURL string
+
+	// Env is "production" in the container image (PHRONESIS_ENV). It turns
+	// unsafe defaults into startup errors (validateProduction).
+	Env string
 
 	// user-mgmt-mcp Stage 1a/1b: SQLite-backed projection store for
 	// users + api_keys + key_requests + audit_events. Empty disables
@@ -162,6 +177,8 @@ type Server struct {
 
 	// INT-8: OIDC adapter (nil when OIDCEnabled=false).
 	oidc *oidc.Adapter
+	// sso is the real-IdP browser sign-in (nil unless OIDCClientID set).
+	sso *ssoProvider
 
 	// user-mgmt-mcp Stage 1a/1b: SQLite-backed projection store. Nil
 	// when StorePath is empty; admin endpoints that depend on it
@@ -241,6 +258,13 @@ func LoadConfig() Config {
 		OIDCIssuer:   env("PHRONESIS_OIDC_ISSUER", ""),
 		OIDCAudience: env("PHRONESIS_OIDC_AUDIENCE", ""),
 		OIDCSecret:   env("PHRONESIS_OIDC_SECRET", ""),
+
+		OIDCClientID:     env("PHRONESIS_OIDC_CLIENT_ID", ""),
+		OIDCClientSecret: env("PHRONESIS_OIDC_CLIENT_SECRET", ""),
+		OIDCProviderURL:  env("PHRONESIS_OIDC_PROVIDER_URL", ""),
+		OIDCRedirectURL:  env("PHRONESIS_OIDC_REDIRECT_URL", ""),
+		PublicURL:        env("PHRONESIS_PUBLIC_URL", ""),
+		Env:              env("PHRONESIS_ENV", ""),
 
 		// user-mgmt-mcp Stage 1a/1b: SQLite-backed store. Empty disables
 		// (admin endpoints return 503). Default for the bundled binary is
@@ -328,6 +352,9 @@ func NewServer(cfg Config) (*Server, error) {
 		)
 	}
 
+	if err := validateProduction(cfg); err != nil {
+		return nil, err
+	}
 	if cfg.AdminPassword == defaultAdminPassword {
 		slog.Warn("PHRONESIS_ADMIN_PASSWORD is set to the built-in default; "+
 			"set the env var to a real value before exposing this server outside localhost",
@@ -340,7 +367,7 @@ func NewServer(cfg Config) (*Server, error) {
 	// verifier ships, OIDCEnabled implies stub mode. Mirror the
 	// webfs.IsStub() loud-warning convention so an operator scanning logs
 	// can't miss it.
-	if cfg.OIDCEnabled {
+	if cfg.OIDCEnabled && cfg.OIDCClientID == "" {
 		slog.Warn("OIDC adapter is using the HMAC-stub verifier; suitable for dev/eval only. "+
 			"Configure a real IdP before exposing this server beyond a trusted network.",
 			slog.String("component", "phronesis"),
@@ -478,6 +505,10 @@ func NewServer(cfg Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	ssoProv, err := newSSOProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	oauthSubstrate, err := buildOAuthSubstrate(cfg)
 	if err != nil {
@@ -496,6 +527,8 @@ func NewServer(cfg Config) (*Server, error) {
 			return nil, fmt.Errorf("mcp: register echo tool: %w", err)
 		}
 	}
+	// Wiki MCP tools need the Server (workspaces + audit); registered
+	// after construction below.
 
 	app := &Server{
 		cfg:            cfg,
@@ -510,6 +543,7 @@ func NewServer(cfg Config) (*Server, error) {
 		broadcaster:    broadcaster,
 		journal:        journalFile,
 		oidc:           oidcAdapter,
+		sso:            ssoProv,
 		store:          sqliteStore,
 		auditCompactor: auditCompactor,
 		authCache:      authCache,
@@ -579,6 +613,13 @@ func NewServer(cfg Config) (*Server, error) {
 	// handled by Server.Close.
 	app.janitor.Start()
 
+	if app.mcp != nil {
+		for _, t := range app.wikiMCPTools() {
+			if err := app.mcp.Tools.Register(t); err != nil {
+				return nil, fmt.Errorf("mcp: register %s: %w", t.Name(), err)
+			}
+		}
+	}
 	return app, nil
 }
 
@@ -713,7 +754,9 @@ func kidForKey(key *rsa.PrivateKey) string {
 // Returns (nil, nil) when disabled — the OIDC route is always mounted but
 // returns 404 when the adapter is nil.
 func buildOIDCAdapter(cfg Config) (*oidc.Adapter, error) {
-	if !cfg.OIDCEnabled {
+	if !cfg.OIDCEnabled || cfg.OIDCClientID != "" {
+		// Real-IdP mode builds its RS256 adapter lazily after discovery
+		// (newSSOProvider), so the server starts even if the IdP is not up.
 		return nil, nil
 	}
 	if cfg.OIDCIssuer == "" || cfg.OIDCAudience == "" || cfg.OIDCSecret == "" {
@@ -727,7 +770,11 @@ func buildOIDCAdapter(cfg Config) (*oidc.Adapter, error) {
 			SchemaVersion:    oidc.CurrentSchemaVersion,
 			UserIDClaim:      "sub",
 			DisplayNameClaim: "name",
-			RoleBinding:      func(map[string]any) principal.Role { return principal.RoleAdmin },
+			EmailClaim:       "email",
+			// Decision 2026-11-27: a new OIDC user is a viewer. The real
+			// role comes from the projected users row on every request
+			// (principalFromRequest); admins promote in-app.
+			RoleBinding:      func(map[string]any) principal.Role { return principal.RoleViewer },
 			WorkspaceBinding: func(map[string]any) string { return defaultWorkspaceID },
 		},
 	})
@@ -871,4 +918,24 @@ func Must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// validateProduction refuses unsafe settings when PHRONESIS_ENV=production
+// (set in the container image): the built-in default admin password and the
+// HMAC stub OIDC verifier. Beta scope decision 2026-11-27 (prod guards).
+func validateProduction(cfg Config) error {
+	if cfg.Env != "production" {
+		return nil
+	}
+	var problems []string
+	if cfg.AdminPassword == "" || cfg.AdminPassword == defaultAdminPassword {
+		problems = append(problems, "PHRONESIS_ADMIN_PASSWORD must be set to a non-default value")
+	}
+	if cfg.OIDCEnabled && cfg.OIDCClientID == "" {
+		problems = append(problems, "OIDC stub mode (no PHRONESIS_OIDC_CLIENT_ID) is for development only")
+	}
+	if len(problems) > 0 {
+		return fmt.Errorf("refusing to start with PHRONESIS_ENV=production: %s", strings.Join(problems, "; "))
+	}
+	return nil
 }

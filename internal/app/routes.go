@@ -59,6 +59,17 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 		Limiter:      authRateLimiter,
 		PathPrefixes: []string{"/api/auth/"},
 	}, http.HandlerFunc(s.handleOIDCLogin)))
+	// Browser SSO against a real IdP (authorization code + PKCE).
+	for _, path := range []string{"/api/auth/oidc/start", "/api/auth/oidc/callback"} {
+		h := s.handleSSOStart
+		if path == "/api/auth/oidc/callback" {
+			h = s.handleSSOCallback
+		}
+		mux.Handle(path, ratelimit.Middleware(ratelimit.Config{
+			Limiter:      authRateLimiter,
+			PathPrefixes: []string{"/api/auth/"},
+		}, http.HandlerFunc(h)))
+	}
 	mux.HandleFunc("/api/logout", s.withAuth(s.handleLogout))
 	mux.HandleFunc("/api/session", s.handleSession)
 	mux.HandleFunc("/api/pages", s.withAuth(s.handlePages))
@@ -75,6 +86,10 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 	// return 503 when StorePath is unset.
 	mux.HandleFunc("/api/admin/users", s.withAuth(s.withAdmin(s.handleAdminUsers)))
 	mux.HandleFunc("/api/admin/users/", s.withAuth(s.withAdmin(s.handleAdminUsers)))
+	// User side of the key request -> approve flow (TN7).
+	mux.HandleFunc("/api/keys/requests", s.withAuth(s.handleKeyRequests))
+	// /settings/... are SPA routes (the key request form).
+	mux.HandleFunc("/settings/", s.withAuth(s.handleWikiPage))
 	mux.HandleFunc("/api/admin/keys", s.withAuth(s.withAdmin(s.handleAdminKeys)))
 	mux.HandleFunc("/api/admin/keys/", s.withAuth(s.withAdmin(s.handleAdminKeys)))
 
@@ -95,6 +110,9 @@ func (s *Server) routes(authRateLimiter, keyRateLimiter *ratelimit.Limiter, keyC
 		Limiter:      authRateLimiter,
 		PathPrefixes: []string{"/oauth/"},
 	}, http.HandlerFunc(s.handleOAuthRegister)))
+	// Consent step: SPA page + the data it shows (finding mcp-oauth).
+	mux.HandleFunc("/oauth/consent", s.withAuth(s.handleWikiPage))
+	mux.HandleFunc("/api/oauth/consent-info", s.withAuth(s.handleOAuthConsentInfo))
 	mux.HandleFunc("/.well-known/oauth-authorization-server", s.handleOAuthMetadata)
 	mux.HandleFunc("/.well-known/jwks.json", s.handleJWKS)
 

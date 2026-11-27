@@ -26,6 +26,10 @@ type ClaimMapping struct {
 	// DisplayNameClaim is OPTIONAL. If present, surfaces as Claims["display_name"].
 	DisplayNameClaim string
 
+	// EmailClaim is OPTIONAL. If present, surfaces as Claims["email"] so the
+	// login handler can project it into the users table.
+	EmailClaim string
+
 	// GroupsClaim is OPTIONAL. If present, the claim value (string or []string)
 	// is split into Claims["groups"] as a comma-joined string for audit purposes.
 	// v1 does NOT use groups for authorization (B2 role assignment is external).
@@ -88,10 +92,20 @@ func (cm ClaimMapping) Apply(claims map[string]any) (principal.Principal, error)
 			out.Claims["display_name"] = v
 		}
 	}
+	if cm.EmailClaim != "" {
+		if v, ok := stringClaim(claims, cm.EmailClaim); ok {
+			out.Claims["email"] = v
+		}
+	}
 	if cm.GroupsClaim != "" {
 		if v, ok := claims[cm.GroupsClaim]; ok {
 			out.Claims["groups"] = stringifyGroups(v)
 		}
+	}
+	// nonce is carried through so the browser SSO callback can bind the
+	// id_token to the authorization request it started (OIDC Core 3.1.2.1).
+	if v, ok := stringClaim(claims, "nonce"); ok {
+		out.Claims["nonce"] = v
 	}
 	out.Claims["oidc_schema_version"] = fmt.Sprintf("%d", cm.SchemaVersion)
 	return out, nil

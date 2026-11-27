@@ -1,0 +1,94 @@
+# Dex for the Helm smoke test (deploy/helm/smoke.sh). The issuer is the
+# browser-facing URL through `kubectl port-forward` (localhost:DEX_PORT);
+# phronesis reaches Dex in-cluster at http://dex:5556/dex (oidc.providerURL).
+# __DEX_PORT__ and __WIKI_PORT__ are replaced by smoke.sh.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dex
+type: Opaque
+stringData:
+  config.yaml: |
+    issuer: http://localhost:__DEX_PORT__/dex
+    storage:
+      type: memory
+    web:
+      http: 0.0.0.0:5556
+    oauth2:
+      skipApprovalScreen: true
+    staticClients:
+      - id: phronesis
+        name: phronesis
+        secret: phronesis-dex-client-secret
+        redirectURIs:
+          - http://localhost:__WIKI_PORT__/api/auth/oidc/callback
+    enablePasswordDB: true
+    staticPasswords:
+      - email: admin@example.com
+        hash: "$2a$10$zxuhPsfNrrncQcBWeJp/i.mImBj6hePAC3E4y4s8ukp4DZj2MGbT."
+        username: admin
+        userID: 0b5f5c1e-0001-4d6b-9a52-000000000001
+      - email: editor@example.com
+        hash: "$2a$10$9sbzLFnbiCTdDjSxZOXvpu8TbSytFJPURLjFFP6yroCDDB5qTqz.y"
+        username: editor
+        userID: 0b5f5c1e-0002-4d6b-9a52-000000000002
+      - email: viewer@example.com
+        hash: "$2a$10$PBOzCFHBw5.yaftWucalbezN06VWJ72v3T7kAipI0zVi9lAtZS/k6"
+        username: viewer
+        userID: 0b5f5c1e-0003-4d6b-9a52-000000000003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dex
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: dex}
+  template:
+    metadata:
+      labels: {app: dex}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: dex
+          image: ghcr.io/dexidp/dex:v2.41.1
+          args: ["dex", "serve", "/etc/dex/config.yaml"]
+          ports:
+            - containerPort: 5556
+          readinessProbe:
+            httpGet: {path: /dex/healthz, port: 5556}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi, ephemeral-storage: 16Mi}
+            limits: {cpu: 500m, memory: 256Mi, ephemeral-storage: 64Mi}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/dex
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          secret:
+            secretName: dex
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dex
+spec:
+  selector: {app: dex}
+  ports:
+    - port: 5556
+      targetPort: 5556

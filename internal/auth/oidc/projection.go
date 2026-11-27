@@ -41,9 +41,9 @@ type ProjectedUser struct {
 // successful OIDC login on a suspended account must NOT silently
 // re-grant access.
 //
-// Role argument MUST be one of "user" or "admin" — the schema CHECK
-// constraint rejects anything else. The OIDC adapter is responsible
-// for mapping raw group claims to one of these two values; this
+// Role argument MUST be one of "viewer", "editor" or "admin" — the schema
+// CHECK constraint (migration 003) rejects anything else. The OIDC adapter
+// is responsible for mapping raw group claims to one of these values; this
 // function does not know about IdP-specific group conventions.
 //
 // Returns ErrUserSuspended (with the row populated) when the existing
@@ -56,8 +56,8 @@ func ProjectClaims(ctx context.Context, db *sql.DB, sub, email, displayName, rol
 	if sub == "" {
 		return nil, errors.New("oidc: ProjectClaims requires a non-empty sub")
 	}
-	if role != "user" && role != "admin" {
-		return nil, fmt.Errorf("oidc: role must be 'user' or 'admin', got %q", role)
+	if role != "viewer" && role != "editor" && role != "admin" {
+		return nil, fmt.Errorf("oidc: role must be 'viewer', 'editor' or 'admin', got %q", role)
 	}
 
 	tx, err := db.BeginTx(ctx, nil)

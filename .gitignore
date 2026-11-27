@@ -11,7 +11,9 @@ frontend/dist/
 .vscode/
 .idea/
 *.swp
-.claude/
+.claude/*
+# Project-local skills are committed (verify-phronesis).
+!.claude/skills/
 
 # Go build artifacts (compiled binary at repo root, anchored to avoid
 # accidentally matching cmd/phronesis/)
@@ -31,3 +33,10 @@ dist/
 frontend/blob-report/
 playwright-report/
 test-results/
+
+# world-model-ledger runtime store
+.world-model/
+
+# verify-phronesis evidence + per-instance run state (never committed)
+.verify/
+.verify-run/

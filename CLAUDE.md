@@ -11,13 +11,18 @@ This file describes the current project stack and implementation boundaries for 
 ### Backend
 
 - Language: Go
-- Go version: `1.24.5`
+- Go version: `1.26` floor, `toolchain go1.26.11` pinned (go.mod)
 - Module path: `github.com/dhanesh/phronesis`
 - HTTP server: standard library `net/http`
-- Auth: cookie session auth in `internal/auth` plus optional OIDC token-first
-  login in `internal/auth/oidc`
+- Auth: cookie session auth in `internal/auth`; OIDC in `internal/auth/oidc`
+  (browser SSO against a real IdP: auth code + PKCE in `rp.go`, handlers in
+  `internal/app/handlers_sso.go`; plus an HMAC stub for dev/tests)
 - Authorization: `internal/principal` carries the canonical Principal (user vs
-  service account, role, workspace) attached to request context
+  service account, role, workspace) attached to request context; page RBAC
+  is enforced through `authorize()` in `internal/app/authz.go`. Role
+  catalog: `docs/roles.md`
+- MCP: `/mcp` transport in `internal/mcp`, wiki tools in
+  `internal/app/mcp_tools.go`, OAuth 2.1 server in `internal/auth/oauth`
 - Storage: local filesystem-backed Markdown files in `internal/wiki/store.go`,
   binary blobs in `internal/blob`, atomic writes in `internal/fsutil`
 - Live updates: server-sent events in `internal/wiki/session.go` and
@@ -81,6 +86,8 @@ This file describes the current project stack and implementation boundaries for 
 - `internal/webfs`: dev-stub vs prod-embedded frontend FS (build-tagged)
 - `frontend`: Svelte/Vite application + Playwright e2e suite
 - `data/pages`: default on-disk content root used at runtime
+- `deploy/`: Docker Compose + Dex (`deploy/compose`), Helm chart
+  (`deploy/helm/phronesis`), deployment smoke test (`deploy/smoke`)
 
 ## Architectural Constraints
 
@@ -91,7 +98,10 @@ This file describes the current project stack and implementation boundaries for 
   - transport concerns
   - frontend/editor concerns
 - The frontend should continue moving toward a single-surface live editor model rather than reverting to a split preview/editor design.
-- CLI, MCP, and git sync are planned but not yet implemented. Do not imply they already exist.
+- CLI and git sync are planned but not yet implemented. Do not imply they already exist.
+- All local container and Kubernetes testing runs in Colima (`make image`,
+  `make compose-test`, `make helm-test`); pass `--context` explicitly and do
+  not switch the user's global docker/kubectl context.
 
 ## Current Product Semantics
 
@@ -108,18 +118,29 @@ This file describes the current project stack and implementation boundaries for 
   invocations. The Makefile wraps them with the right flags (deterministic
   ldflags, `-tags=prod`, frontend staging). Raw `go test ./...` and
   `cd frontend && npm run build` still work as a fallback.
+- Run `make security` before publishing (gitleaks, semgrep, govulncheck,
+  trivy, SonarQube; same script as the CI `security` workflow). Suppress
+  only verified false positives, narrowly and with a reason
+  (`docs/security-scans.md`).
 - Backend tests use a dev-stub frontend (see `internal/webfs/`) so
   `make test` runs without a prior `npm run build`.
 - Prefer ASCII unless a file already requires Unicode.
 - Keep public behavior and docs aligned with the actual codebase state.
 - If changing stack choices, update this file and the README in the same change.
 
+## Verifying Changes
+
+- Tests passing is not verification. To prove a change works in the running
+  app, use the project skill `.claude/skills/verify-phronesis/` (launch isolated
+  instances, drive features with a Playwright harness, record SHA-bound evidence
+  under `.verify/`). The feature map is `.claude/skills/verify-phronesis/features/`.
+
 ## Pending Major Areas
 
 - richer CodeMirror live-preview behavior
 - stable HTTP document API
 - CLI interface
-- MCP interface
+- search UI, page history, IdP group-to-role mapping, per-workspace roles
 - git sync to configurable remote (push-journal scaffolding exists in
   `internal/journal`; no remote driver wired)
 - multi-workspace resolution from URL/subdomain (today everything resolves

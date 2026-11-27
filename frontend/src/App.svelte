@@ -7,6 +7,9 @@
   import UsersManager from './lib/UsersManager.svelte';
   import KeysManager from './lib/KeysManager.svelte';
   import MCPSetupPanel from './lib/MCPSetupPanel.svelte';
+  import KeyRequestPanel from './lib/KeyRequestPanel.svelte';
+  import OAuthConsent from './lib/OAuthConsent.svelte';
+  const consentMode = window.location.pathname === '/oauth/consent';
   import { loadTheme } from './lib/theme';
 
   const defaultPage = 'home';
@@ -44,10 +47,16 @@
   let workspaces = $state([]);
   let currentWorkspace = $state('default');
   let userRole = $state('');
+  let selfId = $state('');
+  let displayName = $state('');
+  let ssoEnabled = $state(false);
+  // Page RBAC (docs/roles.md): only editors and admins may write.
+  let canEdit = $derived(userRole === 'editor' || userRole === 'admin');
   let workspaceManagerOpen = $state(false);
   let usersManagerOpen = $state(false);
   let keysManagerOpen = $state(false);
   let mcpSetupOpen = $state(false);
+  let keyRequestOpen = $state(false);
 
   function pagePath(name) {
     const ws = encodeURIComponent(currentWorkspace);
@@ -72,7 +81,42 @@
       keysManagerOpen = true;
     } else if (item.type === 'open-mcp-setup') {
       mcpSetupOpen = true;
+    } else if (item.type === 'open-key-request') {
+      keyRequestOpen = true;
+    } else if (item.type === 'rename-page') {
+      renamePage(item.from, item.to);
+    } else if (item.type === 'delete-page') {
+      deletePage(item.name);
     }
+  }
+
+  async function renamePage(from, to) {
+    const res = await fetch(`${pagePath(from)}/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      status = data.error || `Rename failed (${res.status})`;
+      return;
+    }
+    status = `Renamed to ${data.page.name}`;
+    await loadPages();
+    await loadPage(data.page.name);
+  }
+
+  async function deletePage(name) {
+    if (!confirm(`Delete page "${name}"? Links to it will point at an empty page.`)) return;
+    const res = await fetch(pagePath(name), { method: 'DELETE' });
+    if (!res.ok && res.status !== 204) {
+      const data = await res.json().catch(() => ({}));
+      status = data.error || `Delete failed (${res.status})`;
+      return;
+    }
+    status = `Deleted ${name}`;
+    await loadPages();
+    await loadPage(defaultPage);
   }
 
   async function switchWorkspace(slug) {
@@ -115,12 +159,19 @@
     window.addEventListener('keydown', onGlobalKey);
 
     await loadSession();
+    // The SSO callback reports failures as ?sso_error=<message>.
+    const ssoError = new URLSearchParams(window.location.search).get('sso_error');
+    if (ssoError) {
+      loginError = ssoError;
+      history.replaceState(null, '', window.location.pathname);
+    }
     if (authenticated) {
       await loadWorkspaces();
       const match = window.location.pathname.match(/^\/w\/(.+)$/);
       const initialPage = match ? decodeURIComponent(match[1]) : defaultPage;
       await Promise.all([loadPages(), loadPage(initialPage)]);
       // loadPage calls reconnectStream() internally; no extra connectStream() needed.
+      if (window.location.pathname === '/settings/keys/request') keyRequestOpen = true;
     }
   });
 
@@ -166,6 +217,9 @@
       const data = await res.json();
       authenticated = Boolean(data.authenticated);
       userRole = data.role || '';
+      selfId = data.username || '';
+      displayName = data.display_name || data.username || '';
+      ssoEnabled = Boolean(data.sso);
     } catch (error) {
       authenticated = false;
       bootError = error?.name === 'AbortError'
@@ -174,6 +228,24 @@
     } finally {
       checkingSession = false;
     }
+  }
+
+  // Returns the ?next= target only when it is a same-origin path, so a
+  // crafted link cannot turn the login form into an open redirect.
+  function safeNextPath() {
+    const raw = new URLSearchParams(window.location.search).get('next');
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '';
+    try {
+      const target = new URL(raw, window.location.origin);
+      if (target.origin !== window.location.origin) return '';
+      return target.pathname + target.search + target.hash;
+    } catch {
+      return '';
+    }
+  }
+
+  function startSSO() {
+    window.location.assign('/api/auth/oidc/start?next=' + encodeURIComponent(safeNextPath()));
   }
 
   async function login() {
@@ -190,6 +262,13 @@
     }
     authenticated = true;
     password = '';
+    // handleOAuthAuthorize bounces a signed-out browser to /?next=<authorize
+    // url>; send it back so the OAuth client receives its code.
+    const next = safeNextPath();
+    if (next) {
+      window.location.assign(next);
+      return;
+    }
     // Re-pull session to capture role for the freshly-logged-in user.
     await loadSession();
     await loadWorkspaces();
@@ -238,12 +317,23 @@
         draft = page.content;
       }
     });
+    // Another client renamed or deleted the open page.
+    source.addEventListener('renamed', (event) => {
+      const payload = JSON.parse(event.data);
+      status = `Page renamed to ${payload.page.name}`;
+      loadPages();
+      loadPage(payload.page.name);
+    });
+    source.addEventListener('deleted', () => {
+      status = 'This page was deleted by someone else.';
+      loadPages();
+    });
     source.addEventListener('update', (event) => {
       const payload = JSON.parse(event.data);
       const incoming = payload.page;
       const localDirty = draft !== page.content;
       page = incoming;
-      if (!localDirty || payload.author === username) {
+      if (!localDirty || payload.author === selfId) {
         draft = incoming.content;
       }
       mergedNotice = payload.merged ? 'Concurrent edits were merged on the server.' : '';
@@ -289,6 +379,7 @@
   }
 
   function onEditorChange(detail) {
+    if (!canEdit) return;
     draft = detail.value;
     durability = 'dirty';
     scheduleSave();
@@ -324,8 +415,14 @@
       </label>
       <button type="submit">Sign in</button>
       {#if loginError}<p class="error">{loginError}</p>{/if}
+      {#if ssoEnabled}
+        <div class="sso-divider" aria-hidden="true"><span>or</span></div>
+        <button type="button" class="sso-button" data-testid="sso-signin" onclick={startSSO}>Sign in with SSO</button>
+      {/if}
     </form>
   </main>
+{:else if consentMode}
+  <OAuthConsent />
 {:else}
   <main class="app-shell">
     <TopBar
@@ -339,6 +436,8 @@
       onManageWorkspaces={() => (workspaceManagerOpen = true)}
       onOpenPalette={() => (paletteOpen = true)}
       onLogout={logout}
+      {displayName}
+      role={userRole}
     />
 
     <div class="app-body">
@@ -366,11 +465,17 @@
       <section class="workspace">
         <div class="workspace-body">
           <section class="editor-card">
+            {#if !canEdit}
+              <p class="readonly-banner" role="status" data-testid="readonly-banner">
+                Read-only: your role is <strong>{userRole || 'viewer'}</strong>. Ask an admin for editor access to make changes.
+              </p>
+            {/if}
             <div class="editor-frame">
             <Editor
               bind:this={editor}
               value={draft}
               page={page.name}
+              readOnly={!canEdit}
               {durability}
               onchange={onEditorChange}
               onnavigate={onNavigate}
@@ -469,6 +574,8 @@
   workspaces={workspaces}
   currentWorkspace={currentWorkspace}
   isAdmin={userRole === 'admin'}
+  {canEdit}
+  currentPage={page.name}
   onSelect={onPaletteSelect}
 />
 
@@ -482,6 +589,7 @@
 <UsersManager bind:open={usersManagerOpen} />
 <KeysManager bind:open={keysManagerOpen} />
 <MCPSetupPanel bind:open={mcpSetupOpen} />
+<KeyRequestPanel bind:open={keyRequestOpen} />
 
 <style>
   /* Tokens come from frontend/src/themes.css (apple-light / apple-dark).
@@ -567,6 +675,25 @@
   }
   button:hover {
     background: var(--accent-hover);
+  }
+
+  .sso-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+  .sso-divider::before,
+  .sso-divider::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .sso-button {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong, var(--border-subtle));
   }
 
   .error {
@@ -679,10 +806,24 @@
     min-height: 0;
   }
 
+  /* With the read-only banner the card has two rows: banner, then editor. */
+  .editor-card:has(.readonly-banner) {
+    grid-template-rows: auto 1fr;
+  }
+
   .rail-card {
     padding: 0.9rem 1.1rem;
   }
 
+  .readonly-banner {
+    margin: 0.6rem 0.6rem 0;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in oklab, var(--bg-elevated) 85%, #f5b700 15%);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+  }
   .editor-frame {
     min-height: 68vh;
     padding: 0.5rem 1rem 0.25rem 1.2rem;

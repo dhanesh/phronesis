@@ -75,5 +75,6 @@ func (s *Server) handleJWKS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	w.WriteHeader(http.StatusOK)
+	// nosemgrep: no-direct-write-to-responsewriter -- server-built JSON metadata document
 	_, _ = w.Write(doc)
 }

@@ -22,6 +22,8 @@
     onManageWorkspaces,
     onOpenPalette,
     onLogout,
+    displayName = '',
+    role = '',
   } = $props();
 
   function onWorkspaceChange(event) {
@@ -81,6 +83,11 @@
       <span class="cmdk-label">Quick open</span>
     </button>
     <ThemeSwitcher />
+    {#if displayName}
+      <span class="whoami" data-testid="whoami" title={role ? `Role: ${role}` : ''}>
+        {displayName}{#if role}<span class="whoami-role">{role}</span>{/if}
+      </span>
+    {/if}
     <button class="logout" type="button" onclick={() => onLogout?.()}>Sign out</button>
   </div>
 </header>
@@ -195,6 +202,23 @@
     border-radius: var(--radius-sm);
   }
 
+  .whoami {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .whoami-role {
+    font-size: 0.7rem;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+  }
   .logout {
     background: transparent;
     color: var(--text-secondary);

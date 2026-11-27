@@ -81,9 +81,9 @@ func TestCacheInvalidateByUserDropsAllOfUserSKeys(t *testing.T) {
 	t.Cleanup(func() { _ = store.Close() })
 
 	// Seed two users + three keys (2 owned by user A, 1 by user B).
-	res, _ := store.DB().Exec(`INSERT INTO users (oidc_sub, role, status) VALUES (?, 'user', 'active')`, "sub-A")
+	res, _ := store.DB().Exec(`INSERT INTO users (oidc_sub, role, status) VALUES (?, 'viewer', 'active')`, "sub-A")
 	uidA, _ := res.LastInsertId()
-	res, _ = store.DB().Exec(`INSERT INTO users (oidc_sub, role, status) VALUES (?, 'user', 'active')`, "sub-B")
+	res, _ = store.DB().Exec(`INSERT INTO users (oidc_sub, role, status) VALUES (?, 'viewer', 'active')`, "sub-B")
 	uidB, _ := res.LastInsertId()
 
 	for _, k := range []struct {

@@ -211,15 +211,16 @@ func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string, cache *
 		expiresAt  sql.NullString
 		oidcSub    string
 		userStatus string
+		userRole   string
 	)
 	err := db.QueryRowContext(ctx, `
 		SELECT k.id, k.user_id, k.workspace_slug, k.scope, k.key_hash,
 		       k.revoked_at, k.expires_at,
-		       u.oidc_sub, u.status
+		       u.oidc_sub, u.status, u.role
 		  FROM api_keys k
 		  JOIN users u ON u.id = k.user_id
 		 WHERE k.key_prefix = ?
-	`, prefix).Scan(&id, &userID, &workspace, &scope, &stored, &revokedAt, &expiresAt, &oidcSub, &userStatus)
+	`, prefix).Scan(&id, &userID, &workspace, &scope, &stored, &revokedAt, &expiresAt, &oidcSub, &userStatus, &userRole)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, ErrKeyNotFound
@@ -255,7 +256,9 @@ func ResolveBearerKey(ctx context.Context, db *sql.DB, plaintext string, cache *
 		Type:        principal.TypeServiceAccount,
 		ID:          prefix, // audit-meaningful identity per service-account
 		WorkspaceID: workspace,
-		Role:        scopeToRole(scope),
+		// A key never outranks its owner (docs/roles.md): demoting the
+		// owner weakens their keys at once.
+		Role: principal.MinRole(scopeToRole(scope), principal.ParseRole(userRole)),
 		Claims: map[string]string{
 			"auth_method":    "api_key",
 			"key_prefix":     prefix,

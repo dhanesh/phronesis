@@ -68,7 +68,7 @@ func TestAdminKeyRequestsListEmpty(t *testing.T) {
 // @constraint TN7 — request->approve flow: list pending and deny.
 func TestAdminKeyRequestsListAndDeny(t *testing.T) {
 	s := newAdminTestServer(t)
-	uid := seedUser(t, s, "sub-r", "r@example.com", "R", "user", "active")
+	uid := seedUser(t, s, "sub-r", "r@example.com", "R", "viewer", "active")
 	rid := seedKeyRequest(t, s, uid, "default", "write", "claude-code")
 
 	// List should surface the pending request.
@@ -110,7 +110,7 @@ func TestAdminKeyRequestsListAndDeny(t *testing.T) {
 
 func TestAdminKeyRequestsDenyAlreadyDecidedReturns404(t *testing.T) {
 	s := newAdminTestServer(t)
-	uid := seedUser(t, s, "sub-q", "q@example.com", "Q", "user", "active")
+	uid := seedUser(t, s, "sub-q", "q@example.com", "Q", "viewer", "active")
 	rid := seedKeyRequest(t, s, uid, "default", "read", "test")
 
 	// First deny: 204
@@ -133,7 +133,7 @@ func TestAdminKeyRequestsDenyAlreadyDecidedReturns404(t *testing.T) {
 // The plaintext is returned ONCE; the row carries Argon2id hash.
 func TestAdminKeyRequestApproveMintsRealKey(t *testing.T) {
 	s := newAdminTestServer(t)
-	uid := seedUser(t, s, "sub-a", "a@example.com", "A", "user", "active")
+	uid := seedUser(t, s, "sub-a", "a@example.com", "A", "viewer", "active")
 	rid := seedKeyRequest(t, s, uid, "default", "write", "claude-code")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/keys/requests/"+itoa(rid)+"/approve", nil)
@@ -197,7 +197,7 @@ func TestAdminKeyRequestApproveMintsRealKey(t *testing.T) {
 // @constraint TN7 — approve on already-decided request returns 409.
 func TestAdminKeyRequestApproveAlreadyDecidedReturns409(t *testing.T) {
 	s := newAdminTestServer(t)
-	uid := seedUser(t, s, "sub-d", "d@example.com", "D", "user", "active")
+	uid := seedUser(t, s, "sub-d", "d@example.com", "D", "viewer", "active")
 	rid := seedKeyRequest(t, s, uid, "default", "read", "test")
 
 	// First deny.

@@ -31,7 +31,12 @@ func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-		if _, ok := s.auth.Username(r); !ok {
+		// A session cookie or an API key authenticates alike (decision
+		// 2026-11-27). A session whose principal was refused (a suspended
+		// or deleted OIDC user) has no principal and is not authenticated.
+		p, perr := principal.FromContext(r.Context())
+		ok := perr == nil && apiCredentialAllowed(p)
+		if !ok {
 			if strings.HasPrefix(r.URL.Path, "/api/") {
 				writeError(w, http.StatusUnauthorized, "authentication required")
 			} else {

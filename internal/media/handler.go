@@ -52,7 +52,8 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 // Satisfies: RT-6.2
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	p, err := principal.FromContext(r.Context())
-	if err != nil {
+	// OAuth access tokens are limited to /mcp (decision 2026-11-27).
+	if err != nil || p.Claims["auth_method"] == "oauth_jwt" {
 		http.Error(w, "unauthenticated", http.StatusUnauthorized)
 		return
 	}
@@ -102,7 +103,8 @@ type uploadResponse struct {
 // Satisfies: RT-6.2, S5 (body cap), S6 (content-type + quota enforced by store)
 func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 	p, err := principal.FromContext(r.Context())
-	if err != nil {
+	// OAuth access tokens are limited to /mcp (decision 2026-11-27).
+	if err != nil || p.Claims["auth_method"] == "oauth_jwt" {
 		http.Error(w, "unauthenticated", http.StatusUnauthorized)
 		return
 	}

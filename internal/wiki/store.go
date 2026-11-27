@@ -110,7 +110,7 @@ func (s *Store) List() ([]Summary, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var pages []Summary
+	pages := []Summary{} // never null in JSON
 	err := filepath.WalkDir(s.root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err

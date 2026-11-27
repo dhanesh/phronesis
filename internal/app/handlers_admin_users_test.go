@@ -63,7 +63,7 @@ func seedUser(t *testing.T, s *Server, sub, email, name, role, status string) in
 // Satisfies RT-9 evidence E22 (server-side coverage).
 func TestAdminUsersList(t *testing.T) {
 	s := newAdminTestServer(t)
-	seedUser(t, s, "sub-1", "alice@example.com", "Alice", "user", "active")
+	seedUser(t, s, "sub-1", "alice@example.com", "Alice", "viewer", "active")
 	seedUser(t, s, "sub-2", "admin@example.com", "Admin", "admin", "active")
 
 	req := httptest.NewRequest(http.MethodGet, "/api/admin/users", nil)
@@ -124,7 +124,7 @@ func TestAdminUsersListReturnsEmptyArray(t *testing.T) {
 // @constraint S5 — suspending updates status atomically.
 func TestAdminUserSuspendAndReactivate(t *testing.T) {
 	s := newAdminTestServer(t)
-	id := seedUser(t, s, "sub-x", "x@example.com", "X", "user", "active")
+	id := seedUser(t, s, "sub-x", "x@example.com", "X", "viewer", "active")
 
 	// Suspend
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/users/"+itoa(id)+"/suspend", nil)
@@ -161,7 +161,7 @@ func TestAdminUserSuspendNotFound(t *testing.T) {
 
 func TestAdminUserDelete(t *testing.T) {
 	s := newAdminTestServer(t)
-	id := seedUser(t, s, "sub-d", "d@example.com", "D", "user", "active")
+	id := seedUser(t, s, "sub-d", "d@example.com", "D", "viewer", "active")
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/admin/users/"+itoa(id), nil)
 	w := httptest.NewRecorder()
@@ -178,7 +178,7 @@ func TestAdminUserDelete(t *testing.T) {
 
 func TestAdminUsersUnknownAction(t *testing.T) {
 	s := newAdminTestServer(t)
-	id := seedUser(t, s, "sub-u", "u@example.com", "U", "user", "active")
+	id := seedUser(t, s, "sub-u", "u@example.com", "U", "viewer", "active")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/users/"+itoa(id)+"/sudo", nil)
 	w := httptest.NewRecorder()

@@ -1,0 +1,10 @@
+# gitleaks config: default rules plus narrow, reasoned allowlists.
+# Used by scripts/security-scan.sh (local and CI).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Manifold verify files map source paths to sha256 content hashes; file names containing 'key' or 'auth' trip generic-api-key."
+paths = ['''^\.manifold/[^/]+\.verify\.json$''']
+regexes = ['''^[0-9a-f]{64}$''']
+regexTarget = "secret"

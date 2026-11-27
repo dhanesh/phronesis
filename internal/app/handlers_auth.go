@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -25,13 +26,29 @@ func requestIsSecure(r *http.Request) bool {
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	username, ok := s.auth.Username(r)
 	role := ""
+	displayName := username
 	if p, err := principal.FromContext(r.Context()); err == nil {
 		role = string(p.Role)
+		// OIDC subjects are opaque (Dex: base64 ids); show the projected
+		// display name or email instead.
+		if s.store != nil && p.Claims["auth_method"] == "oidc" {
+			var name, email string
+			_ = s.store.DB().QueryRowContext(r.Context(),
+				`SELECT COALESCE(display_name, ''), COALESCE(email, '') FROM users WHERE oidc_sub = ?`, p.ID).Scan(&name, &email)
+			if name != "" {
+				displayName = name
+			} else if email != "" {
+				displayName = email
+			}
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authenticated": ok,
 		"username":      username,
+		"display_name":  displayName,
 		"role":          role,
+		// sso tells the sign-in page to offer "Sign in with SSO".
+		"sso": s.sso != nil,
 	})
 }
 
@@ -61,6 +78,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    token,
@@ -92,6 +110,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	// INT-5: logout event (Principal still attached to ctx via attachPrincipal).
 	s.auditEnqueue("auth.logout", r, "", nil)
+	// nosemgrep: cookie-missing-secure -- Secure is set on HTTPS via requestIsSecure(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    "",
@@ -145,11 +164,25 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 				claims["auth_method"] = am
 			}
 		}
+		// The built-in password user is the configured admin. An OIDC
+		// session takes its role from the projected users row on every
+		// request, so promotion, suspension and deletion apply at once.
+		role := principal.RoleAdmin
+		if claims["auth_method"] == "oidc" {
+			role = principal.RoleViewer
+			if s.store != nil {
+				r2, ok := s.oidcUserRole(r.Context(), id)
+				if !ok {
+					return principal.Principal{}, false
+				}
+				role = r2
+			}
+		}
 		return principal.Principal{
 			Type:        ptype,
 			ID:          id,
 			WorkspaceID: wsID,
-			Role:        principal.RoleAdmin,
+			Role:        role,
 			Claims:      claims,
 		}, true
 	}
@@ -184,7 +217,14 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 				return principal.Principal{}, false
 			}
 			p, err := s.oauth.tokenVerifier.VerifyAccessToken(plaintext)
-			if err == nil {
+			if err != nil {
+				return principal.Principal{}, false
+			}
+			// The token's role was fixed at consent; cap it at the user's
+			// CURRENT role so demotion, suspension and deletion apply to
+			// tokens already issued (docs/roles.md principle 2).
+			if r, ok := s.currentUserRole(r.Context(), p.Claims["oauth_sub"]); ok {
+				p.Role = principal.MinRole(p.Role, r)
 				return p, true
 			}
 			return principal.Principal{}, false
@@ -203,4 +243,28 @@ func (s *Server) principalFromRequest(r *http.Request) (principal.Principal, boo
 		}
 	}
 	return principal.Principal{}, false
+}
+
+// currentUserRole returns the current role of the human behind a delegated
+// credential. The built-in password admin has no users row and is admin.
+// ok is false for a missing, deleted or suspended user.
+func (s *Server) currentUserRole(ctx context.Context, sub string) (principal.Role, bool) {
+	if sub == "" {
+		return "", false
+	}
+	// The users row wins: an IdP subject that happens to equal the admin
+	// username gets its own (projected) role, never the admin's.
+	if s.store != nil {
+		var exists int
+		if err := s.store.DB().QueryRowContext(ctx, `SELECT 1 FROM users WHERE oidc_sub = ?`, sub).Scan(&exists); err == nil {
+			return s.oidcUserRole(ctx, sub)
+		}
+	}
+	if sub == s.cfg.AdminUser {
+		return principal.RoleAdmin, true
+	}
+	if s.store == nil {
+		return principal.RoleViewer, true
+	}
+	return "", false
 }

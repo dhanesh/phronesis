@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -35,6 +36,9 @@ func (s *Server) handlePages(w http.ResponseWriter, r *http.Request) {
 	if slug == "" {
 		return
 	}
+	if _, ok := s.authorize(w, r, "read", slug); !ok {
+		return
+	}
 	pages, err := store.List()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -55,12 +59,24 @@ func (s *Server) handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleEvents(w, r, "", name)
 		return
 	}
+	if strings.HasSuffix(path, "/rename") {
+		s.handleRename(w, r, "", strings.TrimSuffix(path, "/rename"))
+		return
+	}
 	s.handlePage(w, r, "", path)
 }
 
 func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlug, name string) {
 	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
 	if slug == "" {
+		return
+	}
+	action := "read"
+	if r.Method == http.MethodPost || r.Method == http.MethodDelete {
+		action = "write"
+	}
+	p, ok := s.authorize(w, r, action, slug)
+	if !ok {
 		return
 	}
 	switch r.Method {
@@ -83,8 +99,7 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlu
 			writeError(w, http.StatusBadRequest, "invalid update request")
 			return
 		}
-		username, _ := s.auth.Username(r)
-		page, merged, err := hub.Apply(name, req.BaseVersion, req.Content, username)
+		page, merged, err := hub.Apply(name, req.BaseVersion, req.Content, p.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -99,9 +114,57 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request, workspaceSlu
 			"page":   page,
 			"merged": merged,
 		})
+	case http.MethodDelete:
+		if err := hub.Delete(name); err != nil {
+			if errors.Is(err, wiki.ErrPageNotFound) {
+				writeError(w, http.StatusNotFound, "page not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		s.auditEnqueue("doc.delete", r, name, map[string]string{"workspace": slug})
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		methodNotAllowed(w)
 	}
+}
+
+// handleRename moves a page: POST /api/pages/<name>/rename {"to":"<new>"}.
+// Needs write. Inbound wiki links are not rewritten.
+func (s *Server) handleRename(w http.ResponseWriter, r *http.Request, workspaceSlug, name string) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
+	if slug == "" {
+		return
+	}
+	if _, ok := s.authorize(w, r, "write", slug); !ok {
+		return
+	}
+	var req struct {
+		To string `json:"to"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req); err != nil || strings.TrimSpace(req.To) == "" {
+		writeError(w, http.StatusBadRequest, "body must be {\"to\": \"<new name>\"}")
+		return
+	}
+	page, err := hub.Rename(name, req.To)
+	switch {
+	case errors.Is(err, wiki.ErrPageNotFound):
+		writeError(w, http.StatusNotFound, "page not found")
+		return
+	case errors.Is(err, wiki.ErrPageExists):
+		writeError(w, http.StatusConflict, "a page with that name already exists")
+		return
+	case err != nil:
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	s.auditEnqueue("doc.rename", r, name, map[string]string{"workspace": slug, "to": page.Name})
+	writeJSON(w, http.StatusOK, map[string]any{"page": page})
 }
 
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceSlug, name string) {
@@ -116,6 +179,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceS
 	}
 	_, hub, slug := s.resolveWorkspace(w, workspaceSlug)
 	if slug == "" {
+		return
+	}
+	if _, ok := s.authorize(w, r, "read", slug); !ok {
 		return
 	}
 	ch, cancel, err := hub.Subscribe(name)
@@ -155,8 +221,9 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request, workspaceS
 				)
 				continue
 			}
+			// nosemgrep: no-fprintf-to-responsewriter -- text/event-stream frame; type is a server constant, data is JSON
 			fmt.Fprintf(w, "event: %s\n", event.Type)
-			fmt.Fprintf(w, "data: %s\n\n", payload)
+			fmt.Fprintf(w, "data: %s\n\n", payload) // nosemgrep: no-fprintf-to-responsewriter
 			flusher.Flush()
 		}
 	}

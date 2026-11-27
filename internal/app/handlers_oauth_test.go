@@ -125,7 +125,9 @@ func TestHandleOAuthGoldenFlow(t *testing.T) {
 		"state":                 {"abc"},
 		"scope":                 {"read"},
 	}
-	req := httptest.NewRequest(http.MethodGet, "/oauth/authorize?"+authzQ.Encode(), nil)
+	authzQ.Set("decision", "approve")
+	req := httptest.NewRequest(http.MethodPost, "/oauth/authorize", strings.NewReader(authzQ.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(cookie)
 	rec := httptest.NewRecorder()
 	s.handleOAuthAuthorize(rec, req)
@@ -221,7 +223,9 @@ func TestHandleOAuthTokenRejectsBadPKCE(t *testing.T) {
 		"code_challenge":        {challengeFor("right")},
 		"code_challenge_method": {"S256"},
 	}
-	req := httptest.NewRequest(http.MethodGet, "/oauth/authorize?"+authzQ.Encode(), nil)
+	authzQ.Set("decision", "approve")
+	req := httptest.NewRequest(http.MethodPost, "/oauth/authorize", strings.NewReader(authzQ.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(cookie)
 	rec := httptest.NewRecorder()
 	s.handleOAuthAuthorize(rec, req)
@@ -320,7 +324,9 @@ func TestHandleOAuthTokenRefreshRotates(t *testing.T) {
 		"code_challenge":        {challengeFor(verifier)},
 		"code_challenge_method": {"S256"},
 	}
-	req := httptest.NewRequest(http.MethodGet, "/oauth/authorize?"+authzQ.Encode(), nil)
+	authzQ.Set("decision", "approve")
+	req := httptest.NewRequest(http.MethodPost, "/oauth/authorize", strings.NewReader(authzQ.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(cookie)
 	rec := httptest.NewRecorder()
 	s.handleOAuthAuthorize(rec, req)
